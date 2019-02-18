@@ -40,6 +40,13 @@ module.exports = class IQCommand extends Command {
           else if (data.iq > 110) return msg.channel.send(`${user}'s IQ is **${data.iq}** ${PepoDance}`);
           else return msg.channel.send(`${user}'s IQ is **${data.iq}**`);
         }
+        else if(user.id == 128685552450011137){
+           this.client.db.updateUser(user.id, "iq", 200);
+           if (data.iq < 90) return msg.channel.send(`${user}'s IQ is **${data.iq}** ${PepoSpin}`);
+           else if (data.iq > 90 && data.iq < 110) return msg.channel.send(`${user}'s IQ is **${data.iq}** ${PepoClap}`);
+           else if (data.iq > 110) return msg.channel.send(`${user}'s IQ is **${data.iq}** ${PepoDance}`);
+           else return msg.channel.send(`${user}'s IQ is **${data.iq}**`);
+        }
         else {
           this.client.db.updateUser(user.id, "iq", randomIQ);
           if (randomIQ < 90) return msg.channel.send(`${user}'s IQ is **${randomIQ}** ${PepoSpin}`);
