@@ -22,25 +22,22 @@ module.exports = class PurgeCommand extends Command {
   }
 
   async run(msg, { limit }) {
-    try {
-      await msg.channel.messages.fetch({ limit: limit + 1 }).then(messages => {
-        msg.channel.bulkDelete(messages.array().reverse()).then(msgs => {
-          const embed = new MessageEmbed()
-            .setColor('#00ff1d')
-            .setTitle('Purge')
-            .setDescription(`Deleted ${msgs.size - 1} messages`)
-            .setFooter('This message will be deleted automatically in 5 seconds');
-          
-          msg.channel.send(embed).then(msg => msg.delete({ timeout: 5000 }));
-        }).catch(err => {
-          return [this.client.logger.error('Purge command error', err),msg.channel.send('Could not bulk delete messages')];
-        });
+    await msg.channel.messages.fetch({ limit: limit + 1 }).then(messages => {
+      msg.channel.bulkDelete(messages.array().reverse()).then(msgs => {
+        const embed = new MessageEmbed()
+          .setColor('#00ff1d')
+          .setTitle('Purge')
+          .setDescription(`Deleted ${msgs.size - 1} messages`)
+          .setFooter('This message will be deleted automatically in 5 seconds');
+        
+        msg.channel.send(embed).then(msg => msg.delete({ timeout: 5000 }));
       }).catch(err => {
-        return [this.client.logger.error('Purge command error', err),msg.channel.send('Could not fetch messages')];
+        return [this.client.logger.error('Purge command error', err),msg.channel.send('Could not bulk delete messages')];
       });
-    }
-    catch(error) {
-      return this.client.logger.error('Purge command error', error);
-    }
+    }).catch(err => {
+      return [this.client.logger.error('Purge command error', err),msg.channel.send('Could not fetch messages')];
+    });
+
+    return undefined;
   }
 }

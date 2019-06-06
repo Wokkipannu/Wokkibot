@@ -28,5 +28,7 @@ module.exports = class RandomCommand extends Command {
     else {
       msg.reply('Your list sucks');
     }
+
+    return undefined;
   }
 }

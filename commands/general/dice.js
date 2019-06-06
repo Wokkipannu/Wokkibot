@@ -41,5 +41,7 @@ module.exports = class DiceCommand extends Command {
     else {
       msg.reply(`You rolled ${rolls.join(", ")}`);
     }
+    
+    return undefined;
   }
 }

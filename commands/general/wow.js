@@ -29,7 +29,7 @@ module.exports = class WowCommand extends Command {
     reply += minutes !== 1 ? `${minutes} minutes, ` : `${minutes} minute, `;
     reply += seconds !== 1 ? `${seconds} seconds` : `${seconds} second`;
 
-    msg.reply(`**${reply}** until WoW Classic`);
+    return msg.reply(`**${reply}** until WoW Classic`);
   }
 
   getDays(seconds) {

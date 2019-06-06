@@ -20,18 +20,13 @@ module.exports = class VolumeCommand extends Command {
   }
 
   async run(msg, { volume }) {
-    try {
-      const queue = await this.queue.get(msg.guild.id);
-      if (!queue) return msg.reply('There are no songs in queue');
+    const queue = await this.queue.get(msg.guild.id);
+    if (!queue) return msg.reply('There are no songs in queue');
 
-      if (volume < 1 || volume > 100) return msg.reply('Only use volume between 1 and 100');
+    if (volume < 1 || volume > 100) return msg.reply('Only use volume between 1 and 100');
 
-      queue.connection.dispatcher.setVolume(volume / 100);
-      return msg.reply(`Volume set to ${volume}%`);
-    }
-    catch(error) {
-      return [console.error('Volume error', error),msg.reply('Volume error')];
-    }
+    queue.connection.dispatcher.setVolume(volume / 100);
+    return msg.reply(`Volume set to ${volume}%`);
   }
 
   get queue() {

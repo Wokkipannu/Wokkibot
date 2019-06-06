@@ -16,6 +16,6 @@ module.exports = class ClassCommand extends Command {
     const classes = ["Druid", "Hunter", "Mage", "Priest", "Rogue", "Shaman", "Warlock", "Warrior"];
     const random = classes[Math.floor(Math.random() * classes.length)];
 
-    msg.reply(`you play ${random}`);
+    return msg.reply(`you play ${random}`);
   }
 }

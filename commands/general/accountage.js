@@ -25,7 +25,7 @@ module.exports = class AccountAgeCommand extends Command {
   run(msg, { user }) {
     user = user ? msg.mentions.users.first() : msg.author;
 
-    msg.reply(`Account **${user.username}** was created at **${moment(user.createdAt).format('DD.MM.YYYY HH:mm:ss')}** which was **${this.numberWithCommas(moment().diff(user.createdAt, 'days'))} days ago**.`);
+    return msg.reply(`Account **${user.username}** was created at **${moment(user.createdAt).format('DD.MM.YYYY HH:mm:ss')}** which was **${this.numberWithCommas(moment().diff(user.createdAt, 'days'))} days ago**.`);
   }
 
   numberWithCommas(x) {

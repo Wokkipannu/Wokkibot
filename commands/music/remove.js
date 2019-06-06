@@ -20,20 +20,15 @@ module.exports = class RemoveCommand extends Command {
   }
 
   async run(msg, { index }) {
-    try {
-      const queue = await this.queue.get(msg.guild.id);
-      if (!queue) return msg.reply('There are no songs in queue');
-  
-      if (index <= 1) return msg.reply('You can not remove first song. Use skip instead.');
-      if (index > queue.songs.length) return msg.reply('No song with given index');
-  
-      queue.songs.splice(index - 1, 1);
-  
-      return msg.channel.send(`Removed song ${index} from queue`);
-    }
-    catch(error) {
-      return [console.error('Remove command error', error),msg.reply('Remove command error')];
-    }
+    const queue = await this.queue.get(msg.guild.id);
+    if (!queue) return msg.reply('There are no songs in queue');
+
+    if (index <= 1) return msg.reply('You can not remove first song. Use skip instead.');
+    if (index > queue.songs.length) return msg.reply('No song with given index');
+
+    queue.songs.splice(index - 1, 1);
+
+    return msg.channel.send(`Removed song ${index} from queue`);
   }
 
   get queue() {

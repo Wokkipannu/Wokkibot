@@ -13,17 +13,12 @@ module.exports = class SkipCommand extends Command {
   }
 
   async run(msg) {
-    try {
-      const queue = await this.queue.get(msg.guild.id);
-      if (!queue) return msg.reply('You can not skip nonexistent song');
-      
-      const title = queue.songs[0].title;
-      queue.connection.dispatcher.end('skipped');
-      return msg.channel.send(`${title} was skipped`);
-    }
-    catch(error) {
-      return [console.error('Skip error', error),msg.channel.send('Skip command error')];
-    }
+    const queue = await this.queue.get(msg.guild.id);
+    if (!queue) return msg.reply('You can not skip nonexistent song');
+    
+    const title = queue.songs[0].title;
+    queue.connection.dispatcher.end('skipped');
+    return msg.channel.send(`${title} was skipped`);
   }
 
   get queue() {

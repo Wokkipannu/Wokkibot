@@ -34,6 +34,6 @@ module.exports = class EightballCommand extends Command {
     const random = Math.floor(Math.random() * answers.length);
     const answer = answers[random];
 
-    msg.reply(answer);
+    return msg.reply(answer);
   }
 }
