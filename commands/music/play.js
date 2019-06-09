@@ -93,7 +93,7 @@ module.exports = class PlayCommand extends Command {
   }
 
   async play(msg) {
-    const queue = this.queue.get(msg.guild.id);
+    const queue = await this.queue.get(msg.guild.id);
 
     if (queue.songs.length === 0) {
       queue.voiceChannel.leave();
