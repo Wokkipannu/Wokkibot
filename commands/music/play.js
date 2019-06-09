@@ -36,26 +36,18 @@ module.exports = class PlayCommand extends Command {
       this.handleVideo(msg, video);
     }
     else {
-      let videos = await this.youtube.searchVideos(url, 1).catch((error) => {
-        this.client.logger.error('searchVideos error', error);
-      });
-
-      if (!videos) {
-        this.client.logger.info('No search results for given keyword');
-        return msg.reply('No results for given keyword');
-      }
-      else {
-        let video = await this.youtube.getVideoByID(videos[0].id);
-        this.handleVideo(msg, video);
-      }
+      let videos = await this.youtube.searchVideos(url, 1)
+        .catch(error => {
+          if(error) this.client.logger.error('Play command error', error);
+        });
+      let video = await this.youtube.getVideoByID(videos[0].id);
+      this.handleVideo(msg, video);
     }
-    return undefined;
   }
 
   async handleVideo(msg, video) {
-    const voiceChannel = msg.member.voice.channel;
-
-    const queue = this.queue.get(msg.guild.id);
+    const voiceChannel = await msg.member.voice.channel;
+    const queue = await this.queue.get(msg.guild.id);
 
     const song = {
       id: video.id,
@@ -70,8 +62,10 @@ module.exports = class PlayCommand extends Command {
       const queueConstruct = {
         voiceChannel: voiceChannel,
         connection: null,
-        songs: [song]
+        songs: []
       };
+      queueConstruct.songs.push(song);
+      this.queue.set(msg.guild.id, queueConstruct);
 
       let connection = await voiceChannel.join();
       queueConstruct.connection = connection;
@@ -103,19 +97,19 @@ module.exports = class PlayCommand extends Command {
       .setDescription(`[${queue.songs[0].title}](https://www.youtube.com/watch?v=${queue.songs[0].id})\n**Duration:** ${this.timeString(queue.songs[0].duration)}\n**Requested by:** ${queue.songs[0].requester}`)
       .setImage(queue.songs[0].thumbnail);
 
-      const dispatcher = await queue.connection.play(await ytdl(queue.songs[0].url), { type: 'opus', volume: 0.2 })
-        .on('end', reason => {
-          if (reason === 'skipped') msg.channel.send('Song skipped');
-          queue.songs.shift();
-          this.play(msg);
-        })
-        .on('error', error => {
-          queue.songs.shift();
-          this.play(msg);
-          return this.client.logger.error('Dispatcher error', error);
-        });
-      
-      msg.channel.send(playEmbed);
+    const dispatcher = queue.connection.play(await ytdl(queue.songs[0].url), { type: 'opus', volume: 0.2 })
+      .on('end', reason => {
+        if (reason === 'skipped') msg.channel.send('Song skipped');
+        queue.songs.shift();
+        this.play(msg);
+      })
+      .on('error', error => {
+        queue.songs.shift();
+        this.play(msg);
+        return this.client.logger.error('Dispatcher error', error);
+      });
+    
+    msg.channel.send(playEmbed);
   }
 
   timeString(seconds, forceHours = false) {
