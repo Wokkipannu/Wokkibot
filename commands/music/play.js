@@ -67,17 +67,14 @@ module.exports = class PlayCommand extends Command {
     }
 
     if (!queue) {
-      await voiceChannel.join()
-        .then(connection => {
-          this.queue.set(msg.guild.id, {
-            voiceChannel: voiceChannel,
-            connection: connection,
-            songs: [song]
-          });
-        })
-        .catch(error => {
-          this.client.logger.error("Handle video error", error);
-        });
+      const queueConstruct = {
+        voiceChannel: voiceChannel,
+        connection: null,
+        songs: [song]
+      };
+
+      let connection = await voiceChannel.join();
+      queueConstruct.connection = connection;
       this.play(msg);
     }
     else {
