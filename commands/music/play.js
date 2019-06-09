@@ -30,22 +30,25 @@ module.exports = class PlayCommand extends Command {
   async run(msg, { url }) {
     const voiceChannel = msg.member.voice.channel;
     if (!voiceChannel) return msg.reply('You must connect to a voice channel first');
-  
-    let video;
 
     if (url.match(/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/g)) {
-      video = await this.youtube.getVideo(url);
+      let video = await this.youtube.getVideo(url);
+      this.handleVideo(msg, video);
     }
     else {
-      let videos = await this.youtube.searchVideos(url, 1).catch(() => {
-        this.client.logger.info('No search results for given keyword');
-        msg.reply('No results for given keyword');
+      let videos = await this.youtube.searchVideos(url, 1).catch((error) => {
+        this.client.logger.error('searchVideos error', error);
       });
-      video = await this.youtube.getVideoByID(videos[0].id);
-    }
 
-    if (video) this.handleVideo(msg, video);
-    else msg.reply('Could not find a video');
+      if (!videos) {
+        this.client.logger.info('No search results for given keyword');
+        return msg.reply('No results for given keyword');
+      }
+      else {
+        let video = await this.youtube.getVideoByID(videos[0].id);
+        this.handleVideo(msg, video);
+      }
+    }
     return undefined;
   }
 
@@ -71,6 +74,9 @@ module.exports = class PlayCommand extends Command {
             connection: connection,
             songs: [song]
           });
+        })
+        .catch(error => {
+          this.client.logger.error("Handle video error", error);
         });
       this.play(msg);
     }
@@ -84,8 +90,6 @@ module.exports = class PlayCommand extends Command {
       msg.channel.send(queueEmbed);
       queue.songs.push(song);
     }
-
-    return undefined;
   }
 
   async play(msg) {
