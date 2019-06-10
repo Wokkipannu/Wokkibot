@@ -4,7 +4,7 @@
   "description": "A Discord bot",
   "main": "bot.js",
   "scripts": {
-    "start": "node bot"
+    "start": "node bot.js"
   },
   "keywords": [],
   "author": "Wokkipannu",
