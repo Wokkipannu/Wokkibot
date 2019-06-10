@@ -2,11 +2,9 @@ const Commando = require('discord.js-commando');
 const winston = require('winston');
 const path = require('path');
 
-const { OWNER, TOKEN, PREFIX } = require('./config');
-
 const client = new Commando.Client({
-  owner: OWNER,
-  commandPrefix: PREFIX
+  owner: process.env.OWNER,
+  commandPrefix: process.env.PREFIX
 });
 
 client.logger = winston.createLogger({
@@ -41,4 +39,4 @@ client.registry
   .registerDefaults()
   .registerCommandsIn(path.join(__dirname, 'commands'));
 
-client.login(TOKEN);
+client.login(process.env.TOKEN);

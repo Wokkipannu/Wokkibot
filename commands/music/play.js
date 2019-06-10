@@ -3,7 +3,7 @@ const { Util, MessageEmbed } = require('discord.js');
 const YouTube = require('simple-youtube-api');
 const ytdl = require('ytdl-core-discord');
 
-const { GOOGLE_API_KEY } = require('../../config');
+const GOOGLE_API_KEY = process.env.G_API_KEY
 
 module.exports = class PlayCommand extends Command {
   constructor(client) {
