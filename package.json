@@ -13,6 +13,7 @@
     "discord.js": "github:discordjs/discord.js",
     "discord.js-commando": "github:discordjs/commando",
     "moment": "^2.24.0",
+    "moment-timezone": "^0.5.25",
     "node-opus": "^0.3.1",
     "simple-youtube-api": "^5.1.1",
     "weather-js": "^2.0.0",
