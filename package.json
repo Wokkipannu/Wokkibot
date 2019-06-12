@@ -10,8 +10,10 @@
   "author": "Wokkipannu",
   "license": "ISC",
   "dependencies": {
+    "bufferutil": "^4.0.1",
     "discord.js": "github:discordjs/discord.js",
     "discord.js-commando": "github:discordjs/commando",
+    "libsodium-wrappers": "^0.7.4",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.25",
     "node-opus": "^0.3.1",
