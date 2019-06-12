@@ -97,17 +97,24 @@ module.exports = class PlayCommand extends Command {
       .setDescription(`[${queue.songs[0].title}](https://www.youtube.com/watch?v=${queue.songs[0].id})\n**Duration:** ${this.timeString(queue.songs[0].duration)}\n**Requested by:** ${queue.songs[0].requester}`)
       .setImage(queue.songs[0].thumbnail);
 
-    const dispatcher = queue.connection.play(await ytdl(queue.songs[0].url), { type: 'opus', volume: 0.2 })
-      .on('end', reason => {
-        if (reason === 'skipped') msg.channel.send('Song skipped');
-        queue.songs.shift();
-        this.play(msg);
-      })
-      .on('error', error => {
-        queue.songs.shift();
-        this.play(msg);
-        return this.client.logger.error('Dispatcher error', error);
-      });
+    try {
+      const dispatcher = queue.connection.play(await ytdl(queue.songs[0].url), { type: 'opus', volume: 0.2 })
+        .on('end', reason => {
+          if (reason === 'skipped') msg.channel.send('Song skipped');
+          queue.songs.shift();
+          this.play(msg);
+        })
+        .on('error', error => {
+          queue.songs.shift();
+          this.play(msg);
+          return this.client.logger.error('Dispatcher error', error);
+        });
+    }
+    catch(error) {
+      msg.reply('Could not play song');
+      console.log(error);
+    }
+
     
     msg.channel.send(playEmbed);
   }
