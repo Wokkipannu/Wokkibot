@@ -36,7 +36,8 @@ client.registry
     ['general', 'General commands'],
     ['mod', 'Moderation commands']
   ])
-  .registerDefaults()
+  .registerDefaultTypes()
+  .registerDefaultGroups()
   .registerDefaultCommands({
     unknownCommand: false
   })
