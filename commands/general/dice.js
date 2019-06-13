@@ -4,7 +4,7 @@ module.exports = class DiceCommand extends Command {
   constructor(client) {
     super(client, {
       name: 'dice',
-      aliases: ['die'],
+      aliases: ['die', 'roll'],
       group: 'general',
       memberName: 'dice',
       description: 'Roll the dice',
