@@ -36,7 +36,9 @@ client.registry
     ['general', 'General commands'],
     ['mod', 'Moderation commands']
   ])
-  .registerDefaults()
+  .registerDefaultCommands({
+    unknownCommand: false
+  })
   .registerCommandsIn(path.join(__dirname, 'commands'));
 
 client.login(process.env.TOKEN);
