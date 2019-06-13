@@ -13,8 +13,10 @@ module.exports = class UnknownCommandCommand extends Command {
   }
 
   run(msg) {
+    let user = msg.mentions.users.first() || msg.author;
+
     if (msg.content.includes('vittu')) {
-      return msg.reply('Vittu säkin olet lapsellinen? Kysyn kiltisti jotain niin tommonen vitu chättibodyguard ei voi ottaa chat banneja pois mitkä oon saanu aivan vitun turhaan kun heitin läppää?');
+      return msg.channel.send(`${user}, Vittu säkin olet lapsellinen? Kysyn kiltisti jotain niin tommonen vitu chättibodyguard ei voi ottaa chat banneja pois mitkä oon saanu aivan vitun turhaan kun heitin läppää?`)
     }
     else return;
   }
