@@ -14,7 +14,7 @@ module.exports = class UnknownCommandCommand extends Command {
 
   run(msg) {
     const possibilities = [
-      "mutta nyt :zipper_mout:",
+      "mutta nyt :zipper_mouth:",
       "Vittu säkin olet lapsellinen? Kysyn kiltisti jotain niin tommonen vitu chättibodyguard ei voi ottaa chat banneja pois mitkä oon saanu aivan vitun turhaan kun heitin läppää?",
       "http://www.tilaapullo.com/",
       "Hei, olen Tohtori Gerhard",
