@@ -26,6 +26,12 @@ module.exports = class RemoveCommand extends Command {
     if (index <= 1) return msg.reply('You can not remove first song. Use skip instead.');
     if (index > queue.songs.length) return msg.reply('No song with given index');
 
+    const unremovable = ["108299947257925632", "108617380552273920", "117985849257230345"];
+
+    if (unremovable.includes(queue.songs[index].requester.id) && !unremovable.includes(msg.author.id)) {
+      return msg.reply(`You can not remove song requested by ${queue.songs[index].requester}. Ask them to remove!`);
+    }
+
     queue.songs.splice(index - 1, 1);
 
     return msg.channel.send(`Removed song ${index} from queue`);
