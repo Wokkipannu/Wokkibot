@@ -19,7 +19,8 @@ module.exports = class UnknownCommandCommand extends Command {
       "http://www.tilaapullo.com/",
       "Hei, olen Tohtori Gerhard",
       "Jopa 8cm pidempi penis kahdessa viikossa",
-      "mee lahjottaan tonni hyväntekeväisyyteen ja tuu sitten neuvoon elämässä"
+      "mee lahjottaan tonni hyväntekeväisyyteen ja tuu sitten neuvoon elämässä",
+      "new to this channel <----"
     ];
 
     const random = Math.floor(Math.random() * possibilities.length);
