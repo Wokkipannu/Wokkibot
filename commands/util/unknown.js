@@ -13,7 +13,7 @@ module.exports = class UnknownCommandCommand extends Command {
   }
 
   run(msg) {
-    if (msg.content === "poll") {
+    if (msg.content === "!poll") {
       return msg.reply('https://www.strawpoll.me/18456447');
     }
 
