@@ -13,6 +13,10 @@ module.exports = class UnknownCommandCommand extends Command {
   }
 
   run(msg) {
+    if (msg.content === "poll") {
+      return msg.reply('https://www.strawpoll.me/18456447');
+    }
+
     const possibilities = [
       "mutta nyt :zipper_mouth:",
       "Vittu säkin olet lapsellinen? Kysyn kiltisti jotain niin tommonen vitu chättibodyguard ei voi ottaa chat banneja pois mitkä oon saanu aivan vitun turhaan kun heitin läppää?",
