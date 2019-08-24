@@ -151,7 +151,7 @@ module.exports = class RemoveCommand extends Command {
       .send(player)
       .end((err, res) => {
         if (err) return err;
-        return res.data;
+        return res.body.data;
       });
   }
 }
