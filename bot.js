@@ -34,7 +34,8 @@ client.registry
   .registerGroups([
     ['music', 'Music commands'],
     ['general', 'General commands'],
-    ['mod', 'Moderation commands']
+    ['mod', 'Moderation commands'],
+    ['wow', 'WoW Commands']
   ])
   .registerDefaultTypes()
   .registerDefaultGroups()

@@ -66,3 +66,5 @@ config-dev.json
 
 # Log file
 wokkibot.log
+
+.vscode
