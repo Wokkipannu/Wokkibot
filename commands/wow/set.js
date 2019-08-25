@@ -28,7 +28,7 @@ module.exports = class RemoveCommand extends Command {
   }
 
   async run(msg, { key, value}) {
-    if (msg.channel.id !== "610585419326685242") return;
+    //if (msg.channel.id !== "610585419326685242") return;
 
     if (!this.token) {
       await SuperAgent
@@ -120,7 +120,7 @@ module.exports = class RemoveCommand extends Command {
          * Invalid key response
          */
         else {
-          msg.reply(`Correct usage is **!set <field> <value>**`);
+          return msg.reply(`Correct usage is **!set <race/class/spec/profession1/profession2> <value>**`);
         }
 
         await SuperAgent
@@ -134,24 +134,26 @@ module.exports = class RemoveCommand extends Command {
   }
 
   async createPlayer(name, id) {
-    let player = {
-      name: name,
-      race: 'N/A',
-      class: 'N/A',
-      spec: 'N/A',
-      prof1: 'N/A',
-      prof2: 'N/A',
-      dkp: 10,
-      discord: id,
-      token: this.token
-    };
-
-    await SuperAgent
-      .post(`${process.env.API}/api/v1/players`)
-      .send(player)
-      .end((err, res) => {
-        if (err) return err;
-        return res.body.data;
-      });
+    return new Promise((resolve, reject) => {
+      let player = {
+        name: name,
+        race: 'N/A',
+        class: 'N/A',
+        spec: 'N/A',
+        prof1: 'N/A',
+        prof2: 'N/A',
+        dkp: 10,
+        discord: id,
+        token: this.token
+      };
+  
+      SuperAgent
+        .post(`${process.env.API}/api/v1/players`)
+        .send(player)
+        .end((err, res) => {
+          if (err) return reject(err);
+          return resolve(res.body.data);
+        });
+    });
   }
 }
