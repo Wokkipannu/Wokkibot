@@ -28,7 +28,7 @@ module.exports = class RemoveCommand extends Command {
   }
 
   async run(msg, { key, value}) {
-    //if (msg.channel.id !== "610585419326685242") return;
+    if (msg.channel.id !== "610585419326685242") return;
 
     if (!this.token) {
       await SuperAgent
