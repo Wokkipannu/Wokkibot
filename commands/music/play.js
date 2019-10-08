@@ -84,19 +84,20 @@ module.exports = class PlayCommand extends Command {
   }
 
   async play(msg) {
+    // Get guild's queue from our map
     const queue = await this.queue.get(msg.guild.id);
-
+    // If the queue has no songs left, leave voicechannel and delete guilds queue
     if (queue.songs.length === 0) {
       queue.voiceChannel.leave();
       return this.queue.delete(msg.guild.id);
     }
-
+    // Create embed that we'll post to the channel
     const playEmbed = new MessageEmbed()
       .setColor('#1a2b3c')
       .setTitle('Now playing')
       .setDescription(`[${queue.songs[0].title}](https://www.youtube.com/watch?v=${queue.songs[0].id})\n**Duration:** ${this.timeString(queue.songs[0].duration)}\n**Requested by:** ${queue.songs[0].requester}`)
       .setImage(queue.songs[0].thumbnail);
-
+    // Try playing the song
     try {
       const dispatcher = queue.connection.play(await ytdl(queue.songs[0].url), { type: 'opus', volume: 0.2 })
         .on('end', reason => {
@@ -106,16 +107,17 @@ module.exports = class PlayCommand extends Command {
         })
         .on('error', error => {
           queue.songs.shift();
+          this.client.logger.error('Dispatcher error', error);
           this.play(msg);
-          return this.client.logger.error('Dispatcher error', error);
         });
     }
     catch(error) {
       msg.reply('Could not play song');
-      console.log(error);
+      this.client.logger.error(error);
+      queue.songs.shift();
+      this.play(msg);
     }
-
-    
+    // Send the embed to the channel
     msg.channel.send(playEmbed);
   }
 
