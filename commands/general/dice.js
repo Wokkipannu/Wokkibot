@@ -31,7 +31,7 @@ module.exports = class DiceCommand extends Command {
     let rolls = [];
 
     for (let i = 0; i < times; i++) {
-      rolls.push(Math.floor(Math.random() * max));
+      rolls.push(Math.floor((Math.random() * max) + 1));
     }
 
     if (rolls.length > 1) {
