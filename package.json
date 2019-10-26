@@ -17,7 +17,7 @@
     "libsodium-wrappers": "^0.7.4",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.25",
-    "node-opus": "^0.3.1",
+    "node-opus": "^0.3.3",
     "simple-youtube-api": "^5.1.1",
     "superagent": "^5.1.0",
     "weather-js": "^2.0.0",
