@@ -67,7 +67,11 @@ module.exports = class PlayCommand extends Command {
       queueConstruct.songs.push(song);
       this.queue.set(msg.guild.id, queueConstruct);
 
-      let connection = await voiceChannel.join();
+      let connection = await voiceChannel.join().catch(error => {
+        this.client.logger.error('Connection error', error);
+        voiceChannel.leave();
+        return msg.reply(`Play failed due to an error`);
+      });
       queueConstruct.connection = connection;
       this.play(msg);
     }
