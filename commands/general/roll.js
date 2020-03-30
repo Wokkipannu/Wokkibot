@@ -3,10 +3,9 @@ const { Command } = require('discord.js-commando');
 module.exports = class DiceCommand extends Command {
   constructor(client) {
     super(client, {
-      name: 'dice',
-      aliases: ['die', 'roll'],
+      name: 'roll',
       group: 'general',
-      memberName: 'dice',
+      memberName: 'roll',
       description: 'Roll the dice',
       guildOnly: false,
       clientPermissions: ['SEND_MESSAGES'],

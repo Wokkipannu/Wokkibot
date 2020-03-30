@@ -14,17 +14,10 @@ module.exports = class SkipCommand extends Command {
 
   async run(msg) {
     const queue = await this.queue.get(msg.guild.id);
-    if (!queue) return msg.reply('You can not skip nonexistent song');
+    if (!queue) return msg.reply('No songs in queue');
 
-    const unskippable = ["108299947257925632", "108617380552273920", "117985849257230345"];
-
-    if (unskippable.includes(queue.songs[0].requester.id) && !unskippable.includes(msg.author.id)) {
-      return msg.reply(`You can not skip song requested by ${queue.songs[0].requester}. Ask them to skip!`);
-    }
-
-    const title = queue.songs[0].title;
-    queue.connection.dispatcher.end('skipped');
-    return msg.channel.send(`${title} was skipped`);
+    queue.connection.dispatcher.end();
+    return msg.channel.send('Song skipped');
   }
 
   get queue() {

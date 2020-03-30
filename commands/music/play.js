@@ -1,9 +1,6 @@
 const { Command } = require('discord.js-commando');
-const { Util, MessageEmbed } = require('discord.js');
-const YouTube = require('simple-youtube-api');
+const { Collection } = require('discord.js');
 const ytdl = require('ytdl-core-discord');
-
-const GOOGLE_API_KEY = process.env.G_API_KEY
 
 module.exports = class PlayCommand extends Command {
   constructor(client) {
@@ -11,9 +8,9 @@ module.exports = class PlayCommand extends Command {
       name: 'play',
       group: 'music',
       memberName: 'play',
-      description: 'Play audio from YouTube URL or keyword',
-      clientPermissions: ['CONNECT', 'SPEAK', 'SEND_MESSAGES', 'EMBED_LINKS'],
+      description: 'Play audio in a voice channel',
       guildOnly: true,
+      clientPermissions: ['CONNECT', 'SPEAK', 'SEND_MESSAGES'],
       args: [
         {
           key: 'url',
@@ -23,112 +20,130 @@ module.exports = class PlayCommand extends Command {
       ]
     });
 
-    this.queue = new Map();
-    this.youtube = new YouTube(GOOGLE_API_KEY);
+    this.queue = new Collection();
   }
 
   async run(msg, { url }) {
-    const voiceChannel = msg.member.voice.channel;
-    if (!voiceChannel) return msg.reply('You must connect to a voice channel first');
+    const channel = msg.member.voice.channel;
+    if (!channel) return msg.reply('You can only use play command when in a voice channel');
 
-    if (url.match(/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/g)) {
-      let video = await this.youtube.getVideo(url);
-      this.handleVideo(msg, video);
-    }
-    else {
-      let videos = await this.youtube.searchVideos(url, 1)
-        .catch(error => {
-          if(error) this.client.logger.error('Play command error', error);
-        });
-      let video = await this.youtube.getVideoByID(videos[0].id);
-      this.handleVideo(msg, video);
-    }
+    msg.reply('Handling song request').then(async message => {
+      // Get queue
+      const queue = await this.queue.get(msg.guild.id);
+
+      // If URL is youtube URL
+      if (url.match(/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/g)) {
+        await ytdl.getInfo(url)
+          .then(async info => {
+            const song = {
+              type: 'yt',
+              id: info.video_id,
+              url: info.video_url,
+              title: info.title,
+              length: info.length_seconds,
+              requestedBy: msg.author
+            };
+
+            if (queue) {
+              queue.songs.push(song);
+            }
+            else {
+              await channel.join()
+                .then(async connection => {
+                  const newQueue = {
+                    connection: connection,
+                    songs: [song]
+                  };
+
+                  await this.queue.set(msg.guild.id, newQueue);
+                  this.play(connection);
+                })
+                .catch(error => {
+                  console.error(error);
+                  message.edit('Failed to join your voice channel');
+                });
+            }
+            message.edit(`${info.title} added to queue`);
+          })
+          .catch(error => {
+            console.error(error);
+            return message.edit('Error occurred while trying to get song info');
+          });
+      }
+      else {
+        if (url.endsWith('.mp3')) {
+          const song = {
+            type: 'mp3',
+            id: 'N/A',
+            url: url,
+            title: 'Unknown',
+            length: 0,
+            requestedBy: msg.author
+          };
+
+          if (queue) {
+            queue.songs.push(song);
+          }
+          else {
+            await channel.join()
+              .then(async connection => {
+                const newQueue = {
+                  connection: connection,
+                  songs: [song]
+                };
+
+                await this.queue.set(msg.guild.id, newQueue);
+                this.play(connection);
+              })
+              .catch(error => {
+                console.error(error);
+                message.edit('Failed to join your voice channel');
+              });
+          }
+
+          message.edit(`mp3 file added to queue`);
+        }
+        else {
+          return message.edit('URL has to be YouTube video or mp3 file');
+        }
+      }
+    });
   }
 
-  async handleVideo(msg, video) {
-    const voiceChannel = await msg.member.voice.channel;
-    const queue = await this.queue.get(msg.guild.id);
-
-    const song = {
-      id: video.id,
-      title: Util.escapeMarkdown(video.title),
-      url: `https://www.youtube.com/watch?v=${video.id}`,
-      thumbnail: `https://img.youtube.com/vi/${video.id}/mqdefault.jpg`,
-      duration: video.durationSeconds ? video.durationSeconds : video.duration / 1000,
-      requester: msg.author
-    }
-
-    if (!queue) {
-      const queueConstruct = {
-        voiceChannel: voiceChannel,
-        connection: null,
-        songs: []
-      };
-      queueConstruct.songs.push(song);
-      this.queue.set(msg.guild.id, queueConstruct);
-
-      let connection = await voiceChannel.join().catch(error => {
-        this.client.logger.error('Connection error', error);
-        voiceChannel.leave();
-        return msg.reply(`Play failed due to an error`);
-      });
-      queueConstruct.connection = connection;
-      this.play(msg);
-    }
-    else {
-      let queueEmbed = new MessageEmbed()
-        .setColor('#1a2b3c')
-        .setTitle('Song added to queue')
-        .setDescription(`[${song.title}](https://www.youtube.com/watch?v=${song.id})\n**Duration:** ${this.timeString(song.duration)}\n**Requested by:** ${msg.author}`)
-        .setImage(song.thumbnail);
-      
-      msg.channel.send(queueEmbed);
-      queue.songs.push(song);
-    }
-  }
-
-  async play(msg) {
-    // Get guild's queue from our map
-    const queue = await this.queue.get(msg.guild.id);
-    // If the queue has no songs left, leave voicechannel and delete guilds queue
+  async play(connection) {
+    const queue = await this.queue.get(connection.channel.guild.id);
     if (queue.songs.length === 0) {
-      queue.voiceChannel.leave();
-      return this.queue.delete(msg.guild.id);
+      connection.channel.leave();
+      this.queue.delete(connection.channel.guild.id);
     }
-    // Create embed that we'll post to the channel
-    const playEmbed = new MessageEmbed()
-      .setColor('#1a2b3c')
-      .setTitle('Now playing')
-      .setDescription(`[${queue.songs[0].title}](https://www.youtube.com/watch?v=${queue.songs[0].id})\n**Duration:** ${this.timeString(queue.songs[0].duration)}\n**Requested by:** ${queue.songs[0].requester}`)
-      .setImage(queue.songs[0].thumbnail);
-    // Try playing the song
-    try {
-      const dispatcher = queue.connection.play(await ytdl(queue.songs[0].url), { type: 'opus', volume: 0.2 })
-        .on('end', reason => {
-          if (reason === 'skipped') msg.channel.send('Song skipped');
-          queue.songs.shift();
-          this.play(msg);
-        })
-        .on('error', error => {
-          queue.songs.shift();
-          this.client.logger.error('Dispatcher error', error);
-          this.play(msg);
-        });
+    else {
+      console.log(`Starting to play song ${queue.songs[0].title}`);
+      if (queue.songs[0].type === 'yt') {
+        connection.play(await ytdl(queue.songs[0].url), { type: 'opus', volume: 0.1 })
+          .on('finish', () => {
+            console.log('Song ended or it was skipped');
+            queue.songs.shift();
+            this.play(connection);
+          })
+          .on('error', (error) => {
+            console.error(error);
+            queue.songs.shift();
+            this.play(connection);
+          });
+      }
+      else {
+        connection.play(queue.songs[0].url)
+          .on('finish', () => {
+            console.log('Song ended or it was skipped');
+            queue.songs.shift();
+            this.play(connection);
+          })
+          .on('error', (error) => {
+            console.error(error);
+            queue.songs.shift();
+            this.play(connection);
+          });
+      }
     }
-    catch(error) {
-      msg.reply('Could not play song');
-      this.client.logger.error(error);
-      queue.songs.shift();
-      this.play(msg);
-    }
-    // Send the embed to the channel
-    msg.channel.send(playEmbed);
-  }
-
-  timeString(seconds, forceHours = false) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor(seconds % 3600 / 60);
-
-    return `${forceHours || hours >= 1 ? `${hours}:` : ''}${hours >= 1 ? `0${minutes}`.slice(-2) : minutes}:${`0${Math.floor(seconds % 60)}`.slice(-2)}`;
   }
 }
