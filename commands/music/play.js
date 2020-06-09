@@ -119,7 +119,7 @@ module.exports = class PlayCommand extends Command {
     else {
       console.log(`Starting to play song ${queue.songs[0].title}`);
       if (queue.songs[0].type === 'yt') {
-        connection.play(await ytdl(queue.songs[0].url), { type: 'opus', volume: 0.1 })
+        connection.play(await ytdl(queue.songs[0].url), { volume: 0.1 })
           .on('finish', () => {
             console.log('Song ended or it was skipped');
             queue.songs.shift();
