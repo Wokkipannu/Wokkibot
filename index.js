@@ -9,6 +9,10 @@ require('dotenv').config()
 const { CommandoClient } = require('discord.js-commando');
 const path = require('path');
 
+const cc = require('./customCommands');
+const customCommands = new Map();
+cc.forEach(command => customCommands.set(command.commandName, command.output));
+
 const client = new CommandoClient({
   commandPrefix: process.env.PREFIX,
   owner: process.env.OWNER
@@ -27,6 +31,12 @@ client.registry
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
   client.user.setActivity('you', { type: 'WATCHING' });
+});
+
+client.on('message', msg => {
+  if (customCommands.get(msg.content)) {
+    msg.channel.send(customCommands.get(msg.content));
+  }
 });
 
 client.on('error', console.error);
