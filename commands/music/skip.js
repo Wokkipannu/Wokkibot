@@ -16,8 +16,16 @@ module.exports = class SkipCommand extends Command {
     const queue = await this.queue.get(msg.guild.id);
     if (!queue) return msg.reply('No songs in queue');
 
-    queue.connection.dispatcher.end();
-    return msg.channel.send('Song skipped');
+    try {
+      queue.connection.dispatcher.end();
+      return msg.channel.send('Song skipped');
+    }
+    catch(error) {
+      console.error(error);
+      msg.reply('Skip failed, deleting queue');
+      queue.connection.channel.leave();
+      return queue.delete(msg.guild.id);
+    }
   }
 
   get queue() {
