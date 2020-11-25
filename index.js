@@ -34,9 +34,8 @@ client.once('ready', () => {
 });
 
 client.on('message', msg => {
-  if (customCommands.get(msg.content)) {
-    msg.channel.send(customCommands.get(msg.content));
-  }
+  const customCommand = customCommands.get(msg.content);
+  if (customCommand) msg.channel.send(customCommand);
 });
 
 client.on('error', console.error);
