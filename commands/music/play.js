@@ -74,6 +74,19 @@ module.exports = class PlayCommand extends Command {
         fmt: "mp3",
         encoderArgs: ['-af', settings]
       });
+
+      if (!queue.connection || queue.connection === undefined) {
+        await msg.member.voice.channel.join().then(connection => queue.connection = connection);
+      }
+  
+      let dispatcher = queue.connection.play(stream, {
+        type: "unknown",
+        volume: 0.1
+      })
+      .on("finish", () => {
+        queue.songs.shift();
+        return this.play(queue);
+      });
     }
     catch(error) {
       console.error(error);
@@ -81,19 +94,5 @@ module.exports = class PlayCommand extends Command {
       msg.reply('Failed to play song, resuming queue');
       return this.play(queue);
     }
-
-    if (!queue.connection || queue.connection === undefined) {
-      await msg.member.voice.channel.join().then(connection => queue.connection = connection);
-    }
-
-    let dispatcher = queue.connection.play(stream, {
-      type: "unknown",
-      volume: 0.1
-    })
-    .on("finish", () => {
-      queue.songs.shift();
-      return this.play(queue);
-    });
-
   }
 }
