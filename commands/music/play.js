@@ -67,12 +67,20 @@ module.exports = class PlayCommand extends Command {
 
     const { url, settings } = queue.songs[0];
 
-    let stream = await ytdl(url, {
-      filter: "audioonly",
-      opusEncoded: false,
-      fmt: "mp3",
-      encoderArgs: ['-af', settings]
-    });
+    try {
+      let stream = await ytdl(url, {
+        filter: "audioonly",
+        opusEncoded: false,
+        fmt: "mp3",
+        encoderArgs: ['-af', settings]
+      });
+    }
+    catch(error) {
+      console.error(error);
+      queue.songs.shift();
+      msg.reply('Failed to play song, resuming queue');
+      return this.play(queue);
+    }
 
     if (!queue.connection || queue.connection === undefined) {
       await msg.member.voice.channel.join().then(connection => queue.connection = connection);
