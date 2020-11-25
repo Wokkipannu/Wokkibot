@@ -18,10 +18,10 @@ module.exports = class PlayCommand extends Command {
           type: 'string'
         },
         {
-          key: 'bass',
+          key: 'settings',
           prompt: '',
           type: 'string',
-          default: '10'
+          default: 'bass=g=5,dynaudnorm=f=200'
         }
       ]
     });
@@ -29,7 +29,7 @@ module.exports = class PlayCommand extends Command {
     this.queue = new Collection();
   }
 
-  async run(msg, { url, bass }) {
+  async run(msg, { url, settings }) {
     if (!msg.member.voice.channel) return msg.channel.send("You must be connected to voice channel to play");
 
     let queue = await this.queue.get(msg.guild.id);
@@ -37,7 +37,7 @@ module.exports = class PlayCommand extends Command {
     if (url.match(/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/g)) {
       const song = {
         url,
-        bass
+        settings
       };
 
       if (queue) {
@@ -65,13 +65,13 @@ module.exports = class PlayCommand extends Command {
       return this.queue.delete(queue.id);
     }
 
-    const { url, bass } = queue.songs[0];
+    const { url, settings } = queue.songs[0];
 
     let stream = await ytdl(url, {
       filter: "audioonly",
       opusEncoded: false,
       fmt: "mp3",
-      encoderArgs: ['-af', `bass=g=${bass},dynaudnorm=f=200`]
+      encoderArgs: ['-af', settings]
     });
 
     if (!queue.connection || queue.connection === undefined) {
