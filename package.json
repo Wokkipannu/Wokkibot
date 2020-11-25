@@ -10,10 +10,13 @@
   "license": "ISC",
   "dependencies": {
     "@discordjs/opus": "^0.1.0",
+    "discord-ytdl-core": "^5.0.0",
     "discord.js": "^12.2.0",
     "discord.js-commando": "github:discordjs/Commando",
     "dotenv": "^8.2.0",
     "ffmpeg-static": "^4.2.2",
+    "node-opus": "^0.3.3",
+    "ytdl-core": "^4.1.0",
     "ytdl-core-discord": "^1.2.0"
   }
 }
