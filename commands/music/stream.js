@@ -1,3 +1,6 @@
+const { Command } = require('discord.js-commando');
+const ytdl = require("discord-ytdl-core");
+
 module.exports = class StreamCommand extends Command {
   constructor(client) {
     super(client, {
