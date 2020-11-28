@@ -34,7 +34,8 @@ module.exports = class PlayCommand extends Command {
 
     let queue = await this.queue.get(msg.guild.id);
 
-    if (url.match(/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/g)) {
+    //if (url.match(/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/g)) {
+    if (this.isUrl(url)) {
       const song = {
         url,
         settings
@@ -68,12 +69,22 @@ module.exports = class PlayCommand extends Command {
     const { url, settings } = queue.songs[0];
 
     try {
-      let stream = await ytdl(url, {
-        filter: "audioonly",
-        opusEncoded: false,
-        fmt: "mp3",
-        encoderArgs: ['-af', settings]
-      });
+      let stream;
+      if (url.match(/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/g)) {
+        stream = await ytdl(url, {
+          filter: "audioonly",
+          opusEncoded: false,
+          fmt: "mp3",
+          encoderArgs: ['-af', settings]
+        });
+      }
+      else {
+        stream = await ytdl.arbitraryStream(url, {
+          opusEncoded: false,
+          fmt: 'mp3',
+          encoderArgs: ['-af', settings]
+        });
+      }
 
       if (!queue.connection || queue.connection === undefined) {
         await msg.member.voice.channel.join().then(connection => queue.connection = connection);
@@ -94,5 +105,10 @@ module.exports = class PlayCommand extends Command {
       msg.reply('Failed to play song, resuming queue');
       return this.play(queue);
     }
+  }
+
+  isUrl(s) {
+    let regex = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
+    return regex.test(s);
   }
 }
