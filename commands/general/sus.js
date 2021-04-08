@@ -21,11 +21,7 @@ module.exports = class SusCommand extends Command {
   }
 
   run(msg, { user }) {
-    user = user ? msg.mentions.users.first() : msg.author
-
-    if (!user.username) {
-      return msg.reply('Invalid target! Use `!sus` to check for yourself or `!sus @someone` to check for specific person')
-    }
+    user = msg.mentions.users ? msg.mentions.users.first() : msg.author
 
     let susLevel = Math.floor(Math.random() * 100)
 
