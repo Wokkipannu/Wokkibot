@@ -13,15 +13,15 @@ module.exports = class SusCommand extends Command {
         {
           key: 'user',
           prompt: 'Maximum roll?',
-          type: 'integer',
-          default: 100
+          type: 'string',
+          default: ''
         }
       ]
     });
   }
 
   run(msg, { user }) {
-    user = msg.mentions.users ? msg.mentions.users[0] : msg.author
+    user = user ? msg.mentions.users.first() : msg.author
 
     let susLevel = Math.floor(Math.random() * 100)
 
