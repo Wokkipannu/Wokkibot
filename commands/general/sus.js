@@ -21,10 +21,10 @@ module.exports = class SusCommand extends Command {
   }
 
   run(msg, { user }) {
-    user = msg.mentions.users ? msg.mentions.users : msg.author
+    user = msg.mentions.users ? msg.mentions.users[0] : msg.author
 
     let susLevel = Math.floor(Math.random() * 100)
 
-    return msg.channel.send(`${user} is ${susLevel}% sus!`)
+    return msg.channel.send(`${user.username} is ${susLevel}% sus!`)
   }
 }
