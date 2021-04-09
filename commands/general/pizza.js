@@ -28,7 +28,7 @@ module.exports = class PizzaCommand extends Command {
     let selectedToppings = []
 
     for (let i = 0; i < amount; i++) {
-      selectedToppings.push(toppings[i])
+      selectedToppings.push(toppings[Math.floor(Math.random() * toppings.length)])
     }
 
     if (amount === 1) {
