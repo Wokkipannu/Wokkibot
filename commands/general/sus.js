@@ -27,7 +27,7 @@ module.exports = class SusCommand extends Command {
       return msg.reply('Invalid target! Use `!sus` or `!sus @someone` to check specific user')
     }
 
-    let susLevel = Math.floor(Math.random() * 100)
+    let susLevel = Math.floor(Math.random() * 101)
 
     return msg.channel.send(`${user.username} is ${susLevel}% sus!`)
   }
