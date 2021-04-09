@@ -23,6 +23,7 @@ module.exports = class PizzaCommand extends Command {
 
   run (msg, { amount }) {
     if (amount > 10) amount = 10
+    if (amount < 1) return msg.reply('Syö pizzasi ilman täytteitä tai anna suurempi luku')
 
     let selectedToppings = []
 
@@ -32,6 +33,10 @@ module.exports = class PizzaCommand extends Command {
 
     let lastTopping = selectedToppings.splice(selectedToppings.length - 1, 1)[0]
 
-    return msg.reply(`Pizzaasi tuli täytteet: ${selectedToppings.join(', ')} ja ${lastTopping}`)
+    if (amount === 1) {
+      return msg.reply(`Pizzaasi tuli täyte: ${selectedToppings[0]}`)
+    } else {
+      return msg.reply(`Pizzaasi tuli täytteet: ${selectedToppings.join(', ')} ja ${lastTopping}`)
+    }
   }
 }
