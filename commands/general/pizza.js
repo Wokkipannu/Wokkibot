@@ -31,11 +31,10 @@ module.exports = class PizzaCommand extends Command {
       selectedToppings.push(toppings[i])
     }
 
-    let lastTopping = selectedToppings.splice(selectedToppings.length - 1, 1)[0]
-
     if (amount === 1) {
       return msg.reply(`Pizzaasi tuli täyte: ${selectedToppings[0]}`)
     } else {
+      let lastTopping = selectedToppings.splice(selectedToppings.length - 1, 1)[0]
       return msg.reply(`Pizzaasi tuli täytteet: ${selectedToppings.join(', ')} ja ${lastTopping}`)
     }
   }
