@@ -90,14 +90,18 @@ module.exports = class PlayCommand extends Command {
         await msg.member.voice.channel.join().then(connection => queue.connection = connection);
       }
   
-      let dispatcher = queue.connection.play(stream, {
-        type: "unknown",
-        volume: 0.1
-      })
-      .on("finish", () => {
-        queue.songs.shift();
-        return this.play(queue);
-      });
+      let dispatcher = queue.connection
+        .play(stream, {
+          type: "unknown",
+          volume: 0.1
+        })
+        .on("finish", () => {
+          queue.songs.shift();
+          return this.play(queue);
+        })
+        .on("error", (e) => {
+          console.error('Connection error', e);
+        });
     }
     catch(error) {
       console.error(error);
