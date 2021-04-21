@@ -7,6 +7,7 @@ module.exports = class DiceCommand extends Command {
       group: 'general',
       memberName: 'roll',
       description: 'Roll the dice',
+      aliases: ['die', 'dice', 'rtd'],
       guildOnly: false,
       clientPermissions: ['SEND_MESSAGES'],
       args: [

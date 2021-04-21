@@ -7,6 +7,7 @@ module.exports = class SusCommand extends Command {
       group: 'general',
       memberName: 'sus',
       description: 'See how sus you are',
+      aliases: ['suspicious', 'amogus', 'amongus'],
       guildOnly: false,
       clientPermissions: ['SEND_MESSAGES'],
       args: [
