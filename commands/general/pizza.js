@@ -7,6 +7,7 @@ module.exports = class PizzaCommand extends Command {
       name: 'pizza',
       group: 'general',
       memberName: 'pizza',
+      aliases: ['täytteet', 'toppings', 'taytteet', 'pitsa'],
       description: 'Get random pizza toppings',
       guildOnly: false,
       clientPermissions: ['SEND_MESSAGES'],
@@ -25,10 +26,14 @@ module.exports = class PizzaCommand extends Command {
     if (amount > 10) amount = 10
     if (amount < 1) return msg.reply('Syö pizzasi ilman täytteitä tai anna suurempi luku')
 
+    let myToppings = toppings
+
     let selectedToppings = []
 
     for (let i = 0; i < amount; i++) {
-      selectedToppings.push(toppings[Math.floor(Math.random() * toppings.length)])
+      let randomTopping = myToppings[Math.floor(Math.random() * myToppings.length)]
+      selectedToppings.push(randomTopping)
+      myToppings = myToppings.filter(t => t !== randomTopping)
     }
 
     if (amount === 1) {
