@@ -1,4 +1,6 @@
 # Wokkibot
+No longer updating this. Continuing development on CSharp version [Wokkibot CSharp](https://github.com/Wokkipannu/Wokkibot-CSharp).
+
 A Discord bot written using DiscordJS and Commando.
 
 # Requirements
