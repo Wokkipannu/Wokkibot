@@ -19,7 +19,7 @@ import (
 var (
 	session        *discordgo.Session
 	token          = config.Config("TOKEN")
-	GuildID        = flag.String("guild", "534773820091793408", "Guild ID for testing slash commands")
+	GuildID        = flag.String("guild", config.Config("GUILDID"), "Guild ID for testing slash commands")
 	RemoveCommands = flag.Bool("rmcmd", true, "Remove all commands after shutdowning or not")
 
 	userID     = config.Config("USERID")
