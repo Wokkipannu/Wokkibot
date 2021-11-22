@@ -21,8 +21,8 @@ var (
 		volume.Info,
 		queue.Info,
 		seek.Info,
-		pause.Info,
-		resume.Info,
+		// pause.Info,
+		// resume.Info,
 	}
 	Handlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		// Music related commands
