@@ -13,7 +13,7 @@ import (
 var play = Command{
 	Info: &discordgo.ApplicationCommand{
 		Name:        "play",
-		Description: "Begin playing a song by URL",
+		Description: "Begin playing a track by URL",
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Type:        discordgo.ApplicationCommandOptionString,
