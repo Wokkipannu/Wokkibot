@@ -14,7 +14,10 @@ var queue = Command{
 	},
 	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if q, found := utils.Queue[i.GuildID]; found {
+			color := Session.State.UserColor(Session.State.User.ID, q.TextChannelID)
+
 			embed := &discordgo.MessageEmbed{}
+			embed.Color = color
 			embed.Title = "Queue"
 
 			var names []string
