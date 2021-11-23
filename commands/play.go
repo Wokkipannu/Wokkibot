@@ -121,22 +121,30 @@ func BeginPlay(guildID string, interaction *discordgo.InteractionCreate) {
 	minutes := (duration / (1000 * 60) % 60)
 	hours := (duration / (1000 * 60 * 60) % 24)
 
+	color := Session.State.UserColor(Session.State.User.ID, q.TextChannelID)
+
 	embed := &discordgo.MessageEmbed{}
-	embed.Title = fmt.Sprintf("Now playing %v", q.Queue[0].TrackInfo.Title)
+	embed.Color = color
+	embed.Title = "Now playing"
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+		Name:   "Title",
+		Value:  q.Queue[0].TrackInfo.Title,
+		Inline: false,
+	})
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 		Name:   "Requester",
 		Value:  q.Queue[0].Requester.Nick,
-		Inline: false,
+		Inline: true,
 	})
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 		Name:   "URL",
-		Value:  q.Queue[0].TrackInfo.URI,
-		Inline: false,
+		Value:  fmt.Sprintf("[%v](%v)", "Link", q.Queue[0].TrackInfo.URI),
+		Inline: true,
 	})
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 		Name:   "Duration",
-		Value:  fmt.Sprintf("%v:%v:%v", hours, minutes, seconds),
-		Inline: false,
+		Value:  fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds)),
+		Inline: true,
 	})
 
 	// If the interaction exists (This function was ran via a command)
