@@ -128,7 +128,7 @@ func initWaterlink() (wlerr error) {
 	var err error
 	conn, err = waterlink.Connect(context.TODO(), *wsHost, connOpts)
 	if err != nil {
-		return fmt.Errorf("opening connection failed:", err)
+		return fmt.Errorf("opening connection failed: %v", err)
 	}
 	commands.Conn = conn
 	log.Println("Connection established.")
