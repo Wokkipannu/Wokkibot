@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 	"wokkibot/commands"
 	"wokkibot/config"
 
@@ -58,9 +59,15 @@ func main() {
 	log.Println("Bot session opened")
 
 	cmds := registerCommands()
-	initWaterlink()
-	go commands.ListenForEvents() // Listen for waterlink events
-	// session.UpdateGameStatus(0, "")
+	wlerr := retry(5, 30*time.Second, func() (err error) {
+		werr := initWaterlink()
+		return werr
+	})
+	if wlerr != nil {
+		log.Println(wlerr)
+		return
+	}
+	session.UpdateGameStatus(0, "🪕")
 	commands.Session = session
 
 	sc := make(chan os.Signal, 1)
@@ -117,11 +124,11 @@ func registerCommands() []*discordgo.ApplicationCommand {
 	// }
 }
 
-func initWaterlink() {
+func initWaterlink() (wlerr error) {
 	var err error
 	conn, err = waterlink.Connect(context.TODO(), *wsHost, connOpts)
 	if err != nil {
-		log.Fatalln("Opening connection failed:", err)
+		return fmt.Errorf("opening connection failed:", err)
 	}
 	commands.Conn = conn
 	log.Println("Connection established.")
@@ -129,4 +136,26 @@ func initWaterlink() {
 	req = waterlink.NewRequester(*httpHost, reqOpts)
 	commands.Req = req
 	log.Println("Requester created.")
+
+	go commands.ListenForEvents()
+
+	return nil
+}
+
+func retry(attempts int, sleep time.Duration, f func() error) (err error) {
+	for i := 0; ; i++ {
+		err = f()
+		if err == nil {
+			return
+		}
+
+		if i >= (attempts - 1) {
+			break
+		}
+
+		time.Sleep(sleep)
+
+		log.Println("retrying after error:", err)
+	}
+	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
