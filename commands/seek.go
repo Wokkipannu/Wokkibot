@@ -30,7 +30,7 @@ var seek = Command{
 		if q, found := utils.Queue[i.GuildID]; found {
 			if len(q.Queue) > 0 {
 				Conn.Seek(i.GuildID, position)
-				utils.InteractionRespondMessage(s, i, fmt.Sprintf("Seeking from position %v", position))
+				utils.InteractionRespondMessage(s, i, fmt.Sprintf("Seeking from position %vs", position))
 			} else {
 				utils.InteractionRespondMessage(s, i, "Nothing is playing")
 			}
