@@ -104,6 +104,7 @@ func BeginPlay(guildID string, interaction *discordgo.InteractionCreate) {
 	q := utils.Queue[guildID]
 	if len(q.Queue) == 0 {
 		_, _ = Session.ChannelMessageSend(q.TextChannelID, "No more songs in queue")
+		delete(utils.Queue, guildID)
 		leaveVoiceChannel(guildID, q.TextChannelID)
 		return
 	}
