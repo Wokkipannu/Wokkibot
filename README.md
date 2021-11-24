@@ -4,7 +4,7 @@
 Wokkibot rewritten yet again. This time in GO using Discordgo.
 
 # Setup
-* Get lavalink
+* Get [Lavalink](https://github.com/freyacodes/Lavalink)
 * Setup .env
 * Run `go run main.go` or build
 
@@ -14,4 +14,5 @@ TOKEN=
 PASSPHRASE=
 HOST=
 USERID=
+GUILDID=
 ```
