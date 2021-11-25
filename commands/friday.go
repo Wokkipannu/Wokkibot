@@ -44,8 +44,6 @@ var friday = Command{
 			video = random
 		}
 
-		log.Printf("Video index %v", video)
-
 		if err := utils.InteractionRespondMessage(s, i, videos[video]); err != nil {
 			log.Print(err)
 		}
