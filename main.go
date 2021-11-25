@@ -67,7 +67,7 @@ func main() {
 		log.Println(wlerr)
 		return
 	}
-	session.UpdateGameStatus(0, "🪕")
+	session.UpdateGameStatus(0, "🪗")
 	commands.Session = session
 
 	sc := make(chan os.Signal, 1)
