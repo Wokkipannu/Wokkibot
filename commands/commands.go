@@ -25,6 +25,7 @@ var (
 		// resume.Info,
 		// Other commands
 		roll.Info,
+		friday.Info,
 	}
 	Handlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		// Music related commands
@@ -36,7 +37,8 @@ var (
 		// pause.Info.Name:  pause.Run, // Pause command is not functional
 		// resume.Info.Name: resume.Run, // Resume command is not functional
 		// Other commands
-		roll.Info.Name: roll.Run,
+		roll.Info.Name:   roll.Run,
+		friday.Info.Name: friday.Run,
 	}
 	Session   *discordgo.Session
 	Req       waterlink.Requester
