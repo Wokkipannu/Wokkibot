@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"wokkibot/utils"
 
@@ -13,12 +14,12 @@ import (
 var play = Command{
 	Info: &discordgo.ApplicationCommand{
 		Name:        "play",
-		Description: "Begin playing a track by URL",
+		Description: "Begin playing a track by keyword or URL",
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Type:        discordgo.ApplicationCommandOptionString,
-				Name:        "url",
-				Description: "Link to the video",
+				Name:        "search",
+				Description: "Keyword or URL to search with",
 				Required:    true,
 			},
 		},
@@ -88,6 +89,10 @@ var play = Command{
 }
 
 func GetTrack(identifier string) (*track.Track, error) {
+	if !isValidUrl(identifier) {
+		identifier = "ytsearch: " + identifier
+	}
+
 	res, err := Req.LoadTracks(identifier)
 	if err != nil {
 		return nil, err
@@ -195,4 +200,17 @@ func findMembersChannel(guildID, userID string) string {
 		}
 	}
 	return ""
+}
+
+func isValidUrl(uri string) bool {
+	_, err := url.ParseRequestURI(uri)
+	if err != nil {
+		return false
+	}
+	u, err := url.Parse(uri)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return false
+	}
+
+	return true
 }
