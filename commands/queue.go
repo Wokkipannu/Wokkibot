@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+	"log"
 	"strings"
 	"wokkibot/utils"
 
@@ -22,10 +24,17 @@ var queue = Command{
 
 			var names []string
 			var tracks []string
+			var durations []string
 
 			for _, track := range q.Queue {
+				duration := track.TrackInfo.Length
+				seconds := (duration / 1000) % 60
+				minutes := (duration / (1000 * 60) % 60)
+				hours := (duration / (1000 * 60 * 60) % 24)
+
 				names = append(names, track.Requester.Nick)
-				tracks = append(tracks, track.TrackInfo.Title)
+				tracks = append(tracks, fmt.Sprintf("[%v](%v)", utils.TruncateString(utils.EscapeString(track.TrackInfo.Title), 50), track.TrackInfo.URI))
+				durations = append(durations, fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds)))
 			}
 
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
@@ -38,10 +47,19 @@ var queue = Command{
 				Value:  strings.Join(names, "\n"),
 				Inline: true,
 			})
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+				Name:   "Duration",
+				Value:  strings.Join(durations, "\n"),
+				Inline: true,
+			})
 
-			utils.InteractionRespondMessageEmbed(s, i, embed)
+			if err := utils.InteractionRespondMessageEmbed(s, i, embed); err != nil {
+				log.Print(err)
+			}
 		} else {
-			utils.InteractionRespondMessage(s, i, "No queue found")
+			if err := utils.InteractionRespondMessage(s, i, "No queue found"); err != nil {
+				log.Print(err)
+			}
 		}
 	},
 }
