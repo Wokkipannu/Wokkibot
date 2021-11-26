@@ -1,6 +1,4 @@
-<p align="center">
-  ![Build](https://github.com/wokkipannu/Wokkibot-Go/actions/workflows/build.yml/badge.svg)
-</p>
+![Build](https://github.com/wokkipannu/Wokkibot-Go/actions/workflows/build.yml/badge.svg)
 
 # Wokkibot-Go
 Wokkibot rewritten yet again. This time in GO using Discordgo.
