@@ -213,17 +213,12 @@ func trackEmbed(queue utils.GuildQueue, title string) *discordgo.MessageEmbed {
 	embed.Title = title
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 		Name:   "Title",
-		Value:  q.TrackInfo.Title,
-		Inline: false,
-	})
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name:   "Requester",
-		Value:  q.Requester.Nick,
+		Value:  fmt.Sprintf("[%v](%v)", utils.EscapeString(q.TrackInfo.Title), q.TrackInfo.URI),
 		Inline: true,
 	})
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name:   "URL",
-		Value:  fmt.Sprintf("[%v](%v)", "Link", q.TrackInfo.URI),
+		Name:   "Requester",
+		Value:  utils.EscapeString(q.Requester.Nick),
 		Inline: true,
 	})
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
