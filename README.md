@@ -1,7 +1,22 @@
-![Build](https://github.com/wokkipannu/Wokkibot-Go/actions/workflows/build.yml/badge.svg)
+<p align="center">
+  ![Build](https://github.com/wokkipannu/Wokkibot-Go/actions/workflows/build.yml/badge.svg)
+</p>
 
 # Wokkibot-Go
 Wokkibot rewritten yet again. This time in GO using Discordgo.
+
+# Commands
+##### Music related commands
+* /play
+* /skip
+* /seek
+* /volume
+* /queue
+* /pause (Disabled)
+* /resume (Disabled)
+##### Other commands
+* /friday
+* /roll
 
 # Setup
 * Get [Lavalink](https://github.com/freyacodes/Lavalink)
