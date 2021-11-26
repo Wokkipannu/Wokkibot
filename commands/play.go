@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"log"
-	"net/url"
 	"strings"
 	"wokkibot/utils"
 
@@ -77,8 +76,8 @@ var play = Command{
 			joinMemberChannel(vc, i.GuildID, i.Member.User.ID)
 			queue := utils.Queue[i.GuildID]
 			if len(queue.Queue) > 1 {
-				err := utils.InteractionRespondMessage(s, i, "Added to queue")
-				if err != nil {
+				embed := trackEmbed(*queue, "Added to queue")
+				if err := utils.InteractionRespondMessageEmbed(s, i, embed); err != nil {
 					log.Print(err)
 				}
 			} else {
@@ -89,7 +88,7 @@ var play = Command{
 }
 
 func GetTrack(identifier string) (*track.Track, error) {
-	if !isValidUrl(identifier) {
+	if !utils.IsValidUrl(identifier) {
 		identifier = "ytsearch: " + identifier
 	}
 
@@ -121,36 +120,36 @@ func BeginPlay(guildID string, interaction *discordgo.InteractionCreate) {
 		return
 	}
 
-	duration := q.Queue[0].TrackInfo.Length
-	seconds := (duration / 1000) % 60
-	minutes := (duration / (1000 * 60) % 60)
-	hours := (duration / (1000 * 60 * 60) % 24)
+	// duration := q.Queue[0].TrackInfo.Length
+	// seconds := (duration / 1000) % 60
+	// minutes := (duration / (1000 * 60) % 60)
+	// hours := (duration / (1000 * 60 * 60) % 24)
 
-	color := Session.State.UserColor(Session.State.User.ID, q.TextChannelID)
+	// embed := &discordgo.MessageEmbed{}
+	// embed.Color = Session.State.UserColor(Session.State.User.ID, q.TextChannelID)
+	// embed.Title = "Now playing"
+	// embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+	// 	Name:   "Title",
+	// 	Value:  q.Queue[0].TrackInfo.Title,
+	// 	Inline: false,
+	// })
+	// embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+	// 	Name:   "Requester",
+	// 	Value:  q.Queue[0].Requester.Nick,
+	// 	Inline: true,
+	// })
+	// embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+	// 	Name:   "URL",
+	// 	Value:  fmt.Sprintf("[%v](%v)", "Link", q.Queue[0].TrackInfo.URI),
+	// 	Inline: true,
+	// })
+	// embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+	// 	Name:   "Duration",
+	// 	Value:  fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds)),
+	// 	Inline: true,
+	// })
 
-	embed := &discordgo.MessageEmbed{}
-	embed.Color = color
-	embed.Title = "Now playing"
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name:   "Title",
-		Value:  q.Queue[0].TrackInfo.Title,
-		Inline: false,
-	})
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name:   "Requester",
-		Value:  q.Queue[0].Requester.Nick,
-		Inline: true,
-	})
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name:   "URL",
-		Value:  fmt.Sprintf("[%v](%v)", "Link", q.Queue[0].TrackInfo.URI),
-		Inline: true,
-	})
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name:   "Duration",
-		Value:  fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds)),
-		Inline: true,
-	})
+	embed := trackEmbed(*q, "Now playing")
 
 	// If the interaction exists (This function was ran via a command)
 	// Send a response to the interaction. If the function was ran via
@@ -202,15 +201,36 @@ func findMembersChannel(guildID, userID string) string {
 	return ""
 }
 
-func isValidUrl(uri string) bool {
-	_, err := url.ParseRequestURI(uri)
-	if err != nil {
-		return false
-	}
-	u, err := url.Parse(uri)
-	if err != nil || u.Scheme == "" || u.Host == "" {
-		return false
-	}
+func trackEmbed(queue utils.GuildQueue, title string) *discordgo.MessageEmbed {
+	q := queue.Queue[len(queue.Queue)-1]
+	duration := q.TrackInfo.Length
+	seconds := (duration / 1000) % 60
+	minutes := (duration / (1000 * 60) % 60)
+	hours := (duration / (1000 * 60 * 60) % 24)
 
-	return true
+	embed := &discordgo.MessageEmbed{}
+	embed.Color = Session.State.UserColor(Session.State.User.ID, queue.TextChannelID)
+	embed.Title = title
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+		Name:   "Title",
+		Value:  q.TrackInfo.Title,
+		Inline: false,
+	})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+		Name:   "Requester",
+		Value:  q.Requester.Nick,
+		Inline: true,
+	})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+		Name:   "URL",
+		Value:  fmt.Sprintf("[%v](%v)", "Link", q.TrackInfo.URI),
+		Inline: true,
+	})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+		Name:   "Duration",
+		Value:  fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds)),
+		Inline: true,
+	})
+
+	return embed
 }
