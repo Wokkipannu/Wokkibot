@@ -22,7 +22,7 @@ var (
 	session        *discordgo.Session
 	token          = config.Config("TOKEN")
 	GuildID        = flag.String("guild", config.Config("GUILDID"), "Guild ID for testing slash commands")
-	RemoveCommands = flag.Bool("rmcmd", true, "Remove all commands after shutdowning or not")
+	RemoveCommands = flag.Bool("rmcmd", false, "Remove all commands after shutdowning or not")
 
 	userID     = config.Config("USERID")
 	passphrase = config.Config("PASSPHRASE")
@@ -105,6 +105,17 @@ func handleVoiceStateUpdate(_ *discordgo.Session, update *discordgo.VoiceStateUp
 }
 
 		log.Printf("Command %v was ran", i.ApplicationCommandData().Name)
+	switch i.Type {
+	case discordgo.InteractionApplicationCommand:
+		if h, ok := commands.Handlers[i.ApplicationCommandData().Name]; ok {
+			h(s, i)
+			log.Printf("Command %v was ran", i.ApplicationCommandData().Name)
+		}
+	case discordgo.InteractionMessageComponent:
+		if h, ok := commands.Handlers[i.MessageComponentData().CustomID]; ok {
+			h(s, i)
+			log.Printf("Component %v was ran", i.MessageComponentData().CustomID)
+		}
 	}
 }
 
