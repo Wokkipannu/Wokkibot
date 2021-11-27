@@ -94,9 +94,6 @@ func handleReady(_ *discordgo.Session, ready *discordgo.Ready) {
 	commands.SessionID = ready.SessionID
 }
 
-func handleInteractionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if h, ok := commands.Handlers[i.ApplicationCommandData().Name]; ok {
-		h(s, i)
 func handleVoiceStateUpdate(_ *discordgo.Session, update *discordgo.VoiceStateUpdate) {
 	if update.ChannelID == "" {
 		conn.Destroy(update.GuildID)
@@ -104,7 +101,7 @@ func handleVoiceStateUpdate(_ *discordgo.Session, update *discordgo.VoiceStateUp
 	}
 }
 
-		log.Printf("Command %v was ran", i.ApplicationCommandData().Name)
+func handleInteractionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	switch i.Type {
 	case discordgo.InteractionApplicationCommand:
 		if h, ok := commands.Handlers[i.ApplicationCommandData().Name]; ok {
