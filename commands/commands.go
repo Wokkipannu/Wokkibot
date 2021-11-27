@@ -54,8 +54,10 @@ func ListenForEvents() {
 		case event.TrackStuck:
 		case event.TrackEnd:
 			evt := evt.(player.TrackEnd)
-			utils.Queue[evt.GuildID].Queue = utils.Queue[evt.GuildID].Queue[1:]
-			BeginPlay(evt.GuildID, nil)
+			if _, ok := utils.Queue[evt.GuildID]; ok {
+				utils.Queue[evt.GuildID].Queue = utils.Queue[evt.GuildID].Queue[1:]
+				BeginPlay(evt.GuildID, nil)
+			}
 		}
 	}
 }
