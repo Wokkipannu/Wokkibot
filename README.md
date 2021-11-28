@@ -15,7 +15,7 @@ Wokkibot rewritten yet again. This time in GO using Discordgo.
 ##### Other commands
 * /friday
 * /roll
-
+* /pizza
 # Setup
 * Get [Lavalink](https://github.com/freyacodes/Lavalink)
 * Setup .env
@@ -28,4 +28,5 @@ PASSPHRASE=
 HOST=
 USERID=
 GUILDID=
+PIZZAAPI=
 ```
