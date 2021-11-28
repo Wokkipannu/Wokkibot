@@ -94,10 +94,19 @@ func handleReady(_ *discordgo.Session, ready *discordgo.Ready) {
 	commands.SessionID = ready.SessionID
 }
 
-func handleVoiceStateUpdate(_ *discordgo.Session, update *discordgo.VoiceStateUpdate) {
-	if update.ChannelID == "" {
-		conn.Destroy(update.GuildID)
-		delete(utils.Queue, update.GuildID)
+func handleVoiceStateUpdate(s *discordgo.Session, update *discordgo.VoiceStateUpdate) {
+	if s.State.User.ID == update.UserID {
+		if update.ChannelID == "" {
+			if q, ok := utils.Queue[update.GuildID]; ok {
+				conn.Destroy(update.GuildID)
+				commands.LeaveVoiceChannel(update.GuildID, q.VoiceChannelID)
+				delete(utils.Queue, update.GuildID)
+			}
+		} else {
+			if q, ok := utils.Queue[update.GuildID]; ok {
+				q.VoiceChannelID = update.ChannelID
+			}
+		}
 	}
 }
 
