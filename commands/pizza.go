@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
-	"strings"
+	"strconv"
 	"time"
 	"wokkibot/config"
 	"wokkibot/utils"
@@ -14,17 +14,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type Topping struct {
-	Id        string `json:"id"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-	Topping   string `json:"topping"`
-}
-
 type ToppingsResponse struct {
-	Data    []Topping `json:"data"`
-	Message string    `json:"message"`
-	Status  string    `json:"status"`
+	Data    string `json:"data"`
+	Message string `json:"message"`
+	Status  string `json:"status"`
 }
 
 var pizza = Command{
@@ -50,7 +43,7 @@ var pizza = Command{
 
 		rand.Seed(time.Now().UnixNano())
 		API := config.Config("PIZZAAPI")
-		res, err := s.Client.Get(API)
+		res, err := s.Client.Get(API + "?amount=" + strconv.Itoa(amount))
 		if err != nil {
 			log.Print(err)
 			utils.InteractionRespondMessage(s, i, "Something went wrong when fetching toppings")
@@ -71,12 +64,6 @@ var pizza = Command{
 			log.Print(jsonErr)
 			utils.InteractionRespondMessage(s, i, "Something went wrong when parsing response data")
 			return
-		}
-
-		selectedToppings := make(map[string]int)
-
-		for i := 0; i < amount; i++ {
-			selectedToppings[toppings.Data[rand.Intn(len(toppings.Data))].Topping] += 1
 		}
 
 		var bases [3]string
@@ -117,18 +104,9 @@ var pizza = Command{
 			Inline: true,
 		})
 
-		var output []string
-		for k, v := range selectedToppings {
-			if v > 1 {
-				output = append(output, fmt.Sprintf("%vx %v", v, k))
-			} else {
-				output = append(output, k)
-			}
-		}
-
 		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 			Name:   "Täytteet",
-			Value:  fmt.Sprintf("%v", strings.Join(output[:], ", ")),
+			Value:  toppings.Data,
 			Inline: true,
 		})
 
