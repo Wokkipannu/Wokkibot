@@ -109,7 +109,7 @@ func BeginPlay(guildID string, interaction *discordgo.InteractionCreate) {
 	if len(q.Queue) == 0 {
 		_, _ = Session.ChannelMessageSend(q.TextChannelID, "No more songs in queue")
 		delete(utils.Queue, guildID)
-		leaveVoiceChannel(guildID, q.TextChannelID)
+		LeaveVoiceChannel(guildID, q.TextChannelID)
 		return
 	}
 
@@ -178,7 +178,7 @@ func joinMemberChannel(channelID, guildID, userID string) bool {
 	return true
 }
 
-func leaveVoiceChannel(guildId, channelId string) bool {
+func LeaveVoiceChannel(guildId, channelId string) bool {
 	if err := Session.ChannelVoiceJoinManual(guildId, "", false, true); err != nil {
 		_, _ = Session.ChannelMessageSend(channelId, "I was unable to disconnect. Please disconnect me manually.")
 		Conn.Destroy(guildId)
