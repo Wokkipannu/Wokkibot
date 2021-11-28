@@ -218,7 +218,7 @@ func trackEmbed(queue utils.GuildQueue, title string) *discordgo.MessageEmbed {
 	})
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 		Name:   "Requester",
-		Value:  utils.EscapeString(q.Requester.Nick),
+		Value:  utils.EscapeString(utils.GetName(q.Requester)),
 		Inline: true,
 	})
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{

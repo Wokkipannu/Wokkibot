@@ -103,7 +103,7 @@ var pizza = Command{
 		embed := &discordgo.MessageEmbed{}
 		embed.Color = s.State.UserColor(s.State.User.ID, i.ChannelID)
 		embed.Author = &discordgo.MessageEmbedAuthor{
-			Name:    fmt.Sprintf("%vn pizza", i.Member.Nick),
+			Name:    fmt.Sprintf("%v Pizza", utils.GetName(i.Member)),
 			IconURL: i.Member.User.AvatarURL(""),
 		}
 		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
