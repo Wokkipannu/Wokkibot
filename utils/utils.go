@@ -82,3 +82,12 @@ func EscapeString(str string) string {
 
 	return str
 }
+
+// GetName takes in discordgo Member and returns nickname if the user has one or their username
+func GetName(member *discordgo.Member) string {
+	if member.Nick != "" {
+		return member.Nick
+	} else {
+		return member.User.Username
+	}
+}
