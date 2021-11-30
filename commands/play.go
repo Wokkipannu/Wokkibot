@@ -107,7 +107,7 @@ func GetTrack(identifier string) (*track.Track, error) {
 func BeginPlay(guildID string, interaction *discordgo.InteractionCreate) {
 	q := utils.Queue[guildID]
 	if len(q.Queue) == 0 {
-		_, _ = Session.ChannelMessageSend(q.TextChannelID, "No more songs in queue")
+		_, _ = Session.ChannelMessageSend(q.TextChannelID, "No more tracks in queue")
 		delete(utils.Queue, guildID)
 		LeaveVoiceChannel(guildID, q.TextChannelID)
 		return
@@ -221,9 +221,15 @@ func trackEmbed(queue utils.GuildQueue, title string) *discordgo.MessageEmbed {
 		Value:  utils.EscapeString(utils.GetName(q.Requester)),
 		Inline: true,
 	})
+	var durationText string
+	if q.TrackInfo.Stream {
+		durationText = "Stream"
+	} else {
+		durationText = fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds))
+	}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 		Name:   "Duration",
-		Value:  fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds)),
+		Value:  durationText,
 		Inline: true,
 	})
 
