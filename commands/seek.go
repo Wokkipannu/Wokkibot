@@ -28,11 +28,11 @@ var seek = Command{
 		}
 
 		if q, found := utils.Queue[i.GuildID]; found {
-			if len(q.Queue) > 0 {
+			if q.Queue[0].TrackInfo.Seekable {
 				Conn.Seek(i.GuildID, position)
 				utils.InteractionRespondMessage(s, i, fmt.Sprintf("Seeking from position %vs", position))
 			} else {
-				utils.InteractionRespondMessage(s, i, "Nothing is playing")
+				utils.InteractionRespondMessage(s, i, "Track is not seekable")
 			}
 		} else {
 			utils.InteractionRespondMessage(s, i, "Nothing is playing")
