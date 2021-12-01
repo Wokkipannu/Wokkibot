@@ -34,7 +34,11 @@ var queue = Command{
 
 				names = append(names, utils.EscapeString(utils.GetName(track.Requester)))
 				tracks = append(tracks, fmt.Sprintf("[%v](%v)", utils.TruncateString(utils.EscapeString(track.TrackInfo.Title), 50), track.TrackInfo.URI))
-				durations = append(durations, fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds)))
+				if track.TrackInfo.Stream {
+					durations = append(durations, "Stream")
+				} else {
+					durations = append(durations, fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds)))
+				}
 			}
 
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
