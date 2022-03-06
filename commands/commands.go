@@ -1,12 +1,14 @@
 package commands
 
 import (
+	"log"
 	"wokkibot/utils"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/lukasl-dev/waterlink"
 	"github.com/lukasl-dev/waterlink/entity/event"
 	"github.com/lukasl-dev/waterlink/entity/player"
+	"github.com/lukasl-dev/waterlink/entity/server"
 )
 
 type Command struct {
@@ -51,13 +53,29 @@ var (
 func ListenForEvents() {
 	for evt := range Conn.Events() {
 		switch evt.Type() {
+		case event.WebsocketClosed:
+			evt := evt.(server.WebsocketClosed)
+			log.Printf("Websocket connection to discord closed: %v", evt.Reason)
+			// continueTracks(evt.GuildID)
+		case event.TrackException:
+			evt := evt.(player.TrackException)
+			log.Printf("Exception occurred in an audio track: %v", evt.Error)
+			continueTracks(evt.GuildID)
 		case event.TrackStuck:
+			evt := evt.(player.TrackStuck)
+			log.Printf("Track %v was started, but no audio frames from it have arrived in a long time in guild %v", evt.TrackID, evt.GuildID)
+			continueTracks(evt.GuildID)
 		case event.TrackEnd:
 			evt := evt.(player.TrackEnd)
-			if _, ok := utils.Queue[evt.GuildID]; ok {
-				utils.Queue[evt.GuildID].Queue = utils.Queue[evt.GuildID].Queue[1:]
-				BeginPlay(evt.GuildID, nil)
-			}
+			log.Printf("Track %v ended in guild %v", evt.TrackID, evt.GuildID)
+			continueTracks(evt.GuildID)
 		}
+	}
+}
+
+func continueTracks(guildId string) {
+	if _, ok := utils.Queue[guildId]; ok {
+		utils.Queue[guildId].Queue = utils.Queue[guildId].Queue[1:]
+		BeginPlay(guildId, nil)
 	}
 }
