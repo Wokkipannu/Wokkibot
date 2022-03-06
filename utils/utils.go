@@ -29,6 +29,37 @@ func InteractionRespondMessageEmbed(s *discordgo.Session, i *discordgo.Interacti
 	})
 }
 
+// Button returns a discordgo Button
+func Button(label string, emoji string, style string, disabled bool, customID string) discordgo.Button {
+	var btnStyle discordgo.ButtonStyle
+	switch style {
+	case "primary":
+		btnStyle = discordgo.PrimaryButton
+	case "danger":
+		btnStyle = discordgo.DangerButton
+	case "secondary":
+		btnStyle = discordgo.SecondaryButton
+	case "success":
+		btnStyle = discordgo.SuccessButton
+	case "link":
+		btnStyle = discordgo.LinkButton
+	default:
+		btnStyle = discordgo.PrimaryButton
+	}
+
+	btn := discordgo.Button{
+		Label:    label,
+		Style:    btnStyle,
+		Disabled: disabled,
+		CustomID: customID,
+	}
+	if emoji != "" {
+		btn.Emoji.Name = emoji
+	}
+
+	return btn
+}
+
 // NumberFormat takes in uint value and adds a leading 0 to the value if it's lower than 10.
 func NumberFormat(value uint) string {
 	if value < 10 {
