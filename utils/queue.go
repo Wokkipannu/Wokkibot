@@ -13,10 +13,13 @@ type GuildQueue struct {
 }
 
 type QueueObj struct {
-	Requester *discordgo.Member
-	Keyword   string
-	TrackInfo *track.Info
-	TrackID   string
+	Requester   *discordgo.Member
+	Keyword     string
+	TrackInfo   *track.Info
+	TrackID     string
+	Interaction *discordgo.Interaction
+	Message     *discordgo.Message
+	Embed       *discordgo.MessageEmbed
 }
 
 var (
