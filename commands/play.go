@@ -120,40 +120,11 @@ func BeginPlay(guildID string, interaction *discordgo.InteractionCreate) {
 		return
 	}
 
-	// duration := q.Queue[0].TrackInfo.Length
-	// seconds := (duration / 1000) % 60
-	// minutes := (duration / (1000 * 60) % 60)
-	// hours := (duration / (1000 * 60 * 60) % 24)
-
-	// embed := &discordgo.MessageEmbed{}
-	// embed.Color = Session.State.UserColor(Session.State.User.ID, q.TextChannelID)
-	// embed.Title = "Now playing"
-	// embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-	// 	Name:   "Title",
-	// 	Value:  q.Queue[0].TrackInfo.Title,
-	// 	Inline: false,
-	// })
-	// embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-	// 	Name:   "Requester",
-	// 	Value:  q.Queue[0].Requester.Nick,
-	// 	Inline: true,
-	// })
-	// embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-	// 	Name:   "URL",
-	// 	Value:  fmt.Sprintf("[%v](%v)", "Link", q.Queue[0].TrackInfo.URI),
-	// 	Inline: true,
-	// })
-	// embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-	// 	Name:   "Duration",
-	// 	Value:  fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds)),
-	// 	Inline: true,
-	// })
-
 	embed := trackEmbed(*q, "Now playing")
 
 	// If the interaction exists (This function was ran via a command)
 	// Send a response to the interaction. If the function was ran via
-	// the "TrackEnd", send a normal message with the session
+	// the "TrackEnd" event, send a normal message with the session
 	if interaction != nil {
 		if err := utils.InteractionRespondMessageEmbed(Session, interaction, embed); err != nil {
 			log.Print(err)
