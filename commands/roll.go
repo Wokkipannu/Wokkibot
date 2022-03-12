@@ -39,7 +39,7 @@ var roll = Command{
 			max = int64(100)
 		}
 		value := min + rand.Int63n(max-min)
-		if err := utils.InteractionRespondMessage(s, i, fmt.Sprintf("Rolled %v", value)); err != nil {
+		if err := utils.InteractionRespondMessage(s, i, fmt.Sprintf("Rolled %v (1-%v)", value, max)); err != nil {
 			log.Print(err)
 		}
 	},
