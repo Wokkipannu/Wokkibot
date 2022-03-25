@@ -23,8 +23,7 @@ var (
 		volume.Info,
 		queue.Info,
 		seek.Info,
-		// pause.Info,
-		// resume.Info,
+		disconnect.Info,
 		// Other commands
 		roll.Info,
 		friday.Info,
@@ -32,13 +31,12 @@ var (
 	}
 	Handlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		// Music related commands
-		play.Info.Name:   play.Run,
-		skip.Info.Name:   skip.Run,
-		volume.Info.Name: volume.Run,
-		queue.Info.Name:  queue.Run,
-		seek.Info.Name:   seek.Run,
-		// pause.Info.Name:  pause.Run, // Pause command is not functional
-		// resume.Info.Name: resume.Run, // Resume command is not functional
+		play.Info.Name:       play.Run,
+		skip.Info.Name:       skip.Run,
+		volume.Info.Name:     volume.Run,
+		queue.Info.Name:      queue.Run,
+		seek.Info.Name:       seek.Run,
+		disconnect.Info.Name: disconnect.Run,
 		// Other commands
 		roll.Info.Name:   roll.Run,
 		friday.Info.Name: friday.Run,
