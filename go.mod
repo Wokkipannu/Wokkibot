@@ -3,7 +3,7 @@ module wokkibot
 go 1.17
 
 require (
-	github.com/bwmarrin/discordgo v0.23.3-0.20211117035633-fd6228c0d536
+	github.com/bwmarrin/discordgo v0.24.0
 	github.com/joho/godotenv v1.4.0
 	github.com/lukasl-dev/waterlink v1.1.3
 )
