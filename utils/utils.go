@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -121,4 +122,9 @@ func GetName(member *discordgo.Member) string {
 	} else {
 		return member.User.Username
 	}
+}
+
+// Return days since user joined
+func DaysSince(member *discordgo.Member) int {
+	return int(time.Since(member.JoinedAt).Hours() / 24)
 }

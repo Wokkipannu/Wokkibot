@@ -28,6 +28,7 @@ var (
 		roll.Info,
 		friday.Info,
 		pizza.Info,
+		user.Info,
 	}
 	Handlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		// Music related commands
@@ -41,6 +42,7 @@ var (
 		roll.Info.Name:   roll.Run,
 		friday.Info.Name: friday.Run,
 		pizza.Info.Name:  pizza.Run,
+		user.Info.Name:   user.Run,
 	}
 	Session   *discordgo.Session
 	Req       waterlink.Requester
