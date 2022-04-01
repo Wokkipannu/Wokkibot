@@ -47,8 +47,8 @@ var user = Command{
 					Inline: true,
 				},
 				{
-					Name:   "Created",
-					Value:  fmt.Sprintf("%v (%v days ago)", member.JoinedAt.Format("02.01.2006"), utils.DaysSince(member)),
+					Name:   "Joined this server",
+					Value:  fmt.Sprintf("%v (%v days ago)", member.JoinedAt.Format("02.01.2006"), utils.DaysSince(member.JoinedAt)),
 					Inline: true,
 				},
 			},
@@ -56,6 +56,24 @@ var user = Command{
 				URL: user.AvatarURL(""),
 			},
 		}
+		if user.BannerURL("") != "" {
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+				Name:   "Banner",
+				Value:  fmt.Sprintf("[Click here](%s)", user.BannerURL("")),
+				Inline: true,
+			})
+		}
+
+		snowflake, err := discordgo.SnowflakeTimestamp(user.ID)
+		if err == nil {
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+				Name:   "Account created",
+				Value:  fmt.Sprintf("%v (%v days ago)", snowflake.Format("02.01.2006"), utils.DaysSince(snowflake)),
+				Inline: false,
+			})
+		}
+
+		embed.Color = user.AccentColor
 
 		if err := utils.InteractionRespondMessageEmbed(s, i, embed); err != nil {
 			log.Print(err)
