@@ -59,7 +59,7 @@ var user = Command{
 		if user.BannerURL("") != "" {
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 				Name:   "Banner",
-				Value:  fmt.Sprintf("[Click here](%s)", user.BannerURL("")),
+				Value:  fmt.Sprintf("[Click here](%s)", user.BannerURL("4096")),
 				Inline: true,
 			})
 		}
