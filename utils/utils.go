@@ -124,7 +124,7 @@ func GetName(member *discordgo.Member) string {
 	}
 }
 
-// Return days since user joined
-func DaysSince(member *discordgo.Member) int {
-	return int(time.Since(member.JoinedAt).Hours() / 24)
+// Return days since user joined the server
+func DaysSince(date time.Time) int {
+	return int(time.Since(date).Hours() / 24)
 }
