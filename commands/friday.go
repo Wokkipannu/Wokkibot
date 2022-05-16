@@ -17,20 +17,23 @@ var friday = Command{
 			{
 				Type:        discordgo.ApplicationCommandOptionInteger,
 				Name:        "version",
-				Description: "Which version (1 or 2) you want? Leave empty for random",
+				Description: "Which version (1-5) you want? Leave empty for random",
 				Required:    false,
 			},
 		},
 	},
 	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		var videos [2]string
+		var videos [5]string
 		videos[0] = "https://cdn.discordapp.com/attachments/754470348145295360/908680252157480980/fonkymonkyfriday.mp4"
 		videos[1] = "https://cdn.discordapp.com/attachments/754470348145295360/908671890111991848/fonky_monky_2.mp4"
+		videos[2] = "https://cdn.discordapp.com/attachments/754470348145295360/975746878777987082/perjantai.mp4"
+		videos[3] = "https://cdn.discordapp.com/attachments/754470348145295360/975746878371151882/nyt_on_perjantai.mp4"
+		videos[4] = "https://cdn.discordapp.com/attachments/754470348145295360/975746876110409809/Perjantai_1.mp4"
 
 		var video int
 		if len(i.ApplicationCommandData().Options) > 0 {
 			value := i.ApplicationCommandData().Options[0].IntValue()
-			if value >= 1 && value <= 2 {
+			if value >= 1 && value <= 5 {
 				video = int(i.ApplicationCommandData().Options[0].IntValue()) - 1
 			} else {
 				// Print out random since the value does not exist
