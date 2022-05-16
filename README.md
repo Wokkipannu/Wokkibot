@@ -10,12 +10,12 @@ Wokkibot rewritten yet again. This time in GO using Discordgo.
 * /seek
 * /volume
 * /queue
-* /pause (Disabled)
-* /resume (Disabled)
+* /disconnect
 ##### Other commands
 * /friday
 * /roll
 * /pizza
+* /user
 # Setup
 * Get [Lavalink](https://github.com/freyacodes/Lavalink)
 * Setup .env
@@ -23,10 +23,11 @@ Wokkibot rewritten yet again. This time in GO using Discordgo.
 
 # .env
 ```
-TOKEN=
-PASSPHRASE=
-HOST=
-USERID=
+TOKEN=DISCORD_TOKEN
+PASSPHRASE=LAVALINK_PASSPHARSE
+HOST=LAVALINK_HOST
+USERID=BOT_USER_ID
 GUILDID=
-PIZZAAPI=
+PIZZAAPI=API_ENDPOINT
+OWNERID=
 ```
