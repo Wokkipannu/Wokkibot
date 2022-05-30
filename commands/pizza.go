@@ -104,12 +104,34 @@ var pizza = Command{
 			Inline: true,
 		})
 
-		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-			Name:   "Täytteet",
-			Value:  toppings.Data,
-			Inline: true,
-		})
+		// If the length of toppings is higher than 900, we split it to multiple embeds
+		runeLenth := []rune(toppings.Data)
+		var outputs []string
+		if len(runeLenth) > 900 {
+			outputs = append(outputs, string(runeLenth[:900]))
+			outputs = append(outputs, string(runeLenth[900:]))
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+				Name:   "Täytteet (1/2)",
+				Value:  outputs[0],
+				Inline: true,
+			})
+			utils.InteractionRespondMessageEmbed(s, i, embed)
 
-		utils.InteractionRespondMessageEmbed(s, i, embed)
+			// Remove last field of the embed and create a new field with rest of the toppings
+			embed.Fields = embed.Fields[:len(embed.Fields)-3]
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+				Name:   "Täytteet (2/2)",
+				Value:  outputs[1],
+				Inline: true,
+			})
+			s.ChannelMessageSendEmbed(i.ChannelID, embed)
+		} else {
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+				Name:   "Täytteet",
+				Value:  toppings.Data,
+				Inline: true,
+			})
+			utils.InteractionRespondMessageEmbed(s, i, embed)
+		}
 	},
 }
