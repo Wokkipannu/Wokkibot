@@ -26,7 +26,7 @@ var quote = Command{
 							IconURL: msg.Author.AvatarURL(""),
 						},
 						Description: msg.Content,
-						Timestamp:   time.Now().Format(time.RFC3339),
+						Timestamp:   msg.Timestamp.Format(time.RFC3339),
 						Color:       msg.Author.AccentColor,
 					},
 				},
