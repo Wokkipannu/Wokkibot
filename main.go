@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 	"wokkibot/commands"
@@ -54,6 +55,7 @@ func main() {
 	session.AddHandler(handleInteractionCreate)
 	session.AddHandler(handleVoiceUpdate)
 	session.AddHandler(handleVoiceStateUpdate)
+	session.AddHandler(handleMessageCreate)
 
 	if err := session.Open(); err != nil {
 		log.Fatalln("Error when opening discordgo session:", err)
@@ -141,12 +143,6 @@ func registerCommands() []*discordgo.ApplicationCommand {
 		log.Fatalf("Cannot register commands: %v", err)
 	}
 	return cmds
-	// for _, v := range commands.Commands {
-	// 	_, err := session.ApplicationCommandCreate(session.State.User.ID, *GuildID, v)
-	// 	if err != nil {
-	// 		log.Printf("Cannot create '%v' command: '%v'", v.Name, err)
-	// 	}
-	// }
 }
 
 func initWaterlink() (wlerr error) {
@@ -183,4 +179,35 @@ func retry(attempts int, sleep time.Duration, f func() error) (err error) {
 		log.Println("retrying after error:", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
+}
+
+// Message Create listener has only one purpose. To check if the message includes a link to a message.
+// If it does, the bot will attempt to create an embed with the content of the message.
+// This only works if the message is in the same channel the link was posted in.
+func handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	prefix := "https://discord.com/channels/"
+
+	if strings.HasPrefix(m.Content, prefix) {
+		slashes := strings.Split(m.Content, "/")
+		messageId := slashes[len(slashes)-1]
+		msg, err := s.ChannelMessage(m.ChannelID, messageId)
+		if err != nil {
+			return
+		}
+
+		embed := &discordgo.MessageEmbed{}
+		embed.Author = &discordgo.MessageEmbedAuthor{
+			Name:    "Quote from " + msg.Author.Username,
+			IconURL: msg.Author.AvatarURL(""),
+		}
+		embed.Description = msg.Content
+		embed.Timestamp = msg.Timestamp.Format(time.RFC3339)
+		embed.Color = msg.Author.AccentColor
+
+		_, err = s.ChannelMessageSendEmbed(m.ChannelID, embed)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}
 }
