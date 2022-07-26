@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"mvdan.cc/xurls/v2"
 )
 
 // InteractionRespondMessage sends a response to an interaction.
@@ -127,4 +128,44 @@ func GetName(member *discordgo.Member) string {
 // Return days since user joined the server
 func DaysSince(date time.Time) int {
 	return int(time.Since(date).Hours() / 24)
+}
+
+//
+func GetImageURLFromMessage(m *discordgo.Message) (string, error) {
+	attachments := m.Attachments
+	if len(attachments) > 0 {
+		for _, attachment := range attachments {
+			valid, _ := IsValidImage(attachment.URL)
+			return valid, nil
+		}
+	}
+
+	rxStrict := xurls.Strict()
+	output := rxStrict.FindAllString(m.Content, -1)
+	if len(output) > 0 {
+		for _, s := range output {
+			valid, _ := IsValidImage(s)
+			return valid, nil
+		}
+	}
+
+	return "", fmt.Errorf("message has no valid images")
+}
+
+// Return the given string if it is has a valid suffix
+func IsValidImage(search string) (string, error) {
+	possibleSuffixes := []string{
+		".png",
+		".jpg",
+		".gif",
+		".jpeg",
+	}
+
+	for _, s := range possibleSuffixes {
+		if strings.HasSuffix(search, s) {
+			return search, nil
+		}
+	}
+
+	return "", fmt.Errorf("could not find any image links")
 }

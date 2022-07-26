@@ -204,7 +204,30 @@ func handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		embed.Timestamp = msg.Timestamp.Format(time.RFC3339)
 		embed.Color = msg.Author.AccentColor
 
-		_, err = s.ChannelMessageSendEmbed(m.ChannelID, embed)
+		img, imgErr := utils.GetImageURLFromMessage(msg)
+		if imgErr == nil {
+			embed.Image = &discordgo.MessageEmbedImage{
+				URL: img,
+			}
+		}
+
+		messageData := &discordgo.MessageSend{
+			Content: "",
+			Embeds:  []*discordgo.MessageEmbed{embed},
+			Components: []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						discordgo.Button{
+							Label: "Go to message",
+							Style: discordgo.LinkButton,
+							URL:   "https://discord.com/channels/" + m.GuildID + "/" + msg.ChannelID + "/" + msg.ID,
+						},
+					},
+				},
+			},
+		}
+
+		_, err = s.ChannelMessageSendComplex(m.ChannelID, messageData)
 		if err != nil {
 			log.Println(err)
 			return
