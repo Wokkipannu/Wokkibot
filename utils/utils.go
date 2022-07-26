@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
+	"log"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -9,6 +12,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"mvdan.cc/xurls/v2"
 )
+
+var actualUrl string
 
 // InteractionRespondMessage sends a response to an interaction.
 func InteractionRespondMessage(s *discordgo.Session, i *discordgo.InteractionCreate, msg string) error {
@@ -167,5 +172,42 @@ func IsValidImage(search string) (string, error) {
 		}
 	}
 
+	// If the link begins with c.tenor.com and ends with .gif, we can just return the search string
+	if strings.HasPrefix(search, "https://c.tenor.com/") {
+		if strings.HasSuffix(search, ".gif") {
+			return search, nil
+		}
+	}
+
+	// If the string has a prefix to tenor.com/view, we must get the redirect URL from the given URL
+	if strings.HasPrefix(search, "https://tenor.com/view/") {
+		if !strings.HasSuffix(search, ".gif") {
+			search = search + ".gif"
+		}
+
+		return GetRedirectURL(search), nil
+	}
+
 	return "", fmt.Errorf("could not find any image links")
+}
+
+// Get the redirect URL from a request
+func GetRedirectURL(url string) string {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Printf("Request error %v", err)
+		return ""
+	}
+	client := new(http.Client)
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		actualUrl = req.URL.String()
+		return errors.New("Redirect")
+	}
+
+	_, err2 := client.Do(req)
+	if err2 != nil {
+		return actualUrl
+	}
+
+	return ""
 }
