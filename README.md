@@ -16,6 +16,9 @@ Wokkibot rewritten yet again. This time in GO using Discordgo.
 * /roll
 * /pizza
 * /user
+* /flip
+##### Context menu commands
+* Quote
 # Setup
 * Get [Lavalink](https://github.com/freyacodes/Lavalink)
 * Setup .env
