@@ -44,12 +44,12 @@ var user = Command{
 				{
 					Name:   "Nickname",
 					Value:  utils.GetName(member),
-					Inline: true,
+					Inline: false,
 				},
 				{
 					Name:   "Joined this server",
 					Value:  fmt.Sprintf("%v (%v days ago)", member.JoinedAt.Format("02.01.2006"), utils.DaysSince(member.JoinedAt)),
-					Inline: true,
+					Inline: false,
 				},
 			},
 			Thumbnail: &discordgo.MessageEmbedThumbnail{
@@ -57,11 +57,9 @@ var user = Command{
 			},
 		}
 		if user.BannerURL("") != "" {
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:   "Banner",
-				Value:  fmt.Sprintf("[Click here](%s)", user.BannerURL("4096")),
-				Inline: true,
-			})
+			embed.Image = &discordgo.MessageEmbedImage{
+				URL: user.BannerURL("4096"),
+			}
 		}
 
 		snowflake, err := discordgo.SnowflakeTimestamp(user.ID)
