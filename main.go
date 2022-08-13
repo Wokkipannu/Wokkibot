@@ -21,19 +21,19 @@ import (
 
 var (
 	session        *discordgo.Session
-	token          = config.Config("TOKEN")
+	token          = flag.String("token", config.Config("TOKEN"), "Discord bot account token")
 	GuildID        = flag.String("guild", config.Config("GUILDID"), "Guild ID for testing slash commands")
 	RemoveCommands = flag.Bool("rmcmd", false, "Remove all commands after shutdowning or not")
 
-	userID     = config.Config("USERID")
-	passphrase = config.Config("PASSPHRASE")
-	host       = config.Config("HOST")
+	userID     = flag.String("userid", config.Config("USERID"), "ID of the discord bot account")
+	passphrase = flag.String("passphrase", config.Config("PASSPHRASE"), "Lavalink passphrase")
+	host       = flag.String("host", config.Config("HOST"), "Lavalink host")
 
-	httpHost, _ = url.Parse(fmt.Sprintf("http://%s", host))
-	wsHost, _   = url.Parse(fmt.Sprintf("ws://%s", host))
+	httpHost, _ = url.Parse(fmt.Sprintf("http://%s", *host))
+	wsHost, _   = url.Parse(fmt.Sprintf("ws://%s", *host))
 
-	connOpts = waterlink.NewConnectOptions().WithUserID(userID).WithPassphrase(passphrase)
-	reqOpts  = waterlink.NewRequesterOptions().WithPassphrase(passphrase)
+	connOpts = waterlink.NewConnectOptions().WithUserID(*userID).WithPassphrase(*passphrase)
+	reqOpts  = waterlink.NewRequesterOptions().WithPassphrase(*passphrase)
 
 	conn waterlink.Connection
 	req  waterlink.Requester
@@ -43,7 +43,7 @@ var (
 
 func main() {
 	var err error
-	session, err = discordgo.New(fmt.Sprintf("Bot %s", token))
+	session, err = discordgo.New(fmt.Sprintf("Bot %s", *token))
 	if err != nil {
 		log.Fatalln("Error when creating discordgo session:", err)
 	}
