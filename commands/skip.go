@@ -16,10 +16,10 @@ var skip = Command{
 	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if q, found := utils.Queue[i.GuildID]; found {
 			if q.Queue[0].Interaction != nil {
-				Session.InteractionResponseEdit(Session.State.User.ID, q.Queue[0].Interaction, &discordgo.WebhookEdit{
-					Content:    "",
-					Embeds:     []*discordgo.MessageEmbed{q.Queue[0].Embed},
-					Components: []discordgo.MessageComponent{},
+				Session.InteractionResponseEdit(q.Queue[0].Interaction, &discordgo.WebhookEdit{
+					Content:    nil,
+					Embeds:     &[]*discordgo.MessageEmbed{q.Queue[0].Embed},
+					Components: &[]discordgo.MessageComponent{},
 				})
 			}
 			if q.Queue[0].Message != nil {

@@ -38,8 +38,16 @@ var user = Command{
 			return
 		}
 
+		// Check if the user has a discriminator (A bot account) and set the title accordingly
+		var title = ""
+		if user.Discriminator != "0" {
+			title = fmt.Sprintf("%s#%s (%s)", user.Username, user.Discriminator, user.ID)
+		} else {
+			title = fmt.Sprintf("%s (%s)", user.Username, user.ID)
+		}
+
 		embed := &discordgo.MessageEmbed{
-			Title: fmt.Sprintf("%s#%s", user.Username, user.Discriminator),
+			Title: title,
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:   "Nickname",
