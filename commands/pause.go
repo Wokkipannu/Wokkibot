@@ -5,6 +5,7 @@ import (
 	"wokkibot/utils"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/gompus/snowflake"
 )
 
 var pause = Command{
@@ -14,7 +15,7 @@ var pause = Command{
 	},
 	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if _, found := utils.Queue[i.GuildID]; found {
-			if err := Conn.SetPaused(i.GuildID, true); err != nil {
+			if err := WaterlinkConnection.Guild(snowflake.MustParse(i.GuildID)).SetPaused(true); err != nil {
 				utils.InteractionRespondMessage(s, i, fmt.Sprintf("Error when trying to pause: %v", err.Error()))
 			}
 			utils.InteractionRespondMessage(s, i, "Track paused")

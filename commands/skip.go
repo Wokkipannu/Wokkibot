@@ -6,6 +6,7 @@ import (
 	"wokkibot/utils"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/gompus/snowflake"
 )
 
 var skip = Command{
@@ -32,7 +33,7 @@ var skip = Command{
 					Components: []discordgo.MessageComponent{},
 				})
 			}
-			Conn.Stop(i.GuildID)
+			WaterlinkConnection.Guild(snowflake.MustParse(i.GuildID)).Stop()
 			if err := utils.InteractionRespondMessage(s, i, fmt.Sprintf("Track \"%v\" skipped", utils.EscapeString(q.Queue[0].TrackInfo.Title))); err != nil {
 				log.Print(err)
 			}

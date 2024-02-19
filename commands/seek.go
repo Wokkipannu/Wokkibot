@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"wokkibot/utils"
 
 	"github.com/bwmarrin/discordgo"
@@ -21,21 +20,22 @@ var seek = Command{
 		},
 	},
 	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		position := uint(i.ApplicationCommandData().Options[0].UintValue())
-		if position == 0 {
-			utils.InteractionRespondMessage(s, i, "Value has to be higher than 0")
-			return
-		}
+		// position := uint(i.ApplicationCommandData().Options[0].UintValue())
+		// if position == 0 {
+		// 	utils.InteractionRespondMessage(s, i, "Value has to be higher than 0")
+		// 	return
+		// }
 
-		if q, found := utils.Queue[i.GuildID]; found {
-			if q.Queue[0].TrackInfo.Seekable {
-				Conn.Seek(i.GuildID, position)
-				utils.InteractionRespondMessage(s, i, fmt.Sprintf("Seeking from position %vs", position))
-			} else {
-				utils.InteractionRespondMessage(s, i, "Track is not seekable")
-			}
-		} else {
-			utils.InteractionRespondMessage(s, i, "Nothing is playing")
-		}
+		// if q, found := utils.Queue[i.GuildID]; found {
+		// 	if q.Queue[0].TrackInfo.Seekable {
+		// 		WaterlinkConnection.Guild(snowflake.MustParse(i.GuildID)).Seek(position)
+		// 		utils.InteractionRespondMessage(s, i, fmt.Sprintf("Seeking from position %vs", position))
+		// 	} else {
+		// 		utils.InteractionRespondMessage(s, i, "Track is not seekable")
+		// 	}
+		// } else {
+		// 	utils.InteractionRespondMessage(s, i, "Nothing is playing")
+		// }
+		utils.InteractionRespondMessage(s, i, "Seeking is currently disabled")
 	},
 }

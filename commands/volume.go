@@ -5,6 +5,7 @@ import (
 	"wokkibot/utils"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/gompus/snowflake"
 )
 
 var volume = Command{
@@ -24,7 +25,7 @@ var volume = Command{
 		vol := uint(i.ApplicationCommandData().Options[0].UintValue())
 		if q, found := utils.Queue[i.GuildID]; found {
 			q.Volume = vol
-			Conn.UpdateVolume(i.GuildID, vol)
+			WaterlinkConnection.Guild(snowflake.MustParse(i.GuildID)).UpdateVolume(uint16(vol))
 			utils.InteractionRespondMessage(s, i, fmt.Sprintf("Changed player volume for all queued songs to %v", vol))
 		} else {
 			utils.InteractionRespondMessage(s, i, "Queue does not exist")

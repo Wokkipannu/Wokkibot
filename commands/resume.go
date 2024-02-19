@@ -5,6 +5,7 @@ import (
 	"wokkibot/utils"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/gompus/snowflake"
 )
 
 var resume = Command{
@@ -14,7 +15,7 @@ var resume = Command{
 	},
 	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if _, found := utils.Queue[i.GuildID]; found {
-			if err := Conn.SetPaused(i.GuildID, false); err != nil {
+			if err := WaterlinkConnection.Guild(snowflake.MustParse(i.GuildID)).SetPaused(false); err != nil {
 				utils.InteractionRespondMessage(s, i, fmt.Sprintf("Error when trying to resume: %v", err.Error()))
 			}
 			utils.InteractionRespondMessage(s, i, "Track resumed")

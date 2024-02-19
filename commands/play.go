@@ -7,7 +7,9 @@ import (
 	"wokkibot/utils"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/lukasl-dev/waterlink/entity/track"
+	"github.com/gompus/snowflake"
+	"github.com/lukasl-dev/waterlink/v2/track"
+	"github.com/lukasl-dev/waterlink/v2/track/query"
 )
 
 var play = Command{
@@ -54,6 +56,7 @@ var play = Command{
 				g.Queue = append(g.Queue, &utils.QueueObj{
 					Requester: i.Member,
 					Keyword:   identifier,
+					Track:     track,
 					TrackInfo: &track.Info,
 					TrackID:   track.ID,
 				})
@@ -62,6 +65,7 @@ var play = Command{
 				newQ[0] = &utils.QueueObj{
 					Requester: i.Member,
 					Keyword:   identifier,
+					Track:     track,
 					TrackInfo: &track.Info,
 					TrackID:   track.ID,
 				}
@@ -92,7 +96,7 @@ func GetTrack(identifier string) (*track.Track, error) {
 		identifier = "ytsearch: " + identifier
 	}
 
-	res, err := Req.LoadTracks(identifier)
+	res, err := WaterlinkClient.LoadTracks(query.Of(identifier))
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +117,7 @@ func BeginPlay(guildID string, interaction *discordgo.InteractionCreate) {
 		return
 	}
 
-	if err := Conn.Play(guildID, q.Queue[0].TrackID); err != nil {
+	if err := WaterlinkConnection.Guild(snowflake.MustParse(guildID)).PlayTrack(*q.Queue[0].Track); err != nil {
 		if _, err := Session.ChannelMessageSend(q.TextChannelID, "Could not play track"); err != nil {
 			log.Print(err)
 		}
@@ -152,10 +156,10 @@ func joinMemberChannel(channelID, guildID, userID string) bool {
 func LeaveVoiceChannel(guildId, channelId string) bool {
 	if err := Session.ChannelVoiceJoinManual(guildId, "", false, true); err != nil {
 		_, _ = Session.ChannelMessageSend(channelId, "I was unable to disconnect. Please disconnect me manually.")
-		Conn.Destroy(guildId)
+		WaterlinkConnection.Guild(snowflake.MustParse(guildId)).Destroy()
 		return false
 	}
-	Conn.Destroy(guildId)
+	WaterlinkConnection.Guild(snowflake.MustParse(guildId)).Destroy()
 	return true
 }
 
