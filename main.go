@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -16,7 +15,8 @@ import (
 	"wokkibot/utils"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/lukasl-dev/waterlink"
+	"github.com/gompus/snowflake"
+	"github.com/lukasl-dev/waterlink/v2"
 )
 
 var (
@@ -32,11 +32,8 @@ var (
 	httpHost, _ = url.Parse(fmt.Sprintf("http://%s", *host))
 	wsHost, _   = url.Parse(fmt.Sprintf("ws://%s", *host))
 
-	connOpts = waterlink.NewConnectOptions().WithUserID(*userID).WithPassphrase(*passphrase)
-	reqOpts  = waterlink.NewRequesterOptions().WithPassphrase(*passphrase)
-
-	conn waterlink.Connection
-	req  waterlink.Requester
+	WaterlinkClient     *waterlink.Client
+	WaterlinkConnection waterlink.Connection
 
 	sessionID string
 )
@@ -49,7 +46,7 @@ func main() {
 	}
 	log.Println("Bot session created")
 
-	session.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates
+	session.Identify.Intents = discordgo.IntentsMessageContent | discordgo.IntentsGuildMessages | discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates
 
 	session.AddHandler(handleReady)
 	session.AddHandler(handleInteractionCreate)
@@ -63,15 +60,15 @@ func main() {
 	log.Println("Bot session opened")
 
 	cmds := registerCommands()
-	wlerr := retry(5, 30*time.Second, func() (err error) {
-		werr := initWaterlink()
-		return werr
-	})
-	if wlerr != nil {
-		log.Println(wlerr)
-		return
-	}
-	session.UpdateGameStatus(0, "🪗")
+	// wlerr := retry(5, 30*time.Second, func() (err error) {
+	// 	werr := initWaterlink()
+	// 	return werr
+	// })
+	// if wlerr != nil {
+	// 	log.Println(wlerr)
+	// 	return
+	// }
+	session.UpdateGameStatus(0, "😎")
 	commands.Session = session
 
 	sc := make(chan os.Signal, 1)
@@ -100,7 +97,7 @@ func handleVoiceStateUpdate(s *discordgo.Session, update *discordgo.VoiceStateUp
 	if s.State.User.ID == update.UserID {
 		if update.ChannelID == "" {
 			if q, ok := utils.Queue[update.GuildID]; ok {
-				conn.Destroy(update.GuildID)
+				WaterlinkConnection.Guild(snowflake.MustParse(update.GuildID)).Destroy()
 				commands.LeaveVoiceChannel(update.GuildID, q.VoiceChannelID)
 				delete(utils.Queue, update.GuildID)
 			}
@@ -128,12 +125,12 @@ func handleInteractionCreate(s *discordgo.Session, i *discordgo.InteractionCreat
 }
 
 func handleVoiceUpdate(_ *discordgo.Session, update *discordgo.VoiceServerUpdate) {
-	err := conn.UpdateVoice(update.GuildID, sessionID, update.Token, update.Endpoint)
+	g := WaterlinkConnection.Guild(snowflake.MustParse(update.GuildID))
+	err := g.UpdateVoice(update.GuildID, update.Token, update.Endpoint)
 	if err != nil {
 		log.Printf("Updating voice server failed on guild %s: %s\n", update.GuildID, err)
 	} else {
 		log.Printf("Updated voice server of guild %s.\n", update.GuildID)
-		commands.Conn = conn
 	}
 }
 
@@ -146,19 +143,40 @@ func registerCommands() []*discordgo.ApplicationCommand {
 }
 
 func initWaterlink() (wlerr error) {
-	var err error
-	conn, err = waterlink.Connect(context.TODO(), *wsHost, connOpts)
+	creds := waterlink.Credentials{
+		Authorization: *passphrase,
+		UserID:        snowflake.MustParse(session.State.User.ID),
+	}
+
+	// Create waterlink client
+	WaterlinkClient, err := waterlink.NewClient(httpHost.String(), creds)
+	if err != nil {
+		return fmt.Errorf("creating client failed: %v", err)
+	}
+	commands.WaterlinkClient = WaterlinkClient
+	log.Println("Waterlink client created")
+
+	// Create waterlink connection
+	WaterlinkConnection, err := waterlink.Open(wsHost.String(), creds)
 	if err != nil {
 		return fmt.Errorf("opening connection failed: %v", err)
 	}
-	commands.Conn = conn
-	log.Println("Connection established.")
 
-	req = waterlink.NewRequester(*httpHost, reqOpts)
-	commands.Req = req
-	log.Println("Requester created.")
+	commands.WaterlinkConnection = WaterlinkConnection
+	log.Println("Waterlnk connection established")
 
-	go commands.ListenForEvents()
+	// conn, err = waterlink.Connect(context.TODO(), *wsHost, connOpts)
+	// if err != nil {
+	// 	return fmt.Errorf("opening connection failed: %v", err)
+	// }
+	// commands.Conn = conn
+	// log.Println("Connection established.")
+
+	// req = waterlink.NewRequester(*httpHost, reqOpts)
+	// commands.Req = req
+	// log.Println("Requester created.")
+
+	// go commands.ListenForEvents()
 
 	return nil
 }
@@ -186,6 +204,35 @@ func retry(attempts int, sleep time.Duration, f func() error) (err error) {
 // This only works if the message is in the same channel the link was posted in.
 func handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	prefix := "https://discord.com/channels/"
+
+	// log.Printf("Message from %v: %v", m.Author.Username, m.Content)
+
+	// if m.MessageReference != nil {
+	// 	log.Printf("has messagereference")
+	// }
+
+	// if m.ReferencedMessage != nil {
+	// 	log.Printf("has referencedmessage")
+	// }
+
+	// // Log out the message components
+	// for _, c := range m.Components {
+	// 	log.Printf("Component: %v", c)
+	// }
+
+	// // Log out the embeds in the message
+	// for _, e := range m.Embeds {
+	// 	log.Printf("Embed: %v", e)
+	// }
+
+	// if m.MentionChannels != nil {
+	// 	log.Printf("has mentionchannels")
+	// }
+
+	// // Log out all mentions in the message
+	// for _, u := range m.Mentions {
+	// 	log.Printf("Mention: %v", u)
+	// }
 
 	if strings.HasPrefix(m.Content, prefix) {
 		slashes := strings.Split(m.Content, "/")
@@ -221,6 +268,9 @@ func handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 							Label: "Go to message",
 							Style: discordgo.LinkButton,
 							URL:   "https://discord.com/channels/" + m.GuildID + "/" + msg.ChannelID + "/" + msg.ID,
+							Emoji: discordgo.ComponentEmoji{
+								Name: "🔗",
+							},
 						},
 					},
 				},

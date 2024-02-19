@@ -2,7 +2,7 @@ package utils
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/lukasl-dev/waterlink/entity/track"
+	"github.com/lukasl-dev/waterlink/v2/track"
 )
 
 type GuildQueue struct {
@@ -15,6 +15,7 @@ type GuildQueue struct {
 type QueueObj struct {
 	Requester   *discordgo.Member
 	Keyword     string
+	Track       *track.Track
 	TrackInfo   *track.Info
 	TrackID     string
 	Interaction *discordgo.Interaction

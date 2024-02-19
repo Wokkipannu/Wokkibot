@@ -5,8 +5,11 @@ github.com/bwmarrin/discordgo v0.27.1/go.mod h1:NJZpH+1AfhIcyQsPeuBKsUtYrRnjkyu0
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/gompus/snowflake v0.0.4 h1:EJ5xNymVPO8W1FmJNVAxYk875WMcyNPrm8Albi4hP+c=
+github.com/gompus/snowflake v0.0.4/go.mod h1:jDeGmYm6wmB0UW8kCj41fRLYRiPTkLubeR8Im4vhDfA=
 github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gorilla/websocket v1.5.1 h1:gmztn0JnHVt9JZquRuzLw3g4wouNVzKL15iLr/zn/QY=
 github.com/gorilla/websocket v1.5.1/go.mod h1:x3kM2JMyaluk02fnUJpQuwD2dCS5NDG2ZHL0uE0tcaY=
 github.com/joho/godotenv v1.4.0 h1:3l4+N6zfMWnkbPEXKng2o2/MR5mSwTrBih4ZEkkz1lg=
@@ -20,6 +23,8 @@ github.com/lukasl-dev/waterlink v1.1.3 h1:t1xQdfngxFao5Z2XsM49zZD2ZYkIR7yxOUgPNI
 github.com/lukasl-dev/waterlink v1.1.3/go.mod h1:iCtCe9iu9NOXqFgaXEH54Q97PpMCkyShYS+5pyMI3Hs=
 github.com/lukasl-dev/waterlink v1.1.4 h1:A1akVQSU3tLkEbJdLLN+snahiBODEvzfeSK5/sYKT6w=
 github.com/lukasl-dev/waterlink v1.1.4/go.mod h1:iCtCe9iu9NOXqFgaXEH54Q97PpMCkyShYS+5pyMI3Hs=
+github.com/lukasl-dev/waterlink/v2 v2.0.1 h1:Z6+K4RUH6GaOm6JH5/WTvapJniIX8OGA1XqSW2AaCJA=
+github.com/lukasl-dev/waterlink/v2 v2.0.1/go.mod h1:57q0Eao4Mpk/ZvBHnnAFUGG4IQTXCtxsd/F2SDB7MHA=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=

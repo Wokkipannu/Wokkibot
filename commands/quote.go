@@ -43,6 +43,9 @@ var quote = Command{
 								Label: "Go to message",
 								Style: discordgo.LinkButton,
 								URL:   "https://discord.com/channels/" + i.GuildID + "/" + msg.ChannelID + "/" + msg.ID,
+								Emoji: discordgo.ComponentEmoji{
+									Name: "🔗",
+								},
 							},
 						},
 					},
