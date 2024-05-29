@@ -1,31 +1,34 @@
 package commands
 
 import (
-	"fmt"
-	"log"
 	"math/rand"
 	"time"
-	"wokkibot/utils"
+	"wokkibot/wokkibot"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/handler"
 )
 
-var flip = Command{
-	Info: &discordgo.ApplicationCommand{
-		Name:        "flip",
-		Description: "Flip a coin",
-	},
-	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		rand.Seed(time.Now().UnixNano())
-		value := rand.Intn(2)
-		var side string
-		if value == 1 {
-			side = "Heads"
+var flipCommand = discord.SlashCommandCreate{
+	Name:        "flip",
+	Description: "Flip a coin",
+}
+
+func HandleFlip(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		r := rand.NewSource(time.Now().UnixNano())
+		min := int(0)
+		max := int(1)
+
+		flip := rand.New(r).Intn(max-min+1) + min
+
+		var result string
+		if flip == 0 {
+			result = "Heads"
 		} else {
-			side = "Tails"
+			result = "Tails"
 		}
-		if err := utils.InteractionRespondMessage(s, i, fmt.Sprintf("Flipped **%v**", side)); err != nil {
-			log.Print(err)
-		}
-	},
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent(result).Build())
+	}
 }

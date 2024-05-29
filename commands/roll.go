@@ -1,46 +1,47 @@
 package commands
 
 import (
-	"fmt"
-	"log"
 	"math/rand"
 	"time"
-	"wokkibot/utils"
+	"wokkibot/wokkibot"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/handler"
 )
 
-var roll = Command{
-	Info: &discordgo.ApplicationCommand{
-		Name:        "roll",
-		Description: "Roll a die",
-		Options: []*discordgo.ApplicationCommandOption{
-			{
-				Type:        discordgo.ApplicationCommandOptionInteger,
-				Name:        "max",
-				Description: "Highest possible roll value",
-				Required:    false,
-			},
+var rollCommand = discord.SlashCommandCreate{
+	Name:        "roll",
+	Description: "Roll a dice",
+	Options: []discord.ApplicationCommandOption{
+		discord.ApplicationCommandOptionInt{
+			Name:        "max",
+			Description: "Highest possible roll value",
+			Required:    false,
 		},
 	},
-	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		rand.Seed(time.Now().UnixNano())
-		min := int64(1)
-		var max int64
-		if len(i.ApplicationCommandData().Options) > 0 {
-			max = i.ApplicationCommandData().Options[0].IntValue()
-			if max < 2 {
-				if err := utils.InteractionRespondMessage(s, i, "Value has to be higher than 1"); err != nil {
-					log.Print(err)
-				}
-				return
-			}
+}
+
+func HandleRoll(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
+
+		r := rand.NewSource(time.Now().UnixNano())
+
+		min := int(1)
+		var max int
+
+		if data.Int("max") == 0 {
+			max = int(100)
 		} else {
-			max = int64(100)
+			max = data.Int("max")
 		}
-		value := min + rand.Int63n(max-min)
-		if err := utils.InteractionRespondMessage(s, i, fmt.Sprintf("%v (1-%v)", value, max)); err != nil {
-			log.Print(err)
+
+		if max < 2 {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Max must be at least 2 for rolling a dice").Build())
 		}
-	},
+
+		roll := rand.New(r).Intn(max-min+1) + min
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("%d (1-%d)", roll, max).Build())
+	}
 }

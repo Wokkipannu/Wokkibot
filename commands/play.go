@@ -1,212 +1,137 @@
 package commands
 
 import (
+	"context"
 	"fmt"
-	"log"
-	"strings"
-	"wokkibot/utils"
+	"regexp"
+	"time"
+	"wokkibot/wokkibot"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/gompus/snowflake"
-	"github.com/lukasl-dev/waterlink/v2/track"
-	"github.com/lukasl-dev/waterlink/v2/track/query"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/handler"
+	"github.com/disgoorg/disgolink/v3/disgolink"
+	"github.com/disgoorg/disgolink/v3/lavalink"
+	"github.com/disgoorg/json"
 )
 
-var play = Command{
-	Info: &discordgo.ApplicationCommand{
-		Name:        "play",
-		Description: "Begin playing a track by keyword or URL",
-		Options: []*discordgo.ApplicationCommandOption{
-			{
-				Type:        discordgo.ApplicationCommandOptionString,
-				Name:        "search",
-				Description: "Keyword or URL to search with",
-				Required:    true,
+var (
+	urlPattern    = regexp.MustCompile("^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]?")
+	searchPattern = regexp.MustCompile(`^(.{2})search:(.+)`)
+)
+
+var playCommand = discord.SlashCommandCreate{
+	Name:        "play",
+	Description: "Play a song",
+	Options: []discord.ApplicationCommandOption{
+		discord.ApplicationCommandOptionString{
+			Name:        "identifier",
+			Description: "Link to the song",
+			Required:    true,
+		},
+		discord.ApplicationCommandOptionString{
+			Name:        "source",
+			Description: "The source to search on",
+			Required:    false,
+			Choices: []discord.ApplicationCommandOptionChoiceString{
+				{
+					Name:  "YouTube",
+					Value: string(lavalink.SearchTypeYouTube),
+				},
+				{
+					Name:  "YouTube Music",
+					Value: string(lavalink.SearchTypeYouTubeMusic),
+				},
+				{
+					Name:  "SoundCloud",
+					Value: string(lavalink.SearchTypeSoundCloud),
+				},
+				{
+					Name:  "Deezer",
+					Value: "dzsearch",
+				},
+				{
+					Name:  "Deezer ISRC",
+					Value: "dzisrc",
+				},
+				{
+					Name:  "Spotify",
+					Value: "spsearch",
+				},
+				{
+					Name:  "AppleMusic",
+					Value: "amsearch",
+				},
 			},
 		},
 	},
-	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		if i.Member != nil {
-			vc := findMembersChannel(i.GuildID, i.Member.User.ID)
-			if vc == "" {
-				err := utils.InteractionRespondMessage(s, i, "You must be connected to a voice channel")
-				if err != nil {
-					log.Print(err)
-				}
-				return
-			}
+}
 
-			identifier := i.ApplicationCommandData().Options[0].StringValue()
+func HandlePlay(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
 
-			track, err := GetTrack(identifier)
-			if err != nil {
-				utils.InteractionRespondMessage(s, i, fmt.Sprintf("Failed to fetch track: %v", err.Error()))
-				return
-			}
+		identifier := data.String("identifier")
 
-			if err := s.ChannelVoiceJoinManual(i.GuildID, vc, false, true); err != nil {
-				err := utils.InteractionRespondMessage(s, i, "Could not join your voice channel")
-				if err != nil {
-					log.Print(err)
-				}
-				return
-			}
+		if source, ok := data.OptString("source"); ok {
+			identifier = lavalink.SearchType(source).Apply(identifier)
+		} else if !urlPattern.MatchString(identifier) && !searchPattern.MatchString(identifier) {
+			identifier = lavalink.SearchTypeYouTube.Apply(identifier)
+		}
 
-			if g, ok := utils.Queue[i.GuildID]; ok {
-				g.Queue = append(g.Queue, &utils.QueueObj{
-					Requester: i.Member,
-					Keyword:   identifier,
-					Track:     track,
-					TrackInfo: &track.Info,
-					TrackID:   track.ID,
+		voiceState, ok := b.Client.Caches().VoiceState(*e.GuildID(), e.User().ID)
+		if !ok {
+			return e.CreateMessage(discord.MessageCreate{
+				Content: "You need to be in a voice channel to use this command",
+			})
+		}
+
+		if err := e.DeferCreateMessage(false); err != nil {
+			return err
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		var toPlay *lavalink.Track
+		b.Lavalink.BestNode().LoadTracksHandler(ctx, identifier, disgolink.NewResultHandler(
+			func(track lavalink.Track) {
+				_, _ = b.Client.Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.MessageUpdate{
+					Content: json.Ptr(fmt.Sprintf("Loaded track: [`%s`](<%s>)", track.Info.Title, *track.Info.URI)),
 				})
-			} else {
-				newQ := make([]*utils.QueueObj, 1)
-				newQ[0] = &utils.QueueObj{
-					Requester: i.Member,
-					Keyword:   identifier,
-					Track:     track,
-					TrackInfo: &track.Info,
-					TrackID:   track.ID,
-				}
-				q := utils.GuildQueue{
-					TextChannelID:  i.ChannelID,
-					VoiceChannelID: vc,
-					Queue:          newQ,
-				}
-				utils.Queue[i.GuildID] = &q
-			}
+				toPlay = &track
+			},
+			func(playlist lavalink.Playlist) {
+				_, _ = b.Client.Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.MessageUpdate{
+					Content: json.Ptr(fmt.Sprintf("Loaded playlist: `%s` with `%d` tracks", playlist.Info.Name, len(playlist.Tracks))),
+				})
+				toPlay = &playlist.Tracks[0]
+			},
+			func(tracks []lavalink.Track) {
+				_, _ = b.Client.Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.MessageUpdate{
+					Content: json.Ptr(fmt.Sprintf("Loaded search result: [`%s`](<%s>)", tracks[0].Info.Title, *tracks[0].Info.URI)),
+				})
+				toPlay = &tracks[0]
+			},
+			func() {
+				_, _ = b.Client.Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.MessageUpdate{
+					Content: json.Ptr(fmt.Sprintf("Nothing found for: `%s`", identifier)),
+				})
+			},
+			func(err error) {
+				_, _ = b.Client.Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.MessageUpdate{
+					Content: json.Ptr(fmt.Sprintf("Error while looking up query: `%s`", err)),
+				})
+			},
+		))
 
-			joinMemberChannel(vc, i.GuildID, i.Member.User.ID)
-			queue := utils.Queue[i.GuildID]
-			if len(queue.Queue) > 1 {
-				embed := trackEmbed(*queue, "Added to queue")
-				if err := utils.InteractionRespondMessageEmbed(s, i, embed); err != nil {
-					log.Print(err)
-				}
-			} else {
-				BeginPlay(i.GuildID, i)
-			}
+		if toPlay == nil {
+			return nil
 		}
-	},
-}
 
-func GetTrack(identifier string) (*track.Track, error) {
-	if !utils.IsValidUrl(identifier) {
-		identifier = "ytsearch: " + identifier
-	}
-
-	res, err := WaterlinkClient.LoadTracks(query.Of(identifier))
-	if err != nil {
-		return nil, err
-	}
-	if len(res.Tracks) > 0 {
-		track := res.Tracks[0]
-		return &track, nil
-	} else {
-		return nil, fmt.Errorf("search resulted in 0 tracks")
-	}
-}
-
-func BeginPlay(guildID string, interaction *discordgo.InteractionCreate) {
-	q := utils.Queue[guildID]
-	if len(q.Queue) == 0 {
-		_, _ = Session.ChannelMessageSend(q.TextChannelID, "No more tracks in queue")
-		delete(utils.Queue, guildID)
-		LeaveVoiceChannel(guildID, q.TextChannelID)
-		return
-	}
-
-	if err := WaterlinkConnection.Guild(snowflake.MustParse(guildID)).PlayTrack(*q.Queue[0].Track); err != nil {
-		if _, err := Session.ChannelMessageSend(q.TextChannelID, "Could not play track"); err != nil {
-			log.Print(err)
+		if err := b.Client.UpdateVoiceState(context.TODO(), *e.GuildID(), voiceState.ChannelID, false, false); err != nil {
+			return err
 		}
-		return
-	}
 
-	embed := trackEmbed(*q, "Now playing")
-
-	// If the interaction exists (This function was ran via a command)
-	// Send a response to the interaction. If the function was ran via
-	// the "TrackEnd" event, send a normal message with the session
-	if interaction != nil {
-		if err := utils.InteractionRespondMessageEmbed(Session, interaction, embed); err != nil {
-			log.Print(err)
-		}
-	} else {
-		if _, err := Session.ChannelMessageSendEmbed(q.TextChannelID, embed); err != nil {
-			log.Print(err)
-		}
+		return b.Lavalink.Player(*e.GuildID()).Update(context.TODO(), lavalink.WithTrack(*toPlay))
 	}
-}
-
-func joinMemberChannel(channelID, guildID, userID string) bool {
-	vcID := findMembersChannel(guildID, userID)
-	if vcID == "" {
-		_, _ = Session.ChannelMessageSend(channelID, "You must be in a voice channel.")
-		return false
-	}
-	if err := Session.ChannelVoiceJoinManual(guildID, vcID, false, true); err != nil {
-		_, _ = Session.ChannelMessageSend(channelID, "Could not join your voice channel.")
-		return false
-	}
-	return true
-}
-
-func LeaveVoiceChannel(guildId, channelId string) bool {
-	if err := Session.ChannelVoiceJoinManual(guildId, "", false, true); err != nil {
-		_, _ = Session.ChannelMessageSend(channelId, "I was unable to disconnect. Please disconnect me manually.")
-		WaterlinkConnection.Guild(snowflake.MustParse(guildId)).Destroy()
-		return false
-	}
-	WaterlinkConnection.Guild(snowflake.MustParse(guildId)).Destroy()
-	return true
-}
-
-func findMembersChannel(guildID, userID string) string {
-	guild, err := Session.State.Guild(guildID)
-	if err != nil {
-		return ""
-	}
-	for _, state := range guild.VoiceStates {
-		if strings.EqualFold(userID, state.UserID) {
-			return state.ChannelID
-		}
-	}
-	return ""
-}
-
-func trackEmbed(queue utils.GuildQueue, title string) *discordgo.MessageEmbed {
-	q := queue.Queue[len(queue.Queue)-1]
-	duration := q.TrackInfo.Length
-	seconds := (duration / 1000) % 60
-	minutes := (duration / (1000 * 60) % 60)
-	hours := (duration / (1000 * 60 * 60) % 24)
-
-	embed := &discordgo.MessageEmbed{}
-	embed.Color = Session.State.UserColor(Session.State.User.ID, queue.TextChannelID)
-	embed.Title = title
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name:   "Title",
-		Value:  fmt.Sprintf("[%v](%v)", utils.EscapeString(q.TrackInfo.Title), q.TrackInfo.URI),
-		Inline: true,
-	})
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name:   "Requester",
-		Value:  utils.EscapeString(utils.GetName(q.Requester)),
-		Inline: true,
-	})
-	var durationText string
-	if q.TrackInfo.Stream {
-		durationText = "Stream"
-	} else {
-		durationText = fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds))
-	}
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name:   "Duration",
-		Value:  durationText,
-		Inline: true,
-	})
-
-	return embed
 }

@@ -1,5 +1,7 @@
 ![Build](https://github.com/wokkipannu/Wokkibot-Go/actions/workflows/build.yml/badge.svg)
 
+### This is the DisGo version of Wokkibot
+
 # Wokkibot-Go
 Wokkibot rewritten yet again. This time in GO using Discordgo.
 

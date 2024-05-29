@@ -1,16 +1,17 @@
-FROM golang:1.21
+FROM golang:1.21 AS build
 
-WORKDIR /wokkibot
+WORKDIR /build
 
-COPY go.mod ./
-COPY go.sum ./
+COPY go.mod go.sum ./
+
 RUN go mod download
 
-COPY *.go ./
-COPY commands/*.go ./commands/
-COPY config/*.go ./config/
-COPY utils/*.go ./utils/
+COPY . .
 
-RUN go build -o /wokkibot
+RUN go build -o bot main.go
 
-CMD [ "./wokkibot" ]
+FROM alpine
+
+COPY --from=build /build/bot /bin/bot
+
+CMD ["/bin/bot"]

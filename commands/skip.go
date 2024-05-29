@@ -1,46 +1,37 @@
 package commands
 
 import (
-	"fmt"
-	"log"
-	"wokkibot/utils"
+	"context"
+	"wokkibot/wokkibot"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/gompus/snowflake"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/handler"
+	"github.com/disgoorg/disgolink/v3/lavalink"
 )
 
-var skip = Command{
-	Info: &discordgo.ApplicationCommand{
-		Name:        "skip",
-		Description: "Skip current track",
-	},
-	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		if q, found := utils.Queue[i.GuildID]; found {
-			if q.Queue[0].Interaction != nil {
-				Session.InteractionResponseEdit(q.Queue[0].Interaction, &discordgo.WebhookEdit{
-					Content:    nil,
-					Embeds:     &[]*discordgo.MessageEmbed{q.Queue[0].Embed},
-					Components: &[]discordgo.MessageComponent{},
-				})
-			}
-			if q.Queue[0].Message != nil {
-				content := ""
-				Session.ChannelMessageEditComplex(&discordgo.MessageEdit{
-					ID:         q.Queue[0].Message.ID,
-					Channel:    q.Queue[0].Message.ChannelID,
-					Content:    &content, // Why the fuck is this *string?
-					Embeds:     []*discordgo.MessageEmbed{q.Queue[0].Embed},
-					Components: []discordgo.MessageComponent{},
-				})
-			}
-			WaterlinkConnection.Guild(snowflake.MustParse(i.GuildID)).Stop()
-			if err := utils.InteractionRespondMessage(s, i, fmt.Sprintf("Track \"%v\" skipped", utils.EscapeString(q.Queue[0].TrackInfo.Title))); err != nil {
-				log.Print(err)
-			}
-		} else {
-			if err := utils.InteractionRespondMessage(s, i, "Nothing to skip"); err != nil {
-				log.Print(err)
-			}
+var skipCommand = discord.SlashCommandCreate{
+	Name:        "skip",
+	Description: "Skip the current song",
+}
+
+func HandleSkip(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		player := b.Lavalink.ExistingPlayer(*e.GuildID())
+		queue := b.Queues.Get(*e.GuildID())
+
+		if player == nil || queue == nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No player or queue found").Build())
 		}
-	},
+
+		track, ok := queue.Skip()
+		if !ok {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No tracks in queue").Build())
+		}
+
+		if err := player.Update(context.TODO(), lavalink.WithTrack(track)); err != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Failed to skip track").Build())
+		}
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Skipped track").Build())
+	}
 }

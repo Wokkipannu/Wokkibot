@@ -1,4 +1,4 @@
-package config
+package wokkibot
 
 import (
 	"fmt"
