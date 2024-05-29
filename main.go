@@ -22,6 +22,10 @@ func main() {
 
 	b.SetupBot(r)
 	b.InitLavalink()
-	b.SyncGuildCommands(commands.Commands)
+	if wokkibot.Config("GUILDID") != "" {
+		b.SyncGuildCommands(commands.Commands)
+	} else {
+		b.SyncGlobalCommands(commands.Commands)
+	}
 	b.Start()
 }

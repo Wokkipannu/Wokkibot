@@ -8,10 +8,14 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o bot main.go
+RUN CGO_ENABLED=0 go build -ldflags="-X 'main.version=${VERSION}'-w -s" -o bot main.go
 
-FROM alpine
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
 
 COPY --from=build /build/bot /bin/bot
+
+RUN chmod +x /bin/bot
 
 CMD ["/bin/bot"]
