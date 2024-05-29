@@ -10,4 +10,5 @@ var Commands = []discord.ApplicationCommandCreate{
 	fridayCommand,
 	playCommand,
 	skipCommand,
+	queueCommand,
 }

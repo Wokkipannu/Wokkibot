@@ -20,6 +20,7 @@ func main() {
 	// Music commands
 	r.Command("/play", commands.HandlePlay(b))
 	r.Command("/skip", commands.HandleSkip(b))
+	r.Command("/queue", commands.HandleQueue(b))
 
 	b.SetupBot(r)
 	b.InitLavalink()

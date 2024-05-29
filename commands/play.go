@@ -70,6 +70,8 @@ func HandlePlay(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		data := e.SlashCommandInteractionData()
 
+		queue := b.Queues.Get(*e.GuildID())
+
 		identifier := data.String("identifier")
 
 		if source, ok := data.OptString("source"); ok {
@@ -132,6 +134,11 @@ func HandlePlay(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
-		return b.Lavalink.Player(*e.GuildID()).Update(context.TODO(), lavalink.WithTrack(*toPlay))
+		if len(queue.Tracks) == 0 && b.Lavalink.ExistingPlayer(*e.GuildID()) == nil {
+			return b.Lavalink.Player(*e.GuildID()).Update(context.TODO(), lavalink.WithTrack(*toPlay))
+		}
+
+		queue.Add(*toPlay)
+		return nil
 	}
 }

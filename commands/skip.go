@@ -23,8 +23,13 @@ func HandleSkip(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No player or queue found").Build())
 		}
 
-		track, ok := queue.Skip()
+		track, ok := queue.Next()
 		if !ok {
+			if player != nil {
+				player.Update(context.TODO(), lavalink.WithNullTrack())
+				return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Skipped track, no more tracks in queue").Build())
+			}
+
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No tracks in queue").Build())
 		}
 
