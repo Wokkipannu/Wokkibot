@@ -11,7 +11,6 @@ import (
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/disgolink/v3/disgolink"
 	"github.com/disgoorg/disgolink/v3/lavalink"
-	"github.com/disgoorg/json"
 )
 
 var (
@@ -97,32 +96,19 @@ func HandlePlay(b *wokkibot.Wokkibot) handler.CommandHandler {
 		var toPlay *lavalink.Track
 		b.Lavalink.BestNode().LoadTracksHandler(ctx, identifier, disgolink.NewResultHandler(
 			func(track lavalink.Track) {
-				_, _ = b.Client.Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.MessageUpdate{
-					Content: json.Ptr(fmt.Sprintf("Loaded track: [`%s`](<%s>)", track.Info.Title, *track.Info.URI)),
-				})
 				toPlay = &track
 			},
 			func(playlist lavalink.Playlist) {
-				_, _ = b.Client.Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.MessageUpdate{
-					Content: json.Ptr(fmt.Sprintf("Loaded playlist: `%s` with `%d` tracks", playlist.Info.Name, len(playlist.Tracks))),
-				})
 				toPlay = &playlist.Tracks[0]
 			},
 			func(tracks []lavalink.Track) {
-				_, _ = b.Client.Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.MessageUpdate{
-					Content: json.Ptr(fmt.Sprintf("Loaded search result: [`%s`](<%s>)", tracks[0].Info.Title, *tracks[0].Info.URI)),
-				})
 				toPlay = &tracks[0]
 			},
 			func() {
-				_, _ = b.Client.Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.MessageUpdate{
-					Content: json.Ptr(fmt.Sprintf("Nothing found for: `%s`", identifier)),
-				})
+				e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Nothing found for: `%s`", identifier).Build())
 			},
 			func(err error) {
-				_, _ = b.Client.Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.MessageUpdate{
-					Content: json.Ptr(fmt.Sprintf("Error while looking up query: `%s`", err)),
-				})
+				e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Error while looking up query: `%s`", identifier).Build())
 			},
 		))
 
@@ -135,9 +121,12 @@ func HandlePlay(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		if len(queue.Tracks) == 0 && b.Lavalink.ExistingPlayer(*e.GuildID()) == nil {
+			e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(discord.NewEmbedBuilder().SetTitle("Playing").SetDescription(fmt.Sprintf("Playing: [`%s`](<%s>)", toPlay.Info.Title, *toPlay.Info.URI)).Build()).Build())
+
 			return b.Lavalink.Player(*e.GuildID()).Update(context.TODO(), lavalink.WithTrack(*toPlay))
 		}
 
+		e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(discord.NewEmbedBuilder().SetTitle("Queued").SetDescription(fmt.Sprintf("Queued: [`%s`](<%s>)", toPlay.Info.Title, *toPlay.Info.URI)).Build()).Build())
 		queue.Add(*toPlay)
 		return nil
 	}

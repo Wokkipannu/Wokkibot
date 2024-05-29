@@ -3,7 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strconv"
 	"wokkibot/wokkibot"
 
@@ -52,14 +52,14 @@ func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		defer res.Body.Close()
 
-		body, readErr := ioutil.ReadAll(res.Body)
-		if readErr != nil {
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while reading data").Build())
 		}
 
 		toppings := ToppingsResponse{}
-		jsonErr := json.Unmarshal(body, &toppings)
-		if jsonErr != nil {
+		err = json.Unmarshal(body, &toppings)
+		if err != nil {
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while parsing data").Build())
 		}
 

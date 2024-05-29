@@ -8,7 +8,9 @@ var Commands = []discord.ApplicationCommandCreate{
 	flipCommand,
 	pizzaCommand,
 	fridayCommand,
+	userCommand,
 	playCommand,
 	skipCommand,
 	queueCommand,
+	disconnectCommand,
 }
