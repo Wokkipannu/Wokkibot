@@ -59,6 +59,7 @@ func (b *Wokkibot) SetupBot(r handler.Router) {
 		),
 		bot.WithEventListenerFunc(b.onVoiceStateUpdate),
 		bot.WithEventListenerFunc(b.onVoiceServerUpdate),
+		bot.WithEventListenerFunc(b.onMessageCreate),
 	)
 
 	if err != nil {
