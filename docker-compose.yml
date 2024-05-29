@@ -12,5 +12,7 @@ services:
     image: wokkipannu/wokkibot-go:latest
     container_name: wokkibot
     restart: always
+    depends_on:
+      - lavalink
     volumes:
       - /opt/Wokkibot/.env:/.env
