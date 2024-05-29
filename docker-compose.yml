@@ -13,4 +13,4 @@ services:
     container_name: wokkibot
     restart: always
     volumes:
-      - /opt/Wokkibot/.env:/wokkibot/.env
+      - /opt/Wokkibot/.env:/.env

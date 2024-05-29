@@ -29,8 +29,7 @@ func New() *Wokkibot {
 }
 
 var (
-	Token   = Config("TOKEN")
-	GuildID = snowflake.MustParse(Config("GUILDID"))
+	Token = Config("TOKEN")
 
 	NodeName      = Config("NODE_NAME")
 	NodeAddress   = Config("NODE_ADDRESS")
@@ -69,8 +68,8 @@ func (b *Wokkibot) SetupBot(r handler.Router) {
 
 }
 
-func (b *Wokkibot) SyncGuildCommands(commands []discord.ApplicationCommandCreate) {
-	if _, err := b.Client.Rest().SetGuildCommands(b.Client.ApplicationID(), GuildID, commands); err != nil {
+func (b *Wokkibot) SyncGuildCommands(commands []discord.ApplicationCommandCreate, guildID snowflake.ID) {
+	if _, err := b.Client.Rest().SetGuildCommands(b.Client.ApplicationID(), guildID, commands); err != nil {
 		slog.Error("error while registering guild commands", slog.Any("err", err))
 	}
 }

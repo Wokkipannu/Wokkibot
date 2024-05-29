@@ -5,6 +5,7 @@ import (
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/handler"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 func main() {
@@ -23,7 +24,7 @@ func main() {
 	b.SetupBot(r)
 	b.InitLavalink()
 	if wokkibot.Config("GUILDID") != "" {
-		b.SyncGuildCommands(commands.Commands)
+		b.SyncGuildCommands(commands.Commands, snowflake.MustParse(wokkibot.Config("GUILDID")))
 	} else {
 		b.SyncGlobalCommands(commands.Commands)
 	}

@@ -1,9 +1,7 @@
 ![Build](https://github.com/wokkipannu/Wokkibot-Go/actions/workflows/build.yml/badge.svg)
 
-### This is the DisGo version of Wokkibot
-
 # Wokkibot-Go
-Wokkibot rewritten yet again. This time in GO using Discordgo.
+Wokkibot rewritten yet again. This time in GO using DisGo.
 
 # Commands
 ##### Music related commands
@@ -29,10 +27,9 @@ Wokkibot rewritten yet again. This time in GO using Discordgo.
 # .env
 ```
 TOKEN=DISCORD_TOKEN
-PASSPHRASE=LAVALINK_PASSPHARSE
-HOST=LAVALINK_HOST
-USERID=BOT_USER_ID
-GUILDID=
-PIZZAAPI=API_ENDPOINT
-OWNERID=
+GUILDID=EMPTY_OR_GUILD_ID
+NODE_NAME=NODE_NAME
+NODE_ADDRESS=localhost:2333
+NODE_PASSWORD=LAVALINK_PASSWORD
+NODE_SECURE=false
 ```
