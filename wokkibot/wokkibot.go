@@ -87,7 +87,7 @@ func (b *Wokkibot) SyncGlobalCommands(commands []discord.ApplicationCommandCreat
 }
 
 func (b *Wokkibot) OnReady(_ *events.Ready) {
-	if err := b.Client.SetPresence(context.TODO(), gateway.WithListeningActivity("Bobr kurwa 🦫")); err != nil {
+	if err := b.Client.SetPresence(context.TODO(), gateway.WithListeningActivity("Bobr kurwa 🦫"), gateway.WithOnlineStatus(discord.OnlineStatusOnline)); err != nil {
 		slog.Error("error while setting presence", slog.Any("err", err))
 	}
 }
