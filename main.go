@@ -18,11 +18,14 @@ func main() {
 	r.Command("/pizza", commands.HandlePizza(b))
 	r.Command("/friday", commands.HandleFriday(b))
 	r.Command("/user", commands.HandleUser(b))
+	r.Command("/Quote", commands.HandleQuote(b))
+	r.Command("/Eval", commands.HandleEval(b))
 	// Music commands
 	r.Command("/play", commands.HandlePlay(b))
 	r.Command("/skip", commands.HandleSkip(b))
 	r.Command("/queue", commands.HandleQueue(b))
 	r.Command("/disconnect", commands.HandleDisconnect(b))
+	r.Command("/seek", commands.HandleSeek(b))
 
 	b.SetupBot(r)
 	b.InitLavalink()

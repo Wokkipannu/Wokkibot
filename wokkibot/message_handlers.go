@@ -1,6 +1,8 @@
 package wokkibot
 
 import (
+	"wokkibot/utils"
+
 	"strings"
 
 	"github.com/disgoorg/disgo/discord"
@@ -26,16 +28,7 @@ func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 			return
 		}
 
-		embed := discord.NewEmbedBuilder()
-		embed.SetAuthor(msg.Author.Username, "", *msg.Author.AvatarURL())
-		embed.SetDescription(msg.Content)
-		embed.SetTimestamp(msg.CreatedAt)
-
-		if len(msg.Attachments) > 0 {
-			for _, attachment := range msg.Attachments {
-				embed.SetImage(attachment.URL)
-			}
-		}
+		embed := utils.QuoteEmbed(*msg)
 
 		event.Client().Rest().CreateMessage(event.Message.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewLinkButton("Go to message", links[0])).Build())
 	}

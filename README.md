@@ -8,7 +8,7 @@ Wokkibot rewritten yet again. This time in GO using DisGo.
 * /play
 * /skip
 * /seek
-* /volume
+* /volume - Not yet
 * /queue
 * /disconnect
 ##### Other commands
@@ -19,6 +19,8 @@ Wokkibot rewritten yet again. This time in GO using DisGo.
 * /flip
 ##### Context menu commands
 * Quote
+* Eval
+
 # Setup
 * Get [Lavalink](https://github.com/freyacodes/Lavalink)
 * Setup .env

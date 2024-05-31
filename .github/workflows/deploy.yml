@@ -16,7 +16,7 @@ jobs:
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
         script: |
-          cd Wokkibot-Go-Disgo
+          cd ${{ secrets.FOLDER || 'Wokkibot-Go' }}
           git pull
           docker build -t wokkipannu/wokkibot-go:latest .
           docker-compose restart wokkibot

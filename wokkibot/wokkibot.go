@@ -18,10 +18,12 @@ import (
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/disgolink/v3/disgolink"
 	"github.com/disgoorg/snowflake/v2"
+	gopiston "github.com/milindmadhukar/go-piston"
 )
 
 func New() *Wokkibot {
 	return &Wokkibot{
+		PistonClient: gopiston.CreateDefaultClient(),
 		Queues: &QueueManager{
 			queues: make(map[snowflake.ID]*Queue),
 		},
@@ -38,9 +40,10 @@ var (
 )
 
 type Wokkibot struct {
-	Client   bot.Client
-	Lavalink disgolink.Client
-	Queues   *QueueManager
+	Client       bot.Client
+	PistonClient *gopiston.Client
+	Lavalink     disgolink.Client
+	Queues       *QueueManager
 }
 
 func (b *Wokkibot) SetupBot(r handler.Router) {
@@ -48,8 +51,9 @@ func (b *Wokkibot) SetupBot(r handler.Router) {
 	b.Client, err = disgo.New(Token,
 		bot.WithGatewayConfigOpts(
 			gateway.WithIntents(gateway.IntentGuildMessages|gateway.IntentDirectMessages|gateway.IntentGuildMessageTyping|gateway.IntentDirectMessageTyping|gateway.IntentMessageContent|gateway.IntentGuilds|gateway.IntentGuildVoiceStates),
+			gateway.WithCompress(true),
 			gateway.WithPresenceOpts(
-				gateway.WithPlayingActivity("🤡"),
+				gateway.WithPlayingActivity("starting up..."),
 				gateway.WithOnlineStatus(discord.OnlineStatusDND),
 			),
 		),
@@ -60,6 +64,7 @@ func (b *Wokkibot) SetupBot(r handler.Router) {
 		bot.WithEventListenerFunc(b.onVoiceStateUpdate),
 		bot.WithEventListenerFunc(b.onVoiceServerUpdate),
 		bot.WithEventListenerFunc(b.onMessageCreate),
+		bot.WithEventListenerFunc(b.OnReady),
 	)
 
 	if err != nil {
@@ -78,6 +83,12 @@ func (b *Wokkibot) SyncGuildCommands(commands []discord.ApplicationCommandCreate
 func (b *Wokkibot) SyncGlobalCommands(commands []discord.ApplicationCommandCreate) {
 	if _, err := b.Client.Rest().SetGlobalCommands(b.Client.ApplicationID(), commands); err != nil {
 		slog.Error("error while registering global commands", slog.Any("err", err))
+	}
+}
+
+func (b *Wokkibot) OnReady(_ *events.Ready) {
+	if err := b.Client.SetPresence(context.TODO(), gateway.WithListeningActivity("Bobr kurwa 🦫")); err != nil {
+		slog.Error("error while setting presence", slog.Any("err", err))
 	}
 }
 

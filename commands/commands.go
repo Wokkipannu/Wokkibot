@@ -13,4 +13,7 @@ var Commands = []discord.ApplicationCommandCreate{
 	skipCommand,
 	queueCommand,
 	disconnectCommand,
+	quoteCommand,
+	seekCommand,
+	evalCommand,
 }

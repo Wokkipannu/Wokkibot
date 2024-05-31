@@ -22,19 +22,22 @@ func HandleQueue(b *wokkibot.Wokkibot) handler.CommandHandler {
 			})
 		}
 
+		embed := discord.NewEmbedBuilder().SetTitle("Queue")
+		currentTrack := b.Lavalink.ExistingPlayer(*e.GuildID()).Track()
+
 		if len(queue.Tracks) == 0 {
-			return e.CreateMessage(discord.MessageCreate{
-				Content: "No tracks in queue",
-			})
+			embed.AddField("", "No tracks in queue", false)
+		} else {
+			for i, track := range queue.Tracks {
+				embed.AddField("", fmt.Sprintf("%v. [%s](<%s>)", i+1, track.Info.Title, *track.Info.URI), false)
+			}
 		}
 
-		var tracks string
-		for i, track := range queue.Tracks {
-			tracks += fmt.Sprintf("%d. [`%s`](<%s>)\n", i+1, track.Info.Title, *track.Info.URI)
+		embed.SetFooterTextf("Currently playing: %s (%s)", currentTrack.Info.Title, *currentTrack.Info.URI)
+		if currentTrack.Info.ArtworkURL != nil {
+			embed.SetFooterIcon(*currentTrack.Info.ArtworkURL)
 		}
 
-		return e.CreateMessage(discord.MessageCreate{
-			Content: fmt.Sprintf("Queue:\n%s", tracks),
-		})
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
 	}
 }

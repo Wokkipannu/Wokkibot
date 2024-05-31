@@ -42,6 +42,7 @@ func HandleRoll(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		roll := rand.New(r).Intn(max-min+1) + min
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("%d (1-%d)", roll, max).Build())
+		// return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("%d (1-%d)", roll, max).Build())
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(discord.NewEmbedBuilder().SetTitlef("%v rolled a dice", e.User().EffectiveName()).SetDescriptionf("%d (1-%d)", roll, max).Build()).Build())
 	}
 }

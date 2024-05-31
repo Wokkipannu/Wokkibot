@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"time"
 	"wokkibot/wokkibot"
@@ -81,9 +80,7 @@ func HandlePlay(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		voiceState, ok := b.Client.Caches().VoiceState(*e.GuildID(), e.User().ID)
 		if !ok {
-			return e.CreateMessage(discord.MessageCreate{
-				Content: "You need to be in a voice channel to use this command",
-			})
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("You need to be in a voice channel to use this command").Build())
 		}
 
 		if err := e.DeferCreateMessage(false); err != nil {
@@ -120,13 +117,23 @@ func HandlePlay(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
-		if len(queue.Tracks) == 0 && b.Lavalink.ExistingPlayer(*e.GuildID()) == nil {
-			e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(discord.NewEmbedBuilder().SetTitle("Playing").SetDescription(fmt.Sprintf("Playing: [`%s`](<%s>)", toPlay.Info.Title, *toPlay.Info.URI)).Build()).Build())
+		embed := discord.NewEmbedBuilder()
+		if toPlay.Info.ArtworkURL != nil {
+			embed.SetImage(*toPlay.Info.ArtworkURL)
+		}
+		embed.SetFooterTextf("Length %s", toPlay.Info.Length)
 
+		if len(queue.Tracks) == 0 && b.Lavalink.ExistingPlayer(*e.GuildID()) == nil {
+			embed.SetTitle("Playing")
+			embed.SetDescriptionf("[%s](<%s>)", toPlay.Info.Title, *toPlay.Info.URI)
+
+			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetEmbeds(embed.Build()).Build())
 			return b.Lavalink.Player(*e.GuildID()).Update(context.TODO(), lavalink.WithTrack(*toPlay))
 		}
 
-		e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(discord.NewEmbedBuilder().SetTitle("Queued").SetDescription(fmt.Sprintf("Queued: [`%s`](<%s>)", toPlay.Info.Title, *toPlay.Info.URI)).Build()).Build())
+		embed.SetTitlef("Queued to position %d", len(queue.Tracks)+1)
+		embed.SetDescriptionf("[%s](<%s>)", toPlay.Info.Title, *toPlay.Info.URI)
+		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetEmbeds((embed).Build()).Build())
 		queue.Add(*toPlay)
 		return nil
 	}
