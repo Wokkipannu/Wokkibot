@@ -1,0 +1,22 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ disgo ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Executing remote ssh commands using password
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd Wokkibot-Go-Disgo
+          git pull
+          docker build -t wokkipannu/wokkibot-go:latest .
+          docker-compose restart wokkibot
