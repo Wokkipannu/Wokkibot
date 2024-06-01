@@ -76,7 +76,7 @@ func HandleEval(b *wokkibot.Wokkibot) handler.CommandHandler {
 			embed.AddField("Language", rs.Language, true)
 		}
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewLinkButton("Go to message", msg.JumpURL())).Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewLinkButton("View code", msg.JumpURL())).Build())
 		return err
 	}
 }

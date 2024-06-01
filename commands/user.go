@@ -55,7 +55,7 @@ func HandleUser(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		if fetchedUser.BannerURL() != nil {
-			formatOpt := SetCDNOptions(discord.FileFormatPNG, discord.QueryValues{"size": 4092})
+			formatOpt := SetCDNOptions(discord.FileFormatPNG, discord.QueryValues{"size": 1024})
 			embed.SetImage(*fetchedUser.BannerURL(formatOpt))
 		}
 
