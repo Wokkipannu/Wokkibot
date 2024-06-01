@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
+	"time"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/discord"
@@ -55,21 +57,26 @@ func HandleEval(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
+		start := time.Now()
 		rs, err := b.PistonClient.Execute(language, "", []gopiston.Code{{Content: code}})
 		embed := discord.NewEmbedBuilder()
+		end := time.Now()
+		duration := end.Sub(start)
 		if err != nil {
 			embed.SetTitle("Eval")
 			embed.SetDescriptionf("Error: %s", err.Error())
 			embed.AddField("Status", "Error", true)
-			embed.AddField("Duration", "0s", true)
+			embed.AddField("Duration", fmt.Sprintf("%.3f seconds", duration.Seconds()), true)
+			embed.AddField("Language", rs.Language, true)
 		} else {
 			embed.SetTitle("Eval")
 			embed.SetDescription(rs.GetOutput())
 			embed.AddField("Status", "Success", true)
-			embed.AddField("Duration", "0s", true)
+			embed.AddField("Duration", fmt.Sprintf("%.3f seconds", duration.Seconds()), true)
+			embed.AddField("Language", rs.Language, true)
 		}
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetEmbeds(embed.Build()).Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewLinkButton("Go to message", msg.JumpURL())).Build())
 		return err
 	}
 }
