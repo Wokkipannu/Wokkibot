@@ -18,4 +18,5 @@ jobs:
         script: |
           cd Wokkibot-Go-Disgo
           git pull
-          docker-compose up --build -d wokkibot
+          docker-compose build wokkibot
+          docker-compose up -d --no-deps wokkibot

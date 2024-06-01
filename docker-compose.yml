@@ -10,6 +10,9 @@ services:
       - /opt/Lavalink/plugins/:/opt/Lavalink/plugins/
   wokkibot:
     image: wokkipannu/wokkibot-go:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: wokkibot
     restart: always
     depends_on:
