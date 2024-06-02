@@ -2,8 +2,10 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"time"
+	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/discord"
@@ -43,22 +45,26 @@ var playCommand = discord.SlashCommandCreate{
 					Name:  "SoundCloud",
 					Value: string(lavalink.SearchTypeSoundCloud),
 				},
-				{
-					Name:  "Deezer",
-					Value: "dzsearch",
-				},
-				{
-					Name:  "Deezer ISRC",
-					Value: "dzisrc",
-				},
+				// {
+				// 	Name:  "Deezer",
+				// 	Value: "dzsearch",
+				// },
+				// {
+				// 	Name:  "Deezer ISRC",
+				// 	Value: "dzisrc",
+				// },
 				{
 					Name:  "Spotify",
 					Value: "spsearch",
 				},
 				{
-					Name:  "AppleMusic",
-					Value: "amsearch",
+					Name:  "http",
+					Value: "http",
 				},
+				// {
+				// 	Name:  "AppleMusic",
+				// 	Value: "amsearch",
+				// },
 			},
 		},
 	},
@@ -110,29 +116,31 @@ func HandlePlay(b *wokkibot.Wokkibot) handler.CommandHandler {
 		))
 
 		if toPlay == nil {
+			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContentf("Nothing found for: `%s`", identifier).Build())
 			return nil
 		}
 
 		if err := b.Client.UpdateVoiceState(context.TODO(), *e.GuildID(), voiceState.ChannelID, false, false); err != nil {
+			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContentf("Error while updating voice state: %s", err.Error()).Build())
 			return err
 		}
 
 		embed := discord.NewEmbedBuilder()
+		embed.SetColor(utils.RGBToInteger(255, 215, 0))
 		if toPlay.Info.ArtworkURL != nil {
 			embed.SetImage(*toPlay.Info.ArtworkURL)
 		}
-		embed.SetFooterTextf("Length %s", toPlay.Info.Length)
+		embed.SetFooterTextf("Length: %s", utils.FormatDuration(toPlay.Info.Length))
+		embed.AddField("Track", fmt.Sprintf("[%s](<%s>)", toPlay.Info.Title, *toPlay.Info.URI), true)
+		embed.AddField("Source", toPlay.Info.SourceName, true)
 
 		if len(queue.Tracks) == 0 && b.Lavalink.ExistingPlayer(*e.GuildID()) == nil {
 			embed.SetTitle("Playing")
-			embed.SetDescriptionf("[%s](<%s>)", toPlay.Info.Title, *toPlay.Info.URI)
-
 			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetEmbeds(embed.Build()).Build())
 			return b.Lavalink.Player(*e.GuildID()).Update(context.TODO(), lavalink.WithTrack(*toPlay))
 		}
 
 		embed.SetTitlef("Queued to position %d", len(queue.Tracks)+1)
-		embed.SetDescriptionf("[%s](<%s>)", toPlay.Info.Title, *toPlay.Info.URI)
 		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetEmbeds((embed).Build()).Build())
 		queue.Add(*toPlay)
 		return nil

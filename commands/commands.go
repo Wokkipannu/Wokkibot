@@ -9,11 +9,13 @@ var Commands = []discord.ApplicationCommandCreate{
 	pizzaCommand,
 	fridayCommand,
 	userCommand,
+	quoteCommand,
+	evalCommand,
+	// Music commands
 	playCommand,
 	skipCommand,
 	queueCommand,
 	disconnectCommand,
-	quoteCommand,
 	seekCommand,
-	evalCommand,
+	volumeCommand,
 }

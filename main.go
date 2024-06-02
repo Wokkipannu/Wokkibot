@@ -2,6 +2,7 @@ package main
 
 import (
 	"wokkibot/commands"
+	"wokkibot/components"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/handler"
@@ -23,9 +24,11 @@ func main() {
 	// Music commands
 	r.Command("/play", commands.HandlePlay(b))
 	r.Command("/skip", commands.HandleSkip(b))
+	r.Component("/queue/skip", components.HandleQueueSkipAction(b))
 	r.Command("/queue", commands.HandleQueue(b))
 	r.Command("/disconnect", commands.HandleDisconnect(b))
 	r.Command("/seek", commands.HandleSeek(b))
+	r.Command("/volume", commands.HandleVolume(b))
 
 	b.SetupBot(r)
 	b.InitLavalink()
