@@ -19,7 +19,7 @@ func HandleQueue(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		queue := b.Queues.Get(*e.GuildID())
 		player := b.Lavalink.ExistingPlayer(*e.GuildID())
-		if queue == nil {
+		if queue == nil || player == nil {
 			return e.CreateMessage(discord.MessageCreate{
 				Content: "No player found",
 			})
@@ -27,7 +27,7 @@ func HandleQueue(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		embed := createResponseEmbed(queue, player)
 		if len(queue.Tracks) > 0 || player.Track() != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewPrimaryButton("Skip current track", "/queue/skip")).Build())
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewPrimaryButton("Skip", "/queue/skip").WithEmoji(discord.ComponentEmoji{Name: "⏩"})).Build())
 		}
 		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
 	}
@@ -36,7 +36,7 @@ func HandleQueue(b *wokkibot.Wokkibot) handler.CommandHandler {
 func HandleQueueSkipAction(b *wokkibot.Wokkibot, e *handler.ComponentEvent) error {
 	queue := b.Queues.Get(*e.GuildID())
 	player := b.Lavalink.ExistingPlayer(*e.GuildID())
-	if queue == nil {
+	if queue == nil || player == nil {
 		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().SetContent("No player found").Build())
 	}
 
@@ -52,7 +52,7 @@ func HandleQueueSkipAction(b *wokkibot.Wokkibot, e *handler.ComponentEvent) erro
 	}
 
 	if len(queue.Tracks) > 0 || player.Track() != nil {
-		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().SetContent(content).SetEmbeds(embed.Build()).AddActionRow(discord.NewPrimaryButton("Skip current track", "/queue/skip")).Build())
+		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().SetContent(content).SetEmbeds(embed.Build()).AddActionRow(discord.NewPrimaryButton("Skip", "/queue/skip").WithEmoji(discord.ComponentEmoji{Name: "⏩"})).Build())
 	} else {
 		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().SetContent(content).SetEmbeds(embed.Build()).ClearContainerComponents().Build())
 	}
