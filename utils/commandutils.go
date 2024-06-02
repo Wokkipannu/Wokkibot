@@ -2,10 +2,13 @@ package utils
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgolink/v3/lavalink"
 )
+
+var imageTypes = []string{"image/png", "image/jpeg", "image/gif", "image/webp"}
 
 func QuoteEmbed(msg discord.Message) discord.EmbedBuilder {
 	embed := discord.NewEmbedBuilder()
@@ -14,9 +17,19 @@ func QuoteEmbed(msg discord.Message) discord.EmbedBuilder {
 	embed.SetTimestamp(msg.CreatedAt)
 
 	if len(msg.Attachments) > 0 {
+		var attachments []string
 		for _, attachment := range msg.Attachments {
-			embed.SetImage(attachment.URL)
+			a := fmt.Sprintf("[%s](<%s>)", attachment.Filename, attachment.URL)
+			attachments = append(attachments, a)
+			for _, t := range imageTypes {
+				if *attachment.ContentType == t {
+					embed.SetImage(attachment.URL)
+					break
+				}
+			}
 		}
+
+		embed.AddField("Attachments", strings.Join(attachments, "\n"), true)
 	}
 
 	return *embed
