@@ -22,11 +22,11 @@ func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 
 		slashes := strings.Split(links[0], "/")
 
-		guildId := snowflake.MustParse(slashes[len(slashes)-3])
+		// guildId := snowflake.MustParse(slashes[len(slashes)-3])
 
-		if guildId != *event.Message.GuildID {
-			return
-		}
+		// if guildId != *event.Message.GuildID {
+		// 	return
+		// }
 
 		channelId := snowflake.MustParse(slashes[len(slashes)-2])
 		messageId := snowflake.MustParse(slashes[len(slashes)-1])
