@@ -1,16 +1,44 @@
 package wokkibot
 
 import (
-	"fmt"
+	"encoding/json"
 	"os"
 
-	"github.com/joho/godotenv"
+	"github.com/disgoorg/disgolink/v3/disgolink"
 )
 
-func Config(key string) string {
-	err := godotenv.Load(".env")
+type Config struct {
+	Token   string                 `json:"token"`
+	GuildID string                 `json:"guildid"`
+	Nodes   []disgolink.NodeConfig `json:"nodes"`
+}
+
+func LoadConfig() (*Config, error) {
+	file, err := os.Open("config.json")
 	if err != nil {
-		fmt.Print("Error loading .env file")
+		return nil, err
 	}
-	return os.Getenv(key)
+
+	var cfg Config
+	if err = json.NewDecoder(file).Decode(&cfg); err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
+func SaveConfig(config Config) error {
+	file, err := os.OpenFile("config.json", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = file.Sync()
+		_ = file.Close()
+	}()
+	data, err := json.MarshalIndent(config, "", " ")
+	if err != nil {
+		return err
+	}
+	_, err = file.Write(data)
+	return err
 }

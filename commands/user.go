@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"strings"
 	"time"
-	"wokkibot/utils"
+	"wokkibot/common"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/discord"
@@ -47,7 +47,7 @@ func HandleUser(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		var userFlags []string
 
-		for flag, name := range utils.UserFlags {
+		for flag, name := range common.UserFlags {
 			if user.PublicFlags&flag != 0 {
 				userFlags = append(userFlags, name)
 			}

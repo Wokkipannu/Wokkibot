@@ -5,14 +5,14 @@ import (
 	"strings"
 
 	"github.com/disgoorg/disgo/discord"
-	"github.com/disgoorg/disgolink/v3/lavalink"
 )
 
 var imageTypes = []string{"image/png", "image/jpeg", "image/gif", "image/webp"}
 
+// Creates a quote embed from a message
 func QuoteEmbed(msg discord.Message) discord.EmbedBuilder {
 	embed := discord.NewEmbedBuilder()
-	embed.SetAuthor(msg.Author.Username, "", *msg.Author.AvatarURL())
+	embed.SetAuthor(fmt.Sprintf("Quoting %v", msg.Author.EffectiveName()), "", *msg.Author.AvatarURL())
 	embed.SetDescription(msg.Content)
 	embed.SetTimestamp(msg.CreatedAt)
 
@@ -33,31 +33,4 @@ func QuoteEmbed(msg discord.Message) discord.EmbedBuilder {
 	}
 
 	return *embed
-}
-
-func FormatDuration(duration lavalink.Duration) string {
-	if duration == 0 {
-		return "0 minutes 0 seconds"
-	}
-
-	minutes := duration.Minutes()
-	seconds := duration.SecondsPart()
-
-	minutesText := "minute"
-	secondsText := "second"
-	if minutes > 1 {
-		minutesText += "s"
-	}
-	if seconds == 1 {
-		secondsText += "s"
-	}
-
-	return fmt.Sprintf("%d %s %d %s", minutes, minutesText, seconds, secondsText)
-}
-
-func FormatPosition(position lavalink.Duration) string {
-	if position == 0 {
-		return "0:00"
-	}
-	return fmt.Sprintf("%d:%02d", position.Minutes(), position.SecondsPart())
 }

@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -17,30 +17,25 @@ import (
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/disgolink/v3/disgolink"
+	"github.com/disgoorg/disgolink/v3/lavalink"
+	"github.com/disgoorg/json"
 	"github.com/disgoorg/snowflake/v2"
 	gopiston "github.com/milindmadhukar/go-piston"
 )
 
-func New() *Wokkibot {
+func New(config Config) *Wokkibot {
 	return &Wokkibot{
 		PistonClient: gopiston.CreateDefaultClient(),
+		Config:       config,
 		Queues: &QueueManager{
 			queues: make(map[snowflake.ID]*Queue),
 		},
 	}
 }
 
-var (
-	Token = Config("TOKEN")
-
-	NodeName      = Config("NODE_NAME")
-	NodeAddress   = Config("NODE_ADDRESS")
-	NodePassword  = Config("NODE_PASSWORD")
-	NodeSecure, _ = strconv.ParseBool(Config("NODE_SECURE"))
-)
-
 type Wokkibot struct {
 	Client       bot.Client
+	Config       Config
 	PistonClient *gopiston.Client
 	Lavalink     disgolink.Client
 	Queues       *QueueManager
@@ -48,7 +43,7 @@ type Wokkibot struct {
 
 func (b *Wokkibot) SetupBot(r handler.Router) {
 	var err error
-	b.Client, err = disgo.New(Token,
+	b.Client, err = disgo.New(b.Config.Token,
 		bot.WithGatewayConfigOpts(
 			gateway.WithIntents(gateway.IntentGuildMessages|gateway.IntentDirectMessages|gateway.IntentGuildMessageTyping|gateway.IntentDirectMessageTyping|gateway.IntentMessageContent|gateway.IntentGuilds|gateway.IntentGuildVoiceStates),
 			gateway.WithCompress(true),
@@ -59,19 +54,16 @@ func (b *Wokkibot) SetupBot(r handler.Router) {
 		),
 		bot.WithEventListeners(r),
 		bot.WithCacheConfigOpts(
-			cache.WithCaches(cache.FlagVoiceStates),
+			cache.WithCaches(cache.FlagGuilds, cache.FlagMembers, cache.FlagVoiceStates),
 		),
-		bot.WithEventListenerFunc(b.onVoiceStateUpdate),
-		bot.WithEventListenerFunc(b.onVoiceServerUpdate),
+		bot.WithEventListenerFunc(b.OnDiscordEvent),
 		bot.WithEventListenerFunc(b.onMessageCreate),
-		bot.WithEventListenerFunc(b.OnReady),
 	)
 
 	if err != nil {
 		slog.Error("error while building disgo instance", slog.Any("err", err))
 		return
 	}
-
 }
 
 func (b *Wokkibot) SyncGuildCommands(commands []discord.ApplicationCommandCreate, guildID snowflake.ID) {
@@ -83,12 +75,6 @@ func (b *Wokkibot) SyncGuildCommands(commands []discord.ApplicationCommandCreate
 func (b *Wokkibot) SyncGlobalCommands(commands []discord.ApplicationCommandCreate) {
 	if _, err := b.Client.Rest().SetGlobalCommands(b.Client.ApplicationID(), commands); err != nil {
 		slog.Error("error while registering global commands", slog.Any("err", err))
-	}
-}
-
-func (b *Wokkibot) OnReady(_ *events.Ready) {
-	if err := b.Client.SetPresence(context.TODO(), gateway.WithListeningActivity("Bobr kurwa 🦫"), gateway.WithOnlineStatus(discord.OnlineStatusOnline)); err != nil {
-		slog.Error("error while setting presence", slog.Any("err", err))
 	}
 }
 
@@ -104,26 +90,36 @@ func (b *Wokkibot) InitLavalink() {
 		disgolink.WithListenerFunc(b.onUnknownEvent),
 	)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	var wg sync.WaitGroup
+	for i := range b.Config.Nodes {
+		wg.Add(1)
+		cfg := b.Config.Nodes[i]
+		go func() {
+			defer wg.Done()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			node, err := b.Lavalink.AddNode(ctx, cfg)
+			if err != nil {
+				slog.Error("error while adding lavalink node", slog.Any("err", err))
+				return
+			}
 
-	node, err := b.Lavalink.AddNode(ctx, disgolink.NodeConfig{
-		Name:     NodeName,
-		Address:  NodeAddress,
-		Password: NodePassword,
-		Secure:   NodeSecure,
-	})
+			if err = node.Update(context.Background(), lavalink.SessionUpdate{
+				Resuming: json.Ptr(true),
+				Timeout:  json.Ptr(100),
+			}); err != nil {
+				slog.Error("error while updating lavalink node", slog.Any("err", err))
+			}
 
-	if err != nil {
-		slog.Error("error while adding lavalink node", slog.Any("err", err))
+			version, err := node.Version(ctx)
+			if err != nil {
+				slog.Error("error while getting lavalink version", slog.Any("err", err))
+			}
+
+			slog.Info("Lavalink connection established", slog.String("node_version", version), slog.String("node_session_id", node.SessionID()))
+		}()
 	}
-
-	version, err := node.Version(ctx)
-	if err != nil {
-		slog.Error("error while getting lavalink version", slog.Any("err", err))
-	}
-
-	slog.Info("Lavalink connection established", slog.String("node_version", version), slog.String("node_session_id", node.SessionID()))
+	wg.Wait()
 }
 
 func (b *Wokkibot) Start() {
@@ -137,16 +133,49 @@ func (b *Wokkibot) Start() {
 	<-s
 }
 
-func (b *Wokkibot) onVoiceStateUpdate(event *events.GuildVoiceStateUpdate) {
-	if event.VoiceState.UserID != b.Client.ApplicationID() {
-		return
+func (b *Wokkibot) Close() {
+	b.Lavalink.ForNodes(func(node disgolink.Node) {
+		for i, cfgNode := range b.Config.Nodes {
+			if node.Config().Name == cfgNode.Name {
+				b.Config.Nodes[i].SessionID = node.SessionID()
+			}
+		}
+	})
+
+	if err := SaveConfig(b.Config); err != nil {
+		slog.Error("error while saving config", slog.Any("err", err))
 	}
-	b.Lavalink.OnVoiceStateUpdate(context.TODO(), event.VoiceState.GuildID, event.VoiceState.ChannelID, event.VoiceState.SessionID)
-	if event.VoiceState.ChannelID == nil {
-		b.Queues.Delete(event.VoiceState.GuildID)
-	}
+	b.Lavalink.Close()
+	b.Client.Close(context.Background())
 }
 
-func (b *Wokkibot) onVoiceServerUpdate(event *events.VoiceServerUpdate) {
-	b.Lavalink.OnVoiceServerUpdate(context.TODO(), event.GuildID, event.Token, *event.Endpoint)
+// func (b *Wokkibot) RestorePlayers() {
+// 	b.Lavalink.ForPlayers(func(player disgolink.Player) {
+// 		voiceState, ok := b.Client.Caches().VoiceState(player.GuildID(), b.Client.ApplicationID())
+// 		if !ok {
+// 			return
+// 		}
+// 		player.OnVoiceStateUpdate(context.Background(), voiceState.ChannelID, voiceState.SessionID)
+// 	})
+// }
+
+func (b *Wokkibot) OnDiscordEvent(event bot.Event) {
+	switch e := event.(type) {
+	case *events.Ready:
+		if err := b.Client.SetPresence(context.TODO(), gateway.WithListeningActivity("Bobr kurwa 🦫"), gateway.WithOnlineStatus(discord.OnlineStatusOnline)); err != nil {
+			slog.Error("error while setting presence", slog.Any("err", err))
+		}
+	case *events.GuildVoiceStateUpdate:
+		if e.VoiceState.UserID != b.Client.ApplicationID() {
+			return
+		}
+		b.Lavalink.OnVoiceStateUpdate(context.TODO(), e.VoiceState.GuildID, e.VoiceState.ChannelID, e.VoiceState.SessionID)
+		if e.VoiceState.ChannelID == nil {
+			b.Queues.Delete(e.VoiceState.GuildID)
+		}
+	case *events.VoiceServerUpdate:
+		b.Lavalink.OnVoiceServerUpdate(context.TODO(), e.GuildID, e.Token, *e.Endpoint)
+		// case *events.GuildReady:
+		// 	b.RestorePlayers()
+	}
 }

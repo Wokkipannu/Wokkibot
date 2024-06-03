@@ -8,7 +8,7 @@ Wokkibot rewritten yet again. This time in GO using DisGo.
 * /play
 * /skip
 * /seek
-* /volume - Not yet
+* /volume
 * /queue
 * /disconnect
 ##### Other commands
@@ -23,15 +23,22 @@ Wokkibot rewritten yet again. This time in GO using DisGo.
 
 # Setup
 * Get [Lavalink](https://github.com/freyacodes/Lavalink)
-* Setup .env
+* Setup config.json
 * Run `go run main.go` or build
 
-# .env
+# config.json example
 ```
-TOKEN=DISCORD_TOKEN
-GUILDID=EMPTY_OR_GUILD_ID
-NODE_NAME=NODE_NAME
-NODE_ADDRESS=localhost:2333
-NODE_PASSWORD=LAVALINK_PASSWORD
-NODE_SECURE=false
+{
+ "token": "", // Discord bot token
+ "guildid": "", // Discord guild id if you want to restrict commands to a specific guild
+ "nodes": [
+  {
+   "name": "",
+   "address": "localhost:2333",
+   "password": "youshallnotpass",
+   "secure": false,
+   "session_id": ""
+  }
+ ]
+}
 ```

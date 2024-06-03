@@ -18,4 +18,4 @@ services:
     depends_on:
       - lavalink
     volumes:
-      - /opt/Wokkibot/.env:/.env
+      - /opt/Wokkibot/config.json:/config.json

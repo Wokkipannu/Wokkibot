@@ -13,10 +13,10 @@ jobs:
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
-        password: ${{ secrets.PASSWORD }}
+        key: ${{ secrets.KEY }}
         port: ${{ secrets.PORT }}
         script: |
-          cd Wokkibot-Go-Disgo
+          cd ${{ secrets.FOLDER }}
           git pull
           docker-compose build wokkibot
           docker-compose up -d --no-deps wokkibot

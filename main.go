@@ -10,7 +10,13 @@ import (
 )
 
 func main() {
-	b := wokkibot.New()
+	cfg, err := wokkibot.LoadConfig()
+	if err != nil {
+		panic("failed to load config: " + err.Error())
+	}
+
+	b := wokkibot.New(*cfg)
+	defer b.Close()
 
 	r := handler.New()
 	r.Command("/ping", commands.HandlePing(b))
@@ -32,8 +38,8 @@ func main() {
 
 	b.SetupBot(r)
 	b.InitLavalink()
-	if wokkibot.Config("GUILDID") != "" {
-		b.SyncGuildCommands(commands.Commands, snowflake.MustParse(wokkibot.Config("GUILDID")))
+	if b.Config.GuildID != "" {
+		b.SyncGuildCommands(commands.Commands, snowflake.MustParse(b.Config.GuildID))
 	} else {
 		b.SyncGlobalCommands(commands.Commands)
 	}
