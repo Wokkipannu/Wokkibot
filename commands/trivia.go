@@ -232,7 +232,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 		embed := discord.NewEmbedBuilder()
 		embed.SetTitle("Trivia Question")
 		embed.AddField("Difficulty", trivia.Difficulty, true)
-		embed.AddField("Category", trivia.Category, true)
+		embed.AddField("Category", html.UnescapeString(trivia.Category), true)
 		embed.SetColor(utils.RGBToInteger(255, 215, 0))
 		embed.SetDescription(html.UnescapeString(trivia.Question))
 		embed.SetFooterText("Type your answers below. Time limit 60 seconds.")
@@ -295,13 +295,23 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 						hintEmbed := discord.NewEmbedBuilder()
 						hintEmbed.SetTitle("Trivia Hint")
-						hintEmbed.SetDescription(trivia.Question)
+						hintEmbed.SetDescription(html.UnescapeString(trivia.Question))
 						hintEmbed.AddField("Choices", strings.Join(options, "\n"), true)
+						hintEmbed.SetColor(utils.RGBToInteger(255, 215, 0))
 
 						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(hintEmbed.Build()).SetMessageReference(messageEvent.Message.MessageReference).Build())
 						if err != nil {
 							slog.Error("Error while sending hint", slog.Any("err", err))
 						}
+					}
+
+					if strings.ToLower(messageEvent.Message.Content) == "skip" {
+						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetContentf("Skipped. The answer was %v", trivia.CorrectAnswer).SetMessageReference(messageEvent.Message.MessageReference).Build())
+						if err != nil {
+							slog.Error("Error while sending skip message", slog.Any("err", err))
+						}
+						t.SetStatus(false)
+						return
 					}
 				}
 			}

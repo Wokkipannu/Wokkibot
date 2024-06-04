@@ -11,6 +11,7 @@ Wokkibot rewritten yet again. This time in GO using DisGo.
 * /volume
 * /queue
 * /disconnect
+* /trivia
 ##### Other commands
 * /friday
 * /roll
