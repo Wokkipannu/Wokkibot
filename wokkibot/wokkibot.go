@@ -30,6 +30,9 @@ func New(config Config) *Wokkibot {
 		Queues: &QueueManager{
 			queues: make(map[snowflake.ID]*Queue),
 		},
+		Trivias: &TriviaManager{
+			trivias: make(map[snowflake.ID]*Trivia),
+		},
 	}
 }
 
@@ -39,10 +42,12 @@ type Wokkibot struct {
 	PistonClient *gopiston.Client
 	Lavalink     disgolink.Client
 	Queues       *QueueManager
+	Trivias      *TriviaManager
 }
 
 func (b *Wokkibot) SetupBot(r handler.Router) {
 	var err error
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	b.Client, err = disgo.New(b.Config.Token,
 		bot.WithGatewayConfigOpts(
 			gateway.WithIntents(gateway.IntentGuildMessages|gateway.IntentDirectMessages|gateway.IntentGuildMessageTyping|gateway.IntentDirectMessageTyping|gateway.IntentMessageContent|gateway.IntentGuilds|gateway.IntentGuildVoiceStates),
@@ -52,12 +57,20 @@ func (b *Wokkibot) SetupBot(r handler.Router) {
 				gateway.WithOnlineStatus(discord.OnlineStatusDND),
 			),
 		),
+		// bot.WithShardManagerConfigOpts(
+		// 	sharding.WithGatewayConfigOpts(
+		// 		gateway.WithCompress(false),
+		// 		gateway.WithIntents(gateway.IntentGuildMessages|gateway.IntentDirectMessages|gateway.IntentGuildMessageTyping|gateway.IntentDirectMessageTyping|gateway.IntentMessageContent|gateway.IntentGuilds|gateway.IntentGuildVoiceStates),
+		// 	),
+		// 	sharding.WithRateLimiter(sharding.NewNoopRateLimiter()),
+		// ),
 		bot.WithEventListeners(r),
 		bot.WithCacheConfigOpts(
 			cache.WithCaches(cache.FlagGuilds, cache.FlagMembers, cache.FlagVoiceStates),
 		),
 		bot.WithEventListenerFunc(b.OnDiscordEvent),
 		bot.WithEventListenerFunc(b.onMessageCreate),
+		bot.WithLogger(logger),
 	)
 
 	if err != nil {
@@ -126,6 +139,8 @@ func (b *Wokkibot) Start() {
 	if err := b.Client.OpenGateway(context.TODO()); err != nil {
 		slog.Error("error while opening gateway", slog.Any("err", err))
 	}
+
+	// b.Client.OpenShardManager(context.Background())
 
 	slog.Info("Wokkibot is now running. Press CTRL-C to exit.")
 	s := make(chan os.Signal, 1)
