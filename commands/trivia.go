@@ -229,17 +229,28 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 		trivia := triviaResponse.Trivia[0]
 
+		var options []string
+		options = append(options, trivia.IncorrectAnswers...)
+		options = append(options, trivia.CorrectAnswer)
+
+		options = ShuffleOptions(options)
+
 		embed := discord.NewEmbedBuilder()
 		embed.SetTitle("Trivia Question")
+
+		if strings.Contains(strings.ToLower(trivia.Question), "which of the following") {
+			embed.AddField("Choices", strings.Join(options, "\n"), false)
+		}
+
 		embed.AddField("Difficulty", trivia.Difficulty, true)
 		embed.AddField("Category", html.UnescapeString(trivia.Category), true)
 		embed.SetColor(utils.RGBToInteger(255, 215, 0))
 		embed.SetDescription(html.UnescapeString(trivia.Question))
-		embed.SetFooterText("Type your answers below. Time limit 60 seconds.")
+		embed.SetFooterText("Type your answers below. Time limit 60 seconds. You can type hint or skip if you are stuck.")
 		// embed.AddField("Correct answer", fmt.Sprintf("||%v||", trivia.CorrectAnswer), true)
 		// embed.AddField("Answers", strings.Join(trivia.IncorrectAnswers, "\n"), true)
 
-		go func(channel snowflake.ID) {
+		go func(channel snowflake.ID, options []string) {
 			defer func() {
 				if r := recover(); r != nil {
 					slog.Error("Recovered from panic in goroutine", slog.Any("recover", r))
@@ -257,7 +268,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 			for {
 				select {
 				case <-ctx.Done():
-					_, err := b.Client.Rest().CreateMessage(channel, discord.NewMessageCreateBuilder().SetContentf("Trivia timed out. The correct answer was %v", trivia.CorrectAnswer).Build())
+					_, err := b.Client.Rest().CreateMessage(channel, discord.NewMessageCreateBuilder().SetContentf("Trivia timed out. The correct answer was %v", html.UnescapeString(trivia.CorrectAnswer)).Build())
 					if err != nil {
 						slog.Error("Error while sending timeout message", slog.Any("err", err))
 					}
@@ -270,12 +281,8 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 						continue
 					}
 
-					distance := levenshtein.DistanceForStrings([]rune(strings.ToLower(trivia.CorrectAnswer)), []rune(strings.ToLower(messageEvent.Message.Content)), levenshtein.DefaultOptions)
-
-					threshold := utf8.RuneCountInString(trivia.CorrectAnswer) / 2
-
-					if distance <= threshold {
-						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetContentf("%v got it correct! The correct answer was %v", messageEvent.Message.Author.EffectiveName(), trivia.CorrectAnswer).SetMessageReference(messageEvent.Message.MessageReference).Build())
+					if ValidateTriviaAnswer(messageEvent.Message.Content, trivia.CorrectAnswer) {
+						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetContentf("%v got it correct! The correct answer was %v", messageEvent.Message.Author.EffectiveName(), html.UnescapeString(trivia.CorrectAnswer)).SetMessageReference(messageEvent.Message.MessageReference).Build())
 						if err != nil {
 							slog.Error("Error while sending correct answer message", slog.Any("err", err))
 						}
@@ -284,15 +291,6 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 					}
 
 					if strings.ToLower(messageEvent.Message.Content) == "hint" {
-						var options []string
-						options = append(options, trivia.IncorrectAnswers...)
-						options = append(options, trivia.CorrectAnswer)
-
-						for i := range options {
-							j := rand.Intn(i + 1)
-							options[i], options[j] = html.UnescapeString(options[j]), html.UnescapeString(options[i])
-						}
-
 						hintEmbed := discord.NewEmbedBuilder()
 						hintEmbed.SetTitle("Trivia Hint")
 						hintEmbed.SetDescription(html.UnescapeString(trivia.Question))
@@ -306,7 +304,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 					}
 
 					if strings.ToLower(messageEvent.Message.Content) == "skip" {
-						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetContentf("Skipped. The answer was %v", trivia.CorrectAnswer).SetMessageReference(messageEvent.Message.MessageReference).Build())
+						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetContentf("Skipped. The answer was %v", html.UnescapeString(trivia.CorrectAnswer)).SetMessageReference(messageEvent.Message.MessageReference).Build())
 						if err != nil {
 							slog.Error("Error while sending skip message", slog.Any("err", err))
 						}
@@ -315,9 +313,31 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 					}
 				}
 			}
-		}(e.Channel().ID())
+		}(e.Channel().ID(), options)
 
 		t.SetStatus(true)
 		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+	}
+}
+
+func ShuffleOptions(options []string) []string {
+	for i := range options {
+		j := rand.Intn(i + 1)
+		options[i], options[j] = html.UnescapeString(options[j]), html.UnescapeString(options[i])
+	}
+	return options
+}
+
+func ValidateTriviaAnswer(answer string, correct string) bool {
+	thresholdValue := 2
+
+	if len(correct) < 6 {
+		return strings.EqualFold(correct, answer)
+	} else {
+		distance := levenshtein.DistanceForStrings([]rune(strings.ToLower(correct)), []rune(strings.ToLower(answer)), levenshtein.DefaultOptions)
+
+		threshold := utf8.RuneCountInString(correct) / thresholdValue
+
+		return distance <= threshold
 	}
 }
