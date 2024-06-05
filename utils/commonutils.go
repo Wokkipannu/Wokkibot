@@ -52,7 +52,8 @@ func StringMatch(a, b string) bool {
 	}
 	similarityRatio := (longest - float64(distance)) / longest
 
-	return distance <= threshold && similarityRatio > 0.8
+	lengthDifference := float64(len(a)) / float64(len(b))
+	return distance <= threshold && similarityRatio > 0.8 && lengthDifference > 0.75 && lengthDifference < 1.25
 }
 
 // Dump goroutines for debugging
