@@ -236,7 +236,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 		embed := discord.NewEmbedBuilder()
 		embed.SetTitle("Trivia Question")
 
-		if strings.Contains(strings.ToLower(trivia.Question), "which of the following") || strings.Contains(strings.ToLower(trivia.Question), "which of these") {
+		if strings.Contains(strings.ToLower(trivia.Question), "which of the following") || strings.Contains(strings.ToLower(trivia.Question), "which of these") || strings.Contains(strings.ToLower(trivia.Question), "which one of these") {
 			embed.AddField("Choices", strings.Join(options, "\n"), false)
 		}
 
