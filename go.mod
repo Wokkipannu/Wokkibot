@@ -11,6 +11,11 @@ require (
 )
 
 require (
+	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
+	golang.org/x/text v0.16.0 // indirect
+)
+
+require (
 	github.com/disgoorg/json v1.1.0
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/milindmadhukar/go-piston v0.0.0-20230505104304-ceae9b10dffa

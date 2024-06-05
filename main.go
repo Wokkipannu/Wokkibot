@@ -1,12 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"net/http"
-	"os"
-	"runtime/pprof"
-	"time"
 	"wokkibot/commands"
 	"wokkibot/components"
 	"wokkibot/wokkibot"
@@ -15,16 +9,7 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 )
 
-func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
-	dumpGoroutines()
-}
-
 func main() {
-	http.HandleFunc("/health", healthCheckHandler)
-	go http.ListenAndServe(":8080", nil)
-
 	cfg, err := wokkibot.LoadConfig()
 	if err != nil {
 		panic("failed to load config: " + err.Error())
@@ -61,15 +46,4 @@ func main() {
 		b.SyncGlobalCommands(commands.Commands)
 	}
 	b.Start()
-}
-
-func dumpGoroutines() {
-	timestamp := time.Now().Format("2006-01-02T15-04-05")
-	filename := fmt.Sprintf("goroutine_dump_%v.txt", timestamp)
-	f, err := os.Create(filename)
-	if err != nil {
-		log.Fatal("could not create goroutine dump file:", err)
-	}
-	defer f.Close()
-	pprof.Lookup("goroutine").WriteTo(f, 1)
 }

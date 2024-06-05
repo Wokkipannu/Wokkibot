@@ -9,14 +9,12 @@ import (
 	"net/url"
 	"strings"
 	"time"
-	"unicode/utf8"
 	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/snowflake/v2"
-	"github.com/texttheater/golang-levenshtein/levenshtein"
 	"golang.org/x/net/context"
 )
 
@@ -238,7 +236,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 		embed := discord.NewEmbedBuilder()
 		embed.SetTitle("Trivia Question")
 
-		if strings.Contains(strings.ToLower(trivia.Question), "which of the following") {
+		if strings.Contains(strings.ToLower(trivia.Question), "which of the following") || strings.Contains(strings.ToLower(trivia.Question), "which of these") {
 			embed.AddField("Choices", strings.Join(options, "\n"), false)
 		}
 
@@ -281,7 +279,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 						continue
 					}
 
-					if ValidateTriviaAnswer(messageEvent.Message.Content, trivia.CorrectAnswer) {
+					if ValidateTriviaAnswer(messageEvent.Message.Content, html.UnescapeString(trivia.CorrectAnswer)) {
 						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetContentf("%v got it correct! The correct answer was %v", messageEvent.Message.Author.EffectiveName(), html.UnescapeString(trivia.CorrectAnswer)).SetMessageReference(messageEvent.Message.MessageReference).Build())
 						if err != nil {
 							slog.Error("Error while sending correct answer message", slog.Any("err", err))
@@ -328,16 +326,17 @@ func ShuffleOptions(options []string) []string {
 	return options
 }
 
-func ValidateTriviaAnswer(answer string, correct string) bool {
-	thresholdValue := 2
-
-	if len(correct) < 6 {
-		return strings.EqualFold(correct, answer)
-	} else {
-		distance := levenshtein.DistanceForStrings([]rune(strings.ToLower(correct)), []rune(strings.ToLower(answer)), levenshtein.DefaultOptions)
-
-		threshold := utf8.RuneCountInString(correct) / thresholdValue
-
-		return distance <= threshold
+func ValidateTriviaAnswer(answer, correct string) bool {
+	if utils.IsNumeric(answer) {
+		cleanedUserAnswer := utils.CleanNumericAnswer(answer)
+		cleanedCorrectAnswer := utils.CleanNumericAnswer(correct)
+		return cleanedUserAnswer == cleanedCorrectAnswer
 	}
+
+	if year, err := utils.ExtractYear(answer); err == nil {
+		cleanedUserAnswer := utils.CleanNumericAnswer(answer)
+		return cleanedUserAnswer == year
+	}
+
+	return utils.StringMatch(strings.ToLower(answer), strings.ToLower(correct))
 }
