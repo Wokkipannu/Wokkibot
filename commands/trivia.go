@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"fmt"
 	"html"
 	"io"
 	"log/slog"
@@ -197,68 +198,19 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Trivia is already running. Wait for it to finish first.").Build())
 		}
 
-		apiEndpoint := "https://opentdb.com/api.php"
-		queryParams := url.Values{}
-
 		if b.Config.TriviaToken == "" {
-			res, err := b.Client.Rest().HTTPClient().Get("https://opentdb.com/api_token.php?command=request")
-			if err != nil {
-				slog.Error("Error while getting trivia token", slog.Any("err", err))
-			}
-			defer res.Body.Close()
-
-			body, err := io.ReadAll(res.Body)
-			if err != nil {
-				slog.Error("Error while reading trivia token", slog.Any("err", err))
-			}
-
-			var tokenResponse TokenRes
-			err = json.Unmarshal(body, &tokenResponse)
-			if err != nil {
-				slog.Error("Error while parsing trivia token", slog.Any("err", err))
-			}
-
-			b.Config.TriviaToken = tokenResponse.Token
+			FetchToken(b)
 		}
 
-		queryParams.Add("amount", "1")
-		queryParams.Add("token", b.Config.TriviaToken) // Random token so we don't get same questions repeated
-
-		if category, ok := data.OptString("category"); ok {
-			queryParams.Add("category", category)
-		}
-
-		if difficulty, ok := data.OptString("difficulty"); ok {
-			queryParams.Add("difficulty", difficulty)
-		}
-		if type_, ok := data.OptString("type"); ok {
-			queryParams.Add("type", type_)
-		} else {
-			queryParams.Add("type", "multiple")
-		}
-
-		res, err := b.Client.Rest().HTTPClient().Get(apiEndpoint + "?" + queryParams.Encode())
+		_trivia, err := FetchTrivia(b, data)
 		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while fetching data").Build())
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while fetching trivia. Maybe the API is down?").Build())
 		}
 
-		defer res.Body.Close()
-
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while reading data").Build())
-		}
-
-		var triviaResponse Res
-		err = json.Unmarshal(body, &triviaResponse)
-		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while parsing data").Build())
-		}
-
-		if len(triviaResponse.Trivia) == 0 {
+		if len(_trivia) == 0 {
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("API did not return any trivia. Try again later.").Build())
 		}
-		trivia := triviaResponse.Trivia[0]
+		trivia := _trivia[0]
 
 		var options []string
 		options = append(options, trivia.IncorrectAnswers...)
@@ -418,4 +370,80 @@ func ValidateTriviaAnswer(answer, correct string) bool {
 	}
 
 	return utils.StringMatch(strings.ToLower(answer), strings.ToLower(correct))
+}
+
+func FetchToken(b *wokkibot.Wokkibot) {
+	res, err := b.Client.Rest().HTTPClient().Get("https://opentdb.com/api_token.php?command=request")
+	if err != nil {
+		slog.Error("Error while getting trivia token", slog.Any("err", err))
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		slog.Error("Error while reading trivia token", slog.Any("err", err))
+	}
+
+	var tokenResponse TokenRes
+	err = json.Unmarshal(body, &tokenResponse)
+	if err != nil {
+		slog.Error("Error while parsing trivia token", slog.Any("err", err))
+	}
+
+	b.Config.TriviaToken = tokenResponse.Token
+}
+
+var tries = 0
+
+func FetchTrivia(b *wokkibot.Wokkibot, data discord.SlashCommandInteractionData) ([]TriviaQuestion, error) {
+	apiEndpoint := "https://opentdb.com/api.php"
+	queryParams := url.Values{}
+
+	queryParams.Add("amount", "1")
+	queryParams.Add("token", b.Config.TriviaToken) // Random token so we don't get same questions repeated
+
+	if category, ok := data.OptString("category"); ok {
+		queryParams.Add("category", category)
+	}
+
+	if difficulty, ok := data.OptString("difficulty"); ok {
+		queryParams.Add("difficulty", difficulty)
+	}
+	if type_, ok := data.OptString("type"); ok {
+		queryParams.Add("type", type_)
+	} else {
+		queryParams.Add("type", "multiple")
+	}
+
+	res, err := b.Client.Rest().HTTPClient().Get(apiEndpoint + "?" + queryParams.Encode())
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var triviaResponse Res
+	err = json.Unmarshal(body, &triviaResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	switch triviaResponse.Code {
+	case 3:
+		FetchToken(b)
+		tries++
+		if tries > 3 {
+			return nil, fmt.Errorf("token expired")
+		}
+		return FetchTrivia(b, data)
+	case 5:
+		return nil, fmt.Errorf("too many requests in a short period of time")
+	}
+
+	return triviaResponse.Trivia, nil
 }
