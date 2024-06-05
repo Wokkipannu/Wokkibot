@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Token   string                 `json:"token"`
-	GuildID string                 `json:"guildid"`
-	Nodes   []disgolink.NodeConfig `json:"nodes"`
+	Token       string                 `json:"token"`
+	GuildID     string                 `json:"guildid"`
+	Nodes       []disgolink.NodeConfig `json:"nodes"`
+	TriviaToken string                 `json:"trivia_token"`
 }
 
 func LoadConfig() (*Config, error) {

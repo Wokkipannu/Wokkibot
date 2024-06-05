@@ -2,7 +2,6 @@ package commands
 
 import (
 	"encoding/json"
-	"fmt"
 	"html"
 	"io"
 	"log/slog"
@@ -24,6 +23,12 @@ type Res struct {
 	Trivia []TriviaQuestion `json:"results"`
 }
 
+type TokenRes struct {
+	Code    int    `json:"response_code"`
+	Message string `json:"response_message"`
+	Token   string `json:"token"`
+}
+
 type TriviaQuestion struct {
 	Type             string   `json:"type"`
 	Difficulty       string   `json:"difficulty"`
@@ -31,6 +36,11 @@ type TriviaQuestion struct {
 	Question         string   `json:"question"`
 	CorrectAnswer    string   `json:"correct_answer"`
 	IncorrectAnswers []string `json:"incorrect_answers"`
+}
+
+type Answers struct {
+	ID           snowflake.ID
+	AnswersCount int
 }
 
 var triviaCommand = discord.SlashCommandCreate{
@@ -190,7 +200,29 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 		apiEndpoint := "https://opentdb.com/api.php"
 		queryParams := url.Values{}
 
+		if b.Config.TriviaToken == "" {
+			res, err := b.Client.Rest().HTTPClient().Get("https://opentdb.com/api_token.php?command=request")
+			if err != nil {
+				slog.Error("Error while getting trivia token", slog.Any("err", err))
+			}
+			defer res.Body.Close()
+
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				slog.Error("Error while reading trivia token", slog.Any("err", err))
+			}
+
+			var tokenResponse TokenRes
+			err = json.Unmarshal(body, &tokenResponse)
+			if err != nil {
+				slog.Error("Error while parsing trivia token", slog.Any("err", err))
+			}
+
+			b.Config.TriviaToken = tokenResponse.Token
+		}
+
 		queryParams.Add("amount", "1")
+		queryParams.Add("token", b.Config.TriviaToken) // Random token so we don't get same questions repeated
 
 		if category, ok := data.OptString("category"); ok {
 			queryParams.Add("category", category)
@@ -264,17 +296,37 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 			ctx, clsCtx := context.WithTimeout(context.Background(), 60*time.Second)
 			defer clsCtx()
 
+			var answers []Answers
+			answersIndexMap := make(map[snowflake.ID]int)
+
+			addOrUpdateUser := func(id snowflake.ID, answerCount int) {
+				if index, exists := answersIndexMap[id]; exists {
+					answers[index].AnswersCount = answers[index].AnswersCount + answerCount
+				} else {
+					user := Answers{ID: id, AnswersCount: answerCount}
+					answers = append(answers, user)
+					answersIndexMap[id] = len(answers) - 1
+				}
+			}
+
+			getUserByID := func(id snowflake.ID) *Answers {
+				if index, exists := answersIndexMap[id]; exists {
+					return &answers[index]
+				}
+				return nil
+			}
+
 			for {
 				select {
 				case <-ctx.Done():
-					correctEmbed := discord.NewEmbedBuilder()
-					correctEmbed.SetTitle("Trivia ended")
-					correctEmbed.SetDescription("No one guessed in time.")
-					correctEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
-					correctEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
-					correctEmbed.SetColor(utils.RGBToInteger(215, 0, 0))
+					timeoutEmbed := discord.NewEmbedBuilder()
+					timeoutEmbed.SetTitle("Trivia ended")
+					timeoutEmbed.SetDescription("No one guessed in time.")
+					timeoutEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
+					timeoutEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
+					timeoutEmbed.SetColor(utils.RGBToInteger(215, 0, 0))
 
-					_, err := b.Client.Rest().CreateMessage(channel, discord.NewMessageCreateBuilder().SetEmbeds(correctEmbed.Build()).Build())
+					_, err := b.Client.Rest().CreateMessage(channel, discord.NewMessageCreateBuilder().SetEmbeds(timeoutEmbed.Build()).Build())
 					if err != nil {
 						slog.Error("Error while sending timeout message", slog.Any("err", err))
 					}
@@ -285,24 +337,6 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 					if messageEvent == nil {
 						slog.Warn("Received nil message event", slog.Any("channel", channel))
 						continue
-					}
-
-					if ValidateTriviaAnswer(messageEvent.Message.Content, html.UnescapeString(trivia.CorrectAnswer)) {
-						correctEmbed := discord.NewEmbedBuilder()
-						correctEmbed.SetTitle("Trivia ended")
-						correctEmbed.SetDescriptionf("%v got it correct!", messageEvent.Message.Author.EffectiveName())
-						correctEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
-						correctEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
-						correctEmbed.SetColor(utils.RGBToInteger(0, 215, 0))
-
-						fmt.Printf("messageEvent.Message.MessageReference: %v\n", messageEvent.Message.MessageReference)
-
-						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(correctEmbed.Build()).SetMessageReferenceByID(messageEvent.Message.ID).Build())
-						if err != nil {
-							slog.Error("Error while sending correct answer message", slog.Any("err", err))
-						}
-						t.SetStatus(false)
-						return
 					}
 
 					if strings.ToLower(messageEvent.Message.Content) == "hint" {
@@ -316,12 +350,40 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 						if err != nil {
 							slog.Error("Error while sending hint", slog.Any("err", err))
 						}
-					}
+					} else if strings.ToLower(messageEvent.Message.Content) == "skip" {
+						skipEmbed := discord.NewEmbedBuilder()
+						skipEmbed.SetTitle("Trivia ended")
+						skipEmbed.SetDescription("Trivia was skipped")
+						skipEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
+						skipEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
+						skipEmbed.SetColor(utils.RGBToInteger(215, 0, 0))
 
-					if strings.ToLower(messageEvent.Message.Content) == "skip" {
-						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetContentf("Skipped. The answer was %v", html.UnescapeString(trivia.CorrectAnswer)).SetMessageReference(messageEvent.Message.MessageReference).Build())
+						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(skipEmbed.Build()).SetMessageReferenceByID(messageEvent.Message.ID).Build())
 						if err != nil {
 							slog.Error("Error while sending skip message", slog.Any("err", err))
+						}
+						t.SetStatus(false)
+						return
+					} else {
+						addOrUpdateUser(messageEvent.Message.Author.ID, 1)
+					}
+
+					if ValidateTriviaAnswer(messageEvent.Message.Content, html.UnescapeString(trivia.CorrectAnswer)) {
+						a := getUserByID(messageEvent.Message.Author.ID)
+						correctEmbed := discord.NewEmbedBuilder()
+						correctEmbed.SetTitle("Trivia ended")
+						if a.AnswersCount == 1 {
+							correctEmbed.SetDescriptionf("%v got it correct in first try!", messageEvent.Message.Author.EffectiveName())
+						} else {
+							correctEmbed.SetDescriptionf("%v got it correct after %v answers!", messageEvent.Message.Author.EffectiveName(), a.AnswersCount)
+						}
+						correctEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
+						correctEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
+						correctEmbed.SetColor(utils.RGBToInteger(0, 215, 0))
+
+						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(correctEmbed.Build()).SetMessageReferenceByID(messageEvent.Message.ID).Build())
+						if err != nil {
+							slog.Error("Error while sending correct answer message", slog.Any("err", err))
 						}
 						t.SetStatus(false)
 						return
