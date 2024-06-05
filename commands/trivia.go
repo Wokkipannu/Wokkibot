@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"fmt"
 	"html"
 	"io"
 	"log/slog"
@@ -236,7 +237,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 		embed := discord.NewEmbedBuilder()
 		embed.SetTitle("Trivia Question")
 
-		if strings.Contains(strings.ToLower(trivia.Question), "which of the following") || strings.Contains(strings.ToLower(trivia.Question), "which of these") || strings.Contains(strings.ToLower(trivia.Question), "which one of these") {
+		if strings.Contains(strings.ToLower(trivia.Question), "which") {
 			embed.AddField("Choices", strings.Join(options, "\n"), false)
 		}
 
@@ -266,7 +267,14 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 			for {
 				select {
 				case <-ctx.Done():
-					_, err := b.Client.Rest().CreateMessage(channel, discord.NewMessageCreateBuilder().SetContentf("Trivia timed out. The correct answer was %v", html.UnescapeString(trivia.CorrectAnswer)).Build())
+					correctEmbed := discord.NewEmbedBuilder()
+					correctEmbed.SetTitle("Trivia ended")
+					correctEmbed.SetDescription("No one guessed in time.")
+					correctEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
+					correctEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
+					correctEmbed.SetColor(utils.RGBToInteger(215, 0, 0))
+
+					_, err := b.Client.Rest().CreateMessage(channel, discord.NewMessageCreateBuilder().SetEmbeds(correctEmbed.Build()).Build())
 					if err != nil {
 						slog.Error("Error while sending timeout message", slog.Any("err", err))
 					}
@@ -280,7 +288,16 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 					}
 
 					if ValidateTriviaAnswer(messageEvent.Message.Content, html.UnescapeString(trivia.CorrectAnswer)) {
-						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetContentf("%v got it correct! The correct answer was %v", messageEvent.Message.Author.EffectiveName(), html.UnescapeString(trivia.CorrectAnswer)).SetMessageReference(messageEvent.Message.MessageReference).Build())
+						correctEmbed := discord.NewEmbedBuilder()
+						correctEmbed.SetTitle("Trivia ended")
+						correctEmbed.SetDescriptionf("%v got it correct!", messageEvent.Message.Author.EffectiveName())
+						correctEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
+						correctEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
+						correctEmbed.SetColor(utils.RGBToInteger(0, 215, 0))
+
+						fmt.Printf("messageEvent.Message.MessageReference: %v\n", messageEvent.Message.MessageReference)
+
+						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(correctEmbed.Build()).SetMessageReferenceByID(messageEvent.Message.ID).Build())
 						if err != nil {
 							slog.Error("Error while sending correct answer message", slog.Any("err", err))
 						}
@@ -295,7 +312,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 						hintEmbed.AddField("Choices", strings.Join(options, "\n"), true)
 						hintEmbed.SetColor(utils.RGBToInteger(255, 215, 0))
 
-						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(hintEmbed.Build()).SetMessageReference(messageEvent.Message.MessageReference).Build())
+						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(hintEmbed.Build()).SetMessageReferenceByID(messageEvent.Message.ID).Build())
 						if err != nil {
 							slog.Error("Error while sending hint", slog.Any("err", err))
 						}

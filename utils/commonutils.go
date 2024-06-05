@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/xrash/smetrics"
+	"github.com/agnivade/levenshtein"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -43,7 +43,7 @@ func StringMatch(a, b string) bool {
 	a = RemoveDiacritics(a)
 	b = RemoveDiacritics(b)
 
-	distance := smetrics.WagnerFischer(a, b, 1, 1, 2)
+	distance := levenshtein.ComputeDistance(a, b)
 	threshold := 2
 
 	longest := float64(len(a))
