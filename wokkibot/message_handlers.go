@@ -56,7 +56,7 @@ func HandleCustomCommand(b *Wokkibot, e *events.MessageCreate) {
 
 	for _, cmd := range b.CustomCommands {
 		if cmd.Prefix == prefix && cmd.Name == name {
-			e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(cmd.Output).Build())
+			e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(cmd.Output).SetMessageReferenceByID(e.Message.ID).Build())
 		}
 	}
 }
