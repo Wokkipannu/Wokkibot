@@ -15,7 +15,12 @@ func main() {
 		panic("failed to load config: " + err.Error())
 	}
 
-	b := wokkibot.New(*cfg)
+	customCommands, err := wokkibot.LoadCommands("custom_commands.json")
+	if err != nil {
+		panic("failed to load custom commands: " + err.Error())
+	}
+
+	b := wokkibot.New(*cfg, customCommands)
 	defer b.Close()
 
 	r := handler.New()
@@ -26,6 +31,13 @@ func main() {
 	r.Command("/friday", commands.HandleFriday(b))
 	r.Command("/user", commands.HandleUser(b))
 	r.Command("/trivia", commands.HandleTrivia(b))
+	r.Route("/settings", func(r handler.Router) {
+		r.Route("/commands", func(r handler.Router) {
+			r.Command("/add", commands.HandleCustomAdd(b))
+			r.Command("/remove", commands.HandleCustomRemove(b))
+			r.Command("/list", commands.HandleCustomList(b))
+		})
+	})
 	// Context menu commands
 	r.Command("/Quote", commands.HandleQuote(b))
 	r.Command("/Eval", commands.HandleEval(b))

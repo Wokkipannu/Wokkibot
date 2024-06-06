@@ -19,3 +19,4 @@ services:
       - lavalink
     volumes:
       - /opt/Wokkibot/config.json:/config.json
+      - /opt/Wokkibot/custom_commands.json:/custom_commands.json

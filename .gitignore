@@ -14,3 +14,4 @@
 .env
 /lavalink
 config.json
+custom_commands.json

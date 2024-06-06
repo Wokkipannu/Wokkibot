@@ -13,9 +13,13 @@ import (
 )
 
 func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
-	prefix := "https://discord.com/channels/"
+	HandleQuoteMessages(b, event)
+	HandleCustomCommand(b, event)
+}
 
-	message := event.Message.Content
+func HandleQuoteMessages(b *Wokkibot, e *events.MessageCreate) {
+	prefix := "https://discord.com/channels/"
+	message := e.Message.Content
 
 	if strings.Contains(message, prefix) {
 		links := xurls.Strict.FindAllString(message, -1)
@@ -37,6 +41,22 @@ func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 
 		embed := utils.QuoteEmbed(*msg)
 
-		event.Client().Rest().CreateMessage(event.Message.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewLinkButton("Go to message", links[0])).Build())
+		e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewLinkButton("Go to message", links[0])).Build())
+	}
+}
+
+func HandleCustomCommand(b *Wokkibot, e *events.MessageCreate) {
+	input := e.Message.Content
+
+	if input == "" {
+		return
+	}
+	prefix := string(input[0])
+	name := strings.TrimPrefix(input, prefix)
+
+	for _, cmd := range b.CustomCommands {
+		if cmd.Prefix == prefix && cmd.Name == name {
+			e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(cmd.Output).Build())
+		}
 	}
 }

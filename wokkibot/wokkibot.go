@@ -23,7 +23,7 @@ import (
 	gopiston "github.com/milindmadhukar/go-piston"
 )
 
-func New(config Config) *Wokkibot {
+func New(config Config, customCommands []Command) *Wokkibot {
 	return &Wokkibot{
 		PistonClient: gopiston.CreateDefaultClient(),
 		Config:       config,
@@ -33,16 +33,18 @@ func New(config Config) *Wokkibot {
 		Trivias: &TriviaManager{
 			trivias: make(map[snowflake.ID]*Trivia),
 		},
+		CustomCommands: customCommands,
 	}
 }
 
 type Wokkibot struct {
-	Client       bot.Client
-	Config       Config
-	PistonClient *gopiston.Client
-	Lavalink     disgolink.Client
-	Queues       *QueueManager
-	Trivias      *TriviaManager
+	Client         bot.Client
+	Config         Config
+	PistonClient   *gopiston.Client
+	Lavalink       disgolink.Client
+	Queues         *QueueManager
+	Trivias        *TriviaManager
+	CustomCommands []Command
 }
 
 func (b *Wokkibot) SetupBot(r handler.Router) {
