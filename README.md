@@ -11,13 +11,19 @@ Wokkibot rewritten yet again. This time in GO using DisGo.
 * /volume
 * /queue
 * /disconnect
-* /trivia
 ##### Other commands
 * /friday
 * /roll
 * /pizza
 * /user
 * /flip
+* /trivia
+* /joke
+* /settings
+  * /settings commands
+    * /settings commands add
+    * /settings commands remove
+    * /settings commands list
 ##### Context menu commands
 * Quote
 * Eval
@@ -27,7 +33,8 @@ Wokkibot rewritten yet again. This time in GO using DisGo.
 * Setup config.json
 * Run `go run main.go` or build
 
-# config.json example
+# Configuration
+### config.json example
 ```
 {
  "token": "", // Discord bot token
@@ -43,3 +50,16 @@ Wokkibot rewritten yet again. This time in GO using DisGo.
  ]
 }
 ```
+
+### custom_commands.json
+Create a custom_commands.json file in the same directory as the bot and give it an empty array to start with.
+```
+[]
+```
+
+# TODO
+- [ ] Add SQLite database for storing data
+- [ ] Make custom commands guild based (currently global)
+- [ ] Store Trivia token in database for each guild
+- [ ] Place music related commands under a music/player command as subcommands
+- [ ] Store /friday command clips in database

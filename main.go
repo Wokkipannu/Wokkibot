@@ -38,6 +38,7 @@ func main() {
 			r.Command("/list", commands.HandleCustomList(b))
 		})
 	})
+	r.Command("/joke", commands.HandleJoke(b))
 	// Context menu commands
 	r.Command("/Quote", commands.HandleQuote(b))
 	r.Command("/Eval", commands.HandleEval(b))
