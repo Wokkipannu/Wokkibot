@@ -78,7 +78,7 @@ func HandleCustomAdd(b *wokkibot.Wokkibot) handler.CommandHandler {
 		output := data.String("output")
 
 		for i, cmd := range b.CustomCommands {
-			if cmd.Prefix == prefix && cmd.Name == name {
+			if cmd.Prefix == prefix && cmd.Name == name && cmd.GuildID == *e.GuildID() {
 				if e.User().ID != cmd.Author {
 					return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("You don't have permission to modify %v%v", prefix, name).Build())
 				}
@@ -87,7 +87,6 @@ func HandleCustomAdd(b *wokkibot.Wokkibot) handler.CommandHandler {
 				b.CustomCommands[i].Prefix = prefix
 				b.CustomCommands[i].Name = name
 				b.CustomCommands[i].Description = description
-				b.CustomCommands[i].GuildID = *e.GuildID()
 				wokkibot.AddOrUpdateCommand("custom_commands.json", b.CustomCommands[i])
 				return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Command **%v%v** modified", prefix, name).Build())
 			}
