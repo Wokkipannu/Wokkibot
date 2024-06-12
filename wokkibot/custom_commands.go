@@ -13,6 +13,7 @@ type Command struct {
 	Description string       `json:"description"`
 	Output      string       `json:"output"`
 	Author      snowflake.ID `json:"author"`
+	GuildID     snowflake.ID `json:"guild_id"`
 }
 
 func LoadCommands(filename string) ([]Command, error) {

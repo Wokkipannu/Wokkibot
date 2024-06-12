@@ -87,6 +87,7 @@ func HandleCustomAdd(b *wokkibot.Wokkibot) handler.CommandHandler {
 				b.CustomCommands[i].Prefix = prefix
 				b.CustomCommands[i].Name = name
 				b.CustomCommands[i].Description = description
+				b.CustomCommands[i].GuildID = *e.GuildID()
 				wokkibot.AddOrUpdateCommand("custom_commands.json", b.CustomCommands[i])
 				return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Command **%v%v** modified", prefix, name).Build())
 			}
@@ -98,6 +99,7 @@ func HandleCustomAdd(b *wokkibot.Wokkibot) handler.CommandHandler {
 			Description: description,
 			Output:      output,
 			Author:      e.User().ID,
+			GuildID:     *e.GuildID(),
 		}
 
 		wokkibot.AddOrUpdateCommand("custom_commands.json", newCommand)
@@ -115,29 +117,30 @@ func HandleCustomRemove(b *wokkibot.Wokkibot) handler.CommandHandler {
 		prefix := data.String("prefix")
 		name := data.String("name")
 
-		found := false
+		var commandToRemove *wokkibot.Command
 		for _, cmd := range b.CustomCommands {
-			if cmd.Prefix == prefix && cmd.Name == name {
-				found = true
+			if cmd.Prefix == prefix && cmd.Name == name && cmd.GuildID == *e.GuildID() {
 				if e.User().ID != cmd.Author {
 					return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("You don't have permission to remove %v%v", prefix, name).Build())
 				}
+				commandToRemove = &cmd
+				break
 			}
 		}
 
-		if found {
-			updatedCommands := b.CustomCommands[:0]
+		if commandToRemove != nil {
+			updatedCommands := make([]wokkibot.Command, 0, len(b.CustomCommands))
 			for _, cmd := range b.CustomCommands {
-				if !(cmd.Prefix == prefix && cmd.Name == name) {
-					b.CustomCommands = append(updatedCommands, cmd)
+				if !(cmd.Prefix == prefix && cmd.Name == name && cmd.GuildID == *e.GuildID()) {
+					updatedCommands = append(updatedCommands, cmd)
 				}
 			}
+			b.CustomCommands = updatedCommands
 			wokkibot.RemoveCommand("custom_commands.json", prefix, name)
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Command **%v%v** removed", prefix, name).Build())
 		}
 
 		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Command **%v%v** could not be found", prefix, name).Build())
-
 	}
 }
 
@@ -147,15 +150,17 @@ func HandleCustomList(b *wokkibot.Wokkibot) handler.CommandHandler {
 		var descriptions []string
 		var authors []string
 		for _, cmd := range b.CustomCommands {
-			author, _ := b.Client.Rest().GetUser(cmd.Author)
-			cmds = append(cmds, fmt.Sprintf("%v%v", cmd.Prefix, cmd.Name))
-			descriptions = append(descriptions, cmd.Description)
-			authors = append(authors, fmt.Sprintf("%v", author.EffectiveName()))
+			if cmd.GuildID == *e.GuildID() {
+				author, _ := b.Client.Rest().GetUser(cmd.Author)
+				cmds = append(cmds, fmt.Sprintf("%v%v", cmd.Prefix, cmd.Name))
+				descriptions = append(descriptions, cmd.Description)
+				authors = append(authors, fmt.Sprintf("%v", author.EffectiveName()))
+			}
 		}
 
 		embed := discord.NewEmbedBuilder()
 		embed.SetTitle("Custom commands")
-		if len(b.CustomCommands) == 0 {
+		if len(cmds) == 0 {
 			embed.SetDescription("No custom commands found")
 		} else {
 			embed.AddField("Command", strings.Join(cmds, "\n"), true)
