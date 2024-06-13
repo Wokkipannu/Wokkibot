@@ -2,21 +2,21 @@ name: Deploy
 
 on:
   push:
-    branches: [ disgo ]
+    branches: [ master ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Executing remote ssh commands using password
+    - name: Executing remote ssh commands using key
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
-        password: ${{ secrets.PASSWORD }}
+        key: ${{ secrets.KEY }}
         port: ${{ secrets.PORT }}
         script: |
           cd ${{ secrets.FOLDER }}
           git pull
-          docker-compose build wokkibot
-          docker-compose up -d --no-deps wokkibot
+          docker compose build wokkibot
+          docker compose up -d --no-deps wokkibot
