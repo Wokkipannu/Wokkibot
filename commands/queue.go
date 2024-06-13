@@ -2,68 +2,89 @@ package commands
 
 import (
 	"fmt"
-	"log"
-	"strings"
 	"wokkibot/utils"
+	"wokkibot/wokkibot"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/handler"
+	"github.com/disgoorg/disgolink/v3/disgolink"
 )
 
-var queue = Command{
-	Info: &discordgo.ApplicationCommand{
-		Name:        "queue",
-		Description: "Display queued tracks",
-	},
-	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		if q, found := utils.Queue[i.GuildID]; found {
-			color := Session.State.UserColor(Session.State.User.ID, q.TextChannelID)
+var queueCommand = discord.SlashCommandCreate{
+	Name:        "queue",
+	Description: "View the current queue",
+}
 
-			embed := &discordgo.MessageEmbed{}
-			embed.Color = color
-			embed.Title = "Queue"
-
-			var names []string
-			var tracks []string
-			var durations []string
-
-			for _, track := range q.Queue {
-				duration := track.TrackInfo.Length
-				seconds := (duration / 1000) % 60
-				minutes := (duration / (1000 * 60) % 60)
-				hours := (duration / (1000 * 60 * 60) % 24)
-
-				names = append(names, utils.EscapeString(utils.GetName(track.Requester)))
-				tracks = append(tracks, fmt.Sprintf("[%v](%v)", utils.TruncateString(utils.EscapeString(track.TrackInfo.Title), 50), track.TrackInfo.URI))
-				if track.TrackInfo.Stream {
-					durations = append(durations, "Stream")
-				} else {
-					durations = append(durations, fmt.Sprintf("%v:%v:%v", utils.NumberFormat(hours), utils.NumberFormat(minutes), utils.NumberFormat(seconds)))
-				}
-			}
-
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:   "Title",
-				Value:  strings.Join(tracks, "\n"),
-				Inline: true,
+func HandleQueue(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		queue := b.Queues.Get(*e.GuildID())
+		player := b.Lavalink.ExistingPlayer(*e.GuildID())
+		if queue == nil || player == nil {
+			return e.CreateMessage(discord.MessageCreate{
+				Content: "No player found",
 			})
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:   "Requester",
-				Value:  strings.Join(names, "\n"),
-				Inline: true,
-			})
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:   "Duration",
-				Value:  strings.Join(durations, "\n"),
-				Inline: true,
-			})
-
-			if err := utils.InteractionRespondMessageEmbed(s, i, embed); err != nil {
-				log.Print(err)
-			}
-		} else {
-			if err := utils.InteractionRespondMessage(s, i, "No queue found"); err != nil {
-				log.Print(err)
-			}
 		}
-	},
+
+		embed := createResponseEmbed(queue, player)
+		if len(queue.Tracks) > 0 || player.Track() != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewPrimaryButton("Skip", "/queue/skip").WithEmoji(discord.ComponentEmoji{Name: "⏩"})).Build())
+		}
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+	}
+}
+
+func HandleQueueSkipAction(b *wokkibot.Wokkibot, e *handler.ComponentEvent) error {
+	queue := b.Queues.Get(*e.GuildID())
+	player := b.Lavalink.ExistingPlayer(*e.GuildID())
+	if queue == nil || player == nil {
+		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().SetContent("No player found").Build())
+	}
+
+	err := Skip(b, e.GuildID())
+
+	embed := createResponseEmbed(queue, player)
+
+	var content string
+	if err != nil {
+		content = utils.CapitalizeFirstLetter(err.Error())
+	} else {
+		content = "Skipped track"
+	}
+
+	if len(queue.Tracks) > 0 || player.Track() != nil {
+		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().SetContent(content).SetEmbeds(embed.Build()).AddActionRow(discord.NewPrimaryButton("Skip", "/queue/skip").WithEmoji(discord.ComponentEmoji{Name: "⏩"})).Build())
+	} else {
+		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().SetContent(content).SetEmbeds(embed.Build()).ClearContainerComponents().Build())
+	}
+}
+
+func createResponseEmbed(queue *wokkibot.Queue, player disgolink.Player) *discord.EmbedBuilder {
+	embed := discord.NewEmbedBuilder().SetTitle("Queue")
+	embed.SetColor(utils.RGBToInteger(255, 215, 0))
+	currentTrack := player.Track()
+
+	if currentTrack != nil {
+		embed.AddField("Current track", fmt.Sprintf("[%s](<%s>)", currentTrack.Info.Title, *currentTrack.Info.URI), true)
+		embed.AddField("Source", currentTrack.Info.SourceName, true)
+		embed.AddField("Position", fmt.Sprintf("%s / %s", utils.FormatPosition(player.Position()), utils.FormatPosition(currentTrack.Info.Length)), true)
+	}
+
+	if len(queue.Tracks) == 0 {
+		if currentTrack == nil {
+			embed.SetDescription("No tracks in queue")
+		}
+	} else {
+		var tracks string
+		var sources string
+
+		for i, track := range queue.Tracks {
+			tracks += fmt.Sprintf("%v. [%s](<%s>)\n", i+1, track.Info.Title, *track.Info.URI)
+			sources += track.Info.SourceName + "\n"
+		}
+
+		embed.AddField("Track", tracks, true)
+		embed.AddField("Source", sources, true)
+	}
+
+	return embed
 }

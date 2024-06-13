@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ disgo ]
 
 jobs:
   deploy:
@@ -16,8 +16,7 @@ jobs:
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
         script: |
-          cd Wokkibot-Go
+          cd ${{ secrets.FOLDER }}
           git pull
-          docker build -t wokkipannu/wokkibot-go:latest .
-          docker-compose down
-          docker-compose up -d
+          docker-compose build wokkibot
+          docker-compose up -d --no-deps wokkibot

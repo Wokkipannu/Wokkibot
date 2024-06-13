@@ -1,19 +1,29 @@
 package commands
 
 import (
-	"wokkibot/utils"
+	"context"
+	"wokkibot/wokkibot"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/handler"
 )
 
-var disconnect = Command{
-	Info: &discordgo.ApplicationCommand{
-		Name:        "disconnect",
-		Description: "Disconnect from channel and destroy the player",
-	},
-	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		delete(utils.Queue, i.GuildID)
-		LeaveVoiceChannel(i.GuildID, i.ChannelID)
-		utils.InteractionRespondMessage(s, i, "Queue was deleted and disconnected from voice channel.")
-	},
+var disconnectCommand = discord.SlashCommandCreate{
+	Name:        "disconnect",
+	Description: "Disconnect the bot from the voice channel",
+}
+
+func HandleDisconnect(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		player := b.Lavalink.ExistingPlayer(*e.GuildID())
+		if player == nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No player found").Build())
+		}
+
+		if err := b.Client.UpdateVoiceState(context.TODO(), *e.GuildID(), nil, false, false); err != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Failed to disconnect").Build())
+		}
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Disconnected").Build())
+	}
 }

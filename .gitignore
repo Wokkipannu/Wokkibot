@@ -12,4 +12,6 @@
 *.out
 
 .env
-/dcmd
+/lavalink
+config.json
+custom_commands.json

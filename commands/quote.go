@@ -1,61 +1,23 @@
 package commands
 
 import (
-	"log"
-	"time"
 	"wokkibot/utils"
+	"wokkibot/wokkibot"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/handler"
 )
 
-var quote = Command{
-	Info: &discordgo.ApplicationCommand{
-		Name: "Quote",
-		Type: discordgo.MessageApplicationCommand,
-	},
-	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		msg := i.ApplicationCommandData().Resolved.Messages[i.ApplicationCommandData().TargetID]
+var quoteCommand = discord.MessageCommandCreate{
+	Name: "Quote",
+}
 
-		embed := &discordgo.MessageEmbed{}
-		embed.Author = &discordgo.MessageEmbedAuthor{
-			Name:    "Quote from " + msg.Author.Username,
-			IconURL: msg.Author.AvatarURL(""),
-		}
-		embed.Description = msg.Content
-		embed.Timestamp = msg.Timestamp.Format(time.RFC3339)
-		embed.Color = msg.Author.AccentColor
+func HandleQuote(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		msg := e.MessageCommandInteractionData().TargetMessage()
 
-		img, imgErr := utils.GetImageURLFromMessage(msg)
-		if imgErr == nil {
-			embed.Image = &discordgo.MessageEmbedImage{
-				URL: img,
-			}
-		}
+		embed := utils.QuoteEmbed(msg)
 
-		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Embeds: []*discordgo.MessageEmbed{embed},
-				Components: []discordgo.MessageComponent{
-					discordgo.ActionsRow{
-						Components: []discordgo.MessageComponent{
-							discordgo.Button{
-								Label: "Go to message",
-								Style: discordgo.LinkButton,
-								URL:   "https://discord.com/channels/" + i.GuildID + "/" + msg.ChannelID + "/" + msg.ID,
-								Emoji: discordgo.ComponentEmoji{
-									Name: "🔗",
-								},
-							},
-						},
-					},
-				},
-			},
-		})
-		if err != nil {
-			log.Println(err)
-			utils.InteractionRespondMessage(s, i, "Failed to quote")
-			return
-		}
-	},
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewLinkButton("Go to message", msg.JumpURL())).Build())
+	}
 }

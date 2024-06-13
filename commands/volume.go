@@ -1,34 +1,40 @@
 package commands
 
 import (
-	"fmt"
-	"wokkibot/utils"
+	"context"
+	"wokkibot/wokkibot"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/gompus/snowflake"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/handler"
+	"github.com/disgoorg/disgolink/v3/lavalink"
 )
 
-var volume = Command{
-	Info: &discordgo.ApplicationCommand{
-		Name:        "volume",
-		Description: "Change player volume",
-		Options: []*discordgo.ApplicationCommandOption{
-			{
-				Type:        discordgo.ApplicationCommandOptionInteger,
-				Name:        "volume",
-				Description: "Volume in percentage (0-100)",
-				Required:    true,
-			},
+var volumeCommand = discord.SlashCommandCreate{
+	Name:        "volume",
+	Description: "Set the volume",
+	Options: []discord.ApplicationCommandOption{
+		discord.ApplicationCommandOptionInt{
+			Name:        "volume",
+			Description: "The volume to set",
+			Required:    true,
 		},
 	},
-	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		vol := uint(i.ApplicationCommandData().Options[0].UintValue())
-		if q, found := utils.Queue[i.GuildID]; found {
-			q.Volume = vol
-			WaterlinkConnection.Guild(snowflake.MustParse(i.GuildID)).UpdateVolume(uint16(vol))
-			utils.InteractionRespondMessage(s, i, fmt.Sprintf("Changed player volume for all queued songs to %v", vol))
-		} else {
-			utils.InteractionRespondMessage(s, i, "Queue does not exist")
+}
+
+func HandleVolume(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
+		volume := data.Int("volume")
+
+		player := b.Lavalink.ExistingPlayer(*e.GuildID())
+		if player == nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No player found").Build())
 		}
-	},
+
+		if err := player.Update(context.TODO(), lavalink.WithVolume(volume)); err != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Failed to set volume").Build())
+		}
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Volume set to %d", volume).Build())
+	}
 }

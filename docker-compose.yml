@@ -1,15 +1,22 @@
 services:
   lavalink:
-    image: fredboat/lavalink:master
+    image: fredboat/lavalink:4.0.5
     container_name: lavalink
-    restart: always
+    restart: on-failure
     ports:
       - "2333:2333"
     volumes:
       - /opt/Lavalink/application.yml:/opt/Lavalink/application.yml
+      - /opt/Lavalink/plugins/:/opt/Lavalink/plugins/
   wokkibot:
     image: wokkipannu/wokkibot-go:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: wokkibot
     restart: always
+    depends_on:
+      - lavalink
     volumes:
-      - /opt/Wokkibot/.env:/wokkibot/.env
+      - /opt/Wokkibot/config.json:/config.json
+      - /opt/Wokkibot/custom_commands.json:/custom_commands.json

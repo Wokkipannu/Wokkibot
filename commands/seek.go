@@ -1,41 +1,68 @@
 package commands
 
 import (
-	"wokkibot/utils"
+	"context"
+	"wokkibot/wokkibot"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/handler"
+	"github.com/disgoorg/disgolink/v3/lavalink"
 )
 
-var seek = Command{
-	Info: &discordgo.ApplicationCommand{
-		Name:        "seek",
-		Description: "Seek currently playing track",
-		Options: []*discordgo.ApplicationCommandOption{
-			{
-				Type:        discordgo.ApplicationCommandOptionInteger,
-				Name:        "position",
-				Description: "Position to seek for",
-				Required:    true,
+var seekCommand = discord.SlashCommandCreate{
+	Name:        "seek",
+	Description: "Seek to a position in the current track",
+	Options: []discord.ApplicationCommandOption{
+		discord.ApplicationCommandOptionInt{
+			Name:        "position",
+			Description: "The position to seek to",
+			Required:    true,
+		},
+		discord.ApplicationCommandOptionInt{
+			Name:        "unit",
+			Description: "The unit to seek in",
+			Required:    false,
+			Choices: []discord.ApplicationCommandOptionChoiceInt{
+				{
+					Name:  "Milliseconds",
+					Value: int(lavalink.Millisecond),
+				},
+				{
+					Name:  "Seconds",
+					Value: int(lavalink.Second),
+				},
+				{
+					Name:  "Minutes",
+					Value: int(lavalink.Minute),
+				},
+				{
+					Name:  "Hours",
+					Value: int(lavalink.Hour),
+				},
 			},
 		},
 	},
-	Run: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		// position := uint(i.ApplicationCommandData().Options[0].UintValue())
-		// if position == 0 {
-		// 	utils.InteractionRespondMessage(s, i, "Value has to be higher than 0")
-		// 	return
-		// }
+}
 
-		// if q, found := utils.Queue[i.GuildID]; found {
-		// 	if q.Queue[0].TrackInfo.Seekable {
-		// 		WaterlinkConnection.Guild(snowflake.MustParse(i.GuildID)).Seek(position)
-		// 		utils.InteractionRespondMessage(s, i, fmt.Sprintf("Seeking from position %vs", position))
-		// 	} else {
-		// 		utils.InteractionRespondMessage(s, i, "Track is not seekable")
-		// 	}
-		// } else {
-		// 	utils.InteractionRespondMessage(s, i, "Nothing is playing")
-		// }
-		utils.InteractionRespondMessage(s, i, "Seeking is currently disabled")
-	},
+func HandleSeek(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
+
+		player := b.Lavalink.ExistingPlayer(*e.GuildID())
+		if player == nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No player found").Build())
+		}
+
+		position := data.Int("position")
+		unit, ok := data.OptInt("unit")
+		if !ok {
+			unit = int(lavalink.Second)
+		}
+		finalPosition := lavalink.Duration(position * unit)
+		if err := player.Update(context.TODO(), lavalink.WithPosition(finalPosition)); err != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Error while seeking to position %d: %s", position, err.Error()).Build())
+		}
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Seeked to position %d", position).Build())
+	}
 }
