@@ -364,9 +364,9 @@ func ValidateTriviaAnswer(answer, correct string) bool {
 		return cleanedUserAnswer == cleanedCorrectAnswer
 	}
 
-	if year, err := utils.ExtractYear(answer); err == nil {
+	if _, err := utils.ExtractYear(answer); err == nil {
 		cleanedUserAnswer := utils.CleanNumericAnswer(answer)
-		return cleanedUserAnswer == year
+		return cleanedUserAnswer == utils.CleanNumericAnswer(correct)
 	}
 
 	return utils.StringMatch(strings.ToLower(answer), strings.ToLower(correct))
