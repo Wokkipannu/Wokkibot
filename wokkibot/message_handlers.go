@@ -32,6 +32,9 @@ func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 	HandleCustomCommand(b, event)
 
 	self, _ := b.Client.Caches().SelfUser()
+	if event.Message.Author.ID == self.ID {
+		return
+	}
 	for _, user := range event.Message.Mentions {
 		if user.ID == self.ID {
 			HandleAIResponse(b, event)
