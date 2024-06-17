@@ -8,10 +8,12 @@ import (
 )
 
 type Config struct {
-	Token       string                 `json:"token"`
-	GuildID     string                 `json:"guildid"`
-	Nodes       []disgolink.NodeConfig `json:"nodes"`
-	TriviaToken string                 `json:"trivia_token"`
+	Token              string                 `json:"token"`
+	OpenAIApiKey       string                 `json:"openai_api_key"`
+	OpenAIInstructions string                 `json:"openai_instructions"`
+	GuildID            string                 `json:"guildid"`
+	Nodes              []disgolink.NodeConfig `json:"nodes"`
+	TriviaToken        string                 `json:"trivia_token"`
 }
 
 func LoadConfig() (*Config, error) {
