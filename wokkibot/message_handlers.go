@@ -49,7 +49,7 @@ func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 func (b *Wokkibot) HandleAIResponse(e *events.MessageCreate) {
 	url := b.Config.AIApiUrl
 	payload := RequestPayload{
-		Model:  "llama2",
+		Model:  "llama3",
 		Prompt: e.Message.Content,
 	}
 
