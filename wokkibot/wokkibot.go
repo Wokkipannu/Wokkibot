@@ -159,9 +159,9 @@ func (b *Wokkibot) Close() {
 		}
 	})
 
-	if err := SaveConfig(b.Config); err != nil {
-		slog.Error("error while saving config", slog.Any("err", err))
-	}
+	// if err := SaveConfig(b.Config); err != nil {
+	// 	slog.Error("error while saving config", slog.Any("err", err))
+	// }
 	b.Lavalink.Close()
 	b.Client.Close(context.Background())
 }

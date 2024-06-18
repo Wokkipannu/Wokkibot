@@ -7,7 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"sync"
+	"time"
 	"wokkibot/utils"
 
 	"strings"
@@ -19,24 +19,17 @@ import (
 	"github.com/mvdan/xurls"
 )
 
-type OpenAIResponse struct {
-	Choices []struct {
-		Message struct {
-			Role    string `json:"role"`
-			Content string `json:"content"`
-		} `json:"message"`
-	} `json:"choices"`
+type RequestPayload struct {
+	Model  string `json:"model"`
+	Prompt string `json:"prompt"`
 }
 
-type ChatMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+type ResponsePayload struct {
+	Model     string    `json:"model"`
+	CreatedAt time.Time `json:"created_at"`
+	Response  string    `json:"response"`
+	Done      bool      `json:"done"`
 }
-
-var (
-	chatHistory = []ChatMessage{}
-	mu          sync.Mutex
-)
 
 func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 	HandleQuoteMessages(b, event)
@@ -48,101 +41,75 @@ func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 	}
 	for _, user := range event.Message.Mentions {
 		if user.ID == self.ID {
-			HandleAIResponse(b, event)
+			b.HandleAIResponse(event)
 		}
 	}
 }
 
-func HandleAIResponse(b *Wokkibot, e *events.MessageCreate) {
-	if len(chatHistory) == 0 {
-		chatHistory = append(chatHistory, ChatMessage{
-			Role:    "system",
-			Content: b.Config.OpenAIInstructions,
-		})
-	} else {
-		if chatHistory[0].Content != b.Config.OpenAIInstructions {
-			chatHistory[0].Content = b.Config.OpenAIInstructions
-		}
+func (b *Wokkibot) HandleAIResponse(e *events.MessageCreate) {
+	url := b.Config.AIApiUrl
+	payload := RequestPayload{
+		Model:  "llama2",
+		Prompt: e.Message.Content,
 	}
 
-	msg := strings.TrimPrefix(e.Message.Content, "<@512004300218695714> ")
-
-	userMessage := e.Message.Member.EffectiveName() + " (" + e.Message.Member.User.ID.String() + ") said to you: " + msg
-
-	mu.Lock()
-	chatHistory = append(chatHistory, ChatMessage{
-		Role:    "user",
-		Content: userMessage,
-	})
-	mu.Unlock()
-
-	response, err := getOpenAIResponse(b.Config.OpenAIApiKey)
+	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		log.Printf("Error getting OpenAI response: %v", err)
-		e.Client().Rest().CreateMessage(e.ChannelID, discord.NewMessageCreateBuilder().SetContent("Sorry, I encountered an error.").Build())
+		log.Printf("Error marshaling request payload: %v", err)
 		return
 	}
 
-	mu.Lock()
-	chatHistory = append(chatHistory, ChatMessage{
-		Role:    "assistant",
-		Content: response,
-	})
-	mu.Unlock()
-
-	e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(response).SetMessageReferenceByID(e.Message.ID).Build())
-}
-
-func getOpenAIResponse(apiKey string) (string, error) {
-	mu.Lock()
-	history := chatHistory
-	mu.Unlock()
-
-	openAIPrompt := map[string]interface{}{
-		"model":    "gpt-4-turbo",
-		"messages": history,
-	}
-
-	requestBody, err := json.Marshal(openAIPrompt)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal request body: %v", err)
+		log.Printf("Error creating request: %v", err)
+		return
 	}
-
-	req, err := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(requestBody))
-	if err != nil {
-		return "", fmt.Errorf("failed to create request: %v", err)
-	}
-
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to execute request: %v", err)
+		log.Printf("Error executing request: %v", err)
+		return
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to read response body: %v", err)
-	}
-
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("non-OK HTTP status: %s, body: %s", resp.Status, string(body))
+		log.Printf("Non-OK HTTP status: %s", resp.Status)
+		return
 	}
 
-	var openAIResp OpenAIResponse
-	err = json.Unmarshal(body, &openAIResp)
-	if err != nil {
-		return "", fmt.Errorf("failed to unmarshal response body: %v", err)
+	var responseString string
+	decoder := json.NewDecoder(resp.Body)
+
+	var index int
+	index = 0
+
+	msg, _ := e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent("...").SetMessageReferenceByID(e.Message.ID).Build())
+
+	for {
+		var responsePayload ResponsePayload
+		if err := decoder.Decode(&responsePayload); err == io.EOF {
+			break
+		} else if err != nil {
+			fmt.Println("Error decoding JSON:", err)
+			return
+		}
+
+		responseString += responsePayload.Response
+
+		index += 1
+
+		if index%5 == 0 {
+			e.Client().Rest().UpdateMessage(e.ChannelID, msg.ID, discord.NewMessageUpdateBuilder().SetContent(responseString).Build())
+		}
+
+		if responsePayload.Done {
+			break
+		}
 	}
 
-	if len(openAIResp.Choices) > 0 {
-		return openAIResp.Choices[0].Message.Content, nil
-	}
-
-	return "", nil
+	e.Client().Rest().UpdateMessage(e.ChannelID, msg.ID, discord.NewMessageUpdateBuilder().SetContent(responseString).Build())
 }
 
 func HandleQuoteMessages(b *Wokkibot, e *events.MessageCreate) {
