@@ -89,7 +89,7 @@ func getOpenAIResponse(userID, apiKey string) (string, error) {
 	mu.Unlock()
 
 	openAIPrompt := map[string]interface{}{
-		"model": "gpt-4-turbo",
+		"model": "gpt-3.5-turbo",
 		"messages": append([]ChatMessage{
 			{
 				Role:    "system",
