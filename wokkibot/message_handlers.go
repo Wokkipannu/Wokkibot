@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 	"wokkibot/utils"
 
 	"strings"
@@ -27,6 +28,16 @@ type OpenAIResponse struct {
 	} `json:"choices"`
 }
 
+type ChatMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+var (
+	chatHistories = make(map[string][]ChatMessage)
+	mu            sync.Mutex
+)
+
 func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 	HandleQuoteMessages(b, event)
 	HandleCustomCommand(b, event)
@@ -44,26 +55,47 @@ func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 
 func HandleAIResponse(b *Wokkibot, e *events.MessageCreate) {
 	msg := strings.TrimPrefix(e.Message.Content, "<@512004300218695714> ")
+	userID := e.Message.Member.User.ID.String()
 
 	userMessage := e.Message.Member.EffectiveName() + " (" + e.Message.Member.User.ID.String() + ") said to you: " + msg
 
-	response, err := getOpenAIResponse(b, userMessage, b.Config.OpenAIApiKey)
+	mu.Lock()
+	chatHistories[userID] = append(chatHistories[userID], ChatMessage{
+		Role:    "user",
+		Content: userMessage,
+	})
+	mu.Unlock()
+
+	response, err := getOpenAIResponse(userID, b.Config.OpenAIApiKey)
 	if err != nil {
 		log.Printf("Error getting OpenAI response: %v", err)
 		e.Client().Rest().CreateMessage(e.ChannelID, discord.NewMessageCreateBuilder().SetContent("Sorry, I encountered an error.").Build())
 		return
 	}
 
+	mu.Lock()
+	chatHistories[userID] = append(chatHistories[userID], ChatMessage{
+		Role:    "assistant",
+		Content: response,
+	})
+	mu.Unlock()
+
 	e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(response).SetMessageReferenceByID(e.Message.ID).Build())
 }
 
-func getOpenAIResponse(b *Wokkibot, prompt, apiKey string) (string, error) {
+func getOpenAIResponse(userID, apiKey string) (string, error) {
+	mu.Lock()
+	history := chatHistories[userID]
+	mu.Unlock()
+
 	openAIPrompt := map[string]interface{}{
-		"model": "gpt-3.5-turbo",
-		"messages": []map[string]string{
-			{"role": "system", "content": b.Config.OpenAIInstructions},
-			{"role": "user", "content": prompt},
-		},
+		"model": "gpt-4-turbo",
+		"messages": append([]ChatMessage{
+			{
+				Role:    "system",
+				Content: "You are a friendly and enthusiastic AI assistant named ChatBuddy. You love helping people, and you always respond with a positive and upbeat attitude.",
+			},
+		}, history...),
 	}
 
 	requestBody, err := json.Marshal(openAIPrompt)
