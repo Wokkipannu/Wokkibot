@@ -37,6 +37,9 @@ func main() {
 			r.Command("/remove", commands.HandleCustomRemove(b))
 			r.Command("/list", commands.HandleCustomList(b))
 		})
+		r.Route("/config", func(r handler.Router) {
+			r.Command("/openai-instructions", commands.HandleOpenAIInstructions(b))
+		})
 	})
 	r.Command("/joke", commands.HandleJoke(b))
 	// Context menu commands

@@ -65,7 +65,38 @@ var settingsCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
+		discord.ApplicationCommandOptionSubCommandGroup{
+			Name:        "config",
+			Description: "Manage bot configuration",
+			Options: []discord.ApplicationCommandOptionSubCommand{
+				{
+					Name:        "openai-instructions",
+					Description: "Set the instructions to use for OpenAI",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionString{
+							Name:        "instructions",
+							Description: "The instructions to use for OpenAI",
+							Required:    true,
+						},
+					},
+				},
+			},
+		},
 	},
+}
+
+func HandleOpenAIInstructions(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
+
+		instructions := data.String("instructions")
+
+		b.Config.OpenAIInstructions = instructions
+
+		wokkibot.SaveConfig(b.Config)
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("OpenAI instructions set to `%v`", instructions).Build())
+	}
 }
 
 func HandleCustomAdd(b *wokkibot.Wokkibot) handler.CommandHandler {
