@@ -59,6 +59,10 @@ func HandleAIResponse(b *Wokkibot, e *events.MessageCreate) {
 			Role:    "system",
 			Content: b.Config.OpenAIInstructions,
 		})
+	} else {
+		if chatHistory[0].Content != b.Config.OpenAIInstructions {
+			chatHistory[0].Content = b.Config.OpenAIInstructions
+		}
 	}
 
 	msg := strings.TrimPrefix(e.Message.Content, "<@512004300218695714> ")
