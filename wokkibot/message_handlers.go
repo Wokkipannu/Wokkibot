@@ -34,8 +34,8 @@ type ChatMessage struct {
 }
 
 var (
-	chatHistories = make(map[string][]ChatMessage)
-	mu            sync.Mutex
+	chatHistory = []ChatMessage{}
+	mu          sync.Mutex
 )
 
 func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
@@ -54,19 +54,25 @@ func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 }
 
 func HandleAIResponse(b *Wokkibot, e *events.MessageCreate) {
+	if len(chatHistory) == 0 {
+		chatHistory = append(chatHistory, ChatMessage{
+			Role:    "system",
+			Content: b.Config.OpenAIInstructions,
+		})
+	}
+
 	msg := strings.TrimPrefix(e.Message.Content, "<@512004300218695714> ")
-	userID := e.Message.Member.User.ID.String()
 
 	userMessage := e.Message.Member.EffectiveName() + " (" + e.Message.Member.User.ID.String() + ") said to you: " + msg
 
 	mu.Lock()
-	chatHistories[userID] = append(chatHistories[userID], ChatMessage{
+	chatHistory = append(chatHistory, ChatMessage{
 		Role:    "user",
 		Content: userMessage,
 	})
 	mu.Unlock()
 
-	response, err := getOpenAIResponse(b, userID, b.Config.OpenAIApiKey)
+	response, err := getOpenAIResponse(b.Config.OpenAIApiKey)
 	if err != nil {
 		log.Printf("Error getting OpenAI response: %v", err)
 		e.Client().Rest().CreateMessage(e.ChannelID, discord.NewMessageCreateBuilder().SetContent("Sorry, I encountered an error.").Build())
@@ -74,7 +80,7 @@ func HandleAIResponse(b *Wokkibot, e *events.MessageCreate) {
 	}
 
 	mu.Lock()
-	chatHistories[userID] = append(chatHistories[userID], ChatMessage{
+	chatHistory = append(chatHistory, ChatMessage{
 		Role:    "assistant",
 		Content: response,
 	})
@@ -83,19 +89,14 @@ func HandleAIResponse(b *Wokkibot, e *events.MessageCreate) {
 	e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(response).SetMessageReferenceByID(e.Message.ID).Build())
 }
 
-func getOpenAIResponse(b *Wokkibot, userID, apiKey string) (string, error) {
+func getOpenAIResponse(apiKey string) (string, error) {
 	mu.Lock()
-	history := chatHistories[userID]
+	history := chatHistory
 	mu.Unlock()
 
 	openAIPrompt := map[string]interface{}{
-		"model": "gpt-3.5-turbo",
-		"messages": append([]ChatMessage{
-			{
-				Role:    "system",
-				Content: b.Config.OpenAIInstructions,
-			},
-		}, history...),
+		"model":    "gpt-4-turbo",
+		"messages": history,
 	}
 
 	requestBody, err := json.Marshal(openAIPrompt)
