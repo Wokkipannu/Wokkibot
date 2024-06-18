@@ -66,7 +66,7 @@ func HandleAIResponse(b *Wokkibot, e *events.MessageCreate) {
 	})
 	mu.Unlock()
 
-	response, err := getOpenAIResponse(userID, b.Config.OpenAIApiKey)
+	response, err := getOpenAIResponse(b, userID, b.Config.OpenAIApiKey)
 	if err != nil {
 		log.Printf("Error getting OpenAI response: %v", err)
 		e.Client().Rest().CreateMessage(e.ChannelID, discord.NewMessageCreateBuilder().SetContent("Sorry, I encountered an error.").Build())
@@ -83,7 +83,7 @@ func HandleAIResponse(b *Wokkibot, e *events.MessageCreate) {
 	e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(response).SetMessageReferenceByID(e.Message.ID).Build())
 }
 
-func getOpenAIResponse(userID, apiKey string) (string, error) {
+func getOpenAIResponse(b *Wokkibot, userID, apiKey string) (string, error) {
 	mu.Lock()
 	history := chatHistories[userID]
 	mu.Unlock()
@@ -93,7 +93,7 @@ func getOpenAIResponse(userID, apiKey string) (string, error) {
 		"messages": append([]ChatMessage{
 			{
 				Role:    "system",
-				Content: "You are a friendly and enthusiastic AI assistant named ChatBuddy. You love helping people, and you always respond with a positive and upbeat attitude.",
+				Content: b.Config.OpenAIInstructions,
 			},
 		}, history...),
 	}
