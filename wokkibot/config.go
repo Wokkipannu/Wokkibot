@@ -13,6 +13,7 @@ type Config struct {
 	Nodes       []disgolink.NodeConfig `json:"nodes"`
 	TriviaToken string                 `json:"trivia_token"`
 	AIApiUrl    string                 `json:"ai_api_url"`
+	System      string                 `json:"system"`
 }
 
 func LoadConfig() (*Config, error) {
