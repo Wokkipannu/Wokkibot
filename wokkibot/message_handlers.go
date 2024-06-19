@@ -88,7 +88,7 @@ func (b *Wokkibot) HandleAIResponse(e *events.MessageCreate) {
 	}
 
 	payload := RequestPayload{
-		Model:    "llama3",
+		Model:    b.Config.Model,
 		Messages: append([]Message{systemMessage}, chatHistory...),
 	}
 

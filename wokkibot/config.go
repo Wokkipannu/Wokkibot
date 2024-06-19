@@ -14,6 +14,7 @@ type Config struct {
 	TriviaToken string                 `json:"trivia_token"`
 	AIApiUrl    string                 `json:"ai_api_url"`
 	System      string                 `json:"system"`
+	Model       string                 `json:"model"`
 }
 
 func LoadConfig() (*Config, error) {
