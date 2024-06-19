@@ -102,12 +102,16 @@ func (b *Wokkibot) HandleAIResponse(e *events.MessageCreate) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		e.Client().Rest().UpdateMessage(e.ChannelID, msg.ID, discord.NewMessageUpdateBuilder().SetContent("I encountered an error while trying to generate a response. Error executing request").Build())
+		e.Client().Rest().AddReaction(e.ChannelID, msg.ID, "❌")
 		log.Printf("Error executing request: %v", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		e.Client().Rest().UpdateMessage(e.ChannelID, msg.ID, discord.NewMessageUpdateBuilder().SetContent("I encountered an error while trying to generate a response. Non-OK HTTP status").Build())
+		e.Client().Rest().AddReaction(e.ChannelID, msg.ID, "❌")
 		log.Printf("Non-OK HTTP status: %s", resp.Status)
 		return
 	}
@@ -123,6 +127,7 @@ func (b *Wokkibot) HandleAIResponse(e *events.MessageCreate) {
 		if err := decoder.Decode(&responsePayload); err == io.EOF {
 			break
 		} else if err != nil {
+			e.Client().Rest().AddReaction(e.ChannelID, msg.ID, "❌")
 			fmt.Println("Error decoding JSON:", err)
 			return
 		}
@@ -148,6 +153,7 @@ func (b *Wokkibot) HandleAIResponse(e *events.MessageCreate) {
 	mu.Unlock()
 
 	e.Client().Rest().UpdateMessage(e.ChannelID, msg.ID, discord.NewMessageUpdateBuilder().SetContent(responseString).Build())
+	e.Client().Rest().AddReaction(e.ChannelID, msg.ID, "✅")
 }
 
 func HandleQuoteMessages(b *Wokkibot, e *events.MessageCreate) {
