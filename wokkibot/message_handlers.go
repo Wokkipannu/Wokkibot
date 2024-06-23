@@ -50,13 +50,15 @@ func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 	HandleQuoteMessages(b, event)
 	HandleCustomCommand(b, event)
 
-	self, _ := b.Client.Caches().SelfUser()
-	if event.Message.Author.ID == self.ID {
-		return
-	}
-	for _, user := range event.Message.Mentions {
-		if user.ID == self.ID {
-			b.HandleAIResponse(event)
+	if b.Config.AISettings.Enabled {
+		self, _ := b.Client.Caches().SelfUser()
+		if event.Message.Author.ID == self.ID {
+			return
+		}
+		for _, user := range event.Message.Mentions {
+			if user.ID == self.ID {
+				b.HandleAIResponse(event)
+			}
 		}
 	}
 }
@@ -76,19 +78,19 @@ func (b *Wokkibot) HandleAIResponse(e *events.MessageCreate) {
 	})
 	mu.Unlock()
 
-	url := b.Config.AIApiUrl + "/api/chat"
+	url := b.Config.AISettings.ApiUrl + "/api/chat"
 
 	systemMessage := Message{
 		Role:    "system",
-		Content: b.Config.System,
+		Content: b.Config.AISettings.System,
 	}
 
-	if len(chatHistory) > 10 {
-		chatHistory = chatHistory[len(chatHistory)-10:]
+	if len(chatHistory) > b.Config.AISettings.HistoryCount {
+		chatHistory = chatHistory[len(chatHistory)-b.Config.AISettings.HistoryCount:]
 	}
 
 	payload := RequestPayload{
-		Model:    b.Config.Model,
+		Model:    b.Config.AISettings.Model,
 		Messages: append([]Message{systemMessage}, chatHistory...),
 	}
 

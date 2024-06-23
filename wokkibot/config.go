@@ -7,14 +7,20 @@ import (
 	"github.com/disgoorg/disgolink/v3/disgolink"
 )
 
+type AISettings struct {
+	Model        string `json:"model"`
+	System       string `json:"system"`
+	Enabled      bool   `json:"enabled"`
+	ApiUrl       string `json:"api_url"`
+	HistoryCount int    `json:"history_count"`
+}
+
 type Config struct {
 	Token       string                 `json:"token"`
 	GuildID     string                 `json:"guildid"`
 	Nodes       []disgolink.NodeConfig `json:"nodes"`
 	TriviaToken string                 `json:"trivia_token"`
-	AIApiUrl    string                 `json:"ai_api_url"`
-	System      string                 `json:"system"`
-	Model       string                 `json:"model"`
+	AISettings  AISettings             `json:"ai_settings"`
 }
 
 func LoadConfig() (*Config, error) {
