@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/disgoorg/disgolink/v3/disgolink"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 type AISettings struct {
@@ -21,6 +22,7 @@ type Config struct {
 	Nodes       []disgolink.NodeConfig `json:"nodes"`
 	TriviaToken string                 `json:"trivia_token"`
 	AISettings  AISettings             `json:"ai_settings"`
+	Admins      []snowflake.ID         `json:"admins"`
 }
 
 func LoadConfig() (*Config, error) {

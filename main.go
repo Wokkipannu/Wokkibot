@@ -24,6 +24,7 @@ func main() {
 	defer b.Close()
 
 	r := handler.New()
+
 	r.Command("/ping", commands.HandlePing(b))
 	r.Command("/roll", commands.HandleRoll(b))
 	r.Command("/flip", commands.HandleFlip(b))
@@ -36,6 +37,13 @@ func main() {
 			r.Command("/add", commands.HandleCustomAdd(b))
 			r.Command("/remove", commands.HandleCustomRemove(b))
 			r.Command("/list", commands.HandleCustomList(b))
+		})
+		r.Route("/config", func(r handler.Router) {
+			r.Command("/system-message", b.AdminMiddleware(commands.HandleAISystemMessageChange(b)))
+			r.Command("/model", b.AdminMiddleware(commands.HandleAIModelChange(b)))
+			r.Command("/history-count", b.AdminMiddleware(commands.HandleAIHistoryCountChange(b)))
+			r.Command("/api_url", b.AdminMiddleware(commands.HandleAIApiUrlChange(b)))
+			r.Command("/enabled", b.AdminMiddleware(commands.HandleAIEnableChange(b)))
 		})
 	})
 	r.Command("/joke", commands.HandleJoke(b))

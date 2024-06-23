@@ -65,6 +65,67 @@ var settingsCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
+		discord.ApplicationCommandOptionSubCommandGroup{
+			Name:        "config",
+			Description: "Change bots configuration",
+			Options: []discord.ApplicationCommandOptionSubCommand{
+				{
+					Name:        "system-message",
+					Description: "Change the system message",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionString{
+							Name:        "system_message",
+							Description: "The system message",
+							Required:    true,
+						},
+					},
+				},
+				{
+					Name:        "model",
+					Description: "Change the model",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionString{
+							Name:        "model",
+							Description: "The model to use",
+							Required:    true,
+						},
+					},
+				},
+				{
+					Name:        "history-count",
+					Description: "Change the history count",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionInt{
+							Name:        "history_count",
+							Description: "The history count",
+							Required:    true,
+						},
+					},
+				},
+				{
+					Name:        "api_url",
+					Description: "Change the API URL",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionString{
+							Name:        "api_url",
+							Description: "The API URL",
+							Required:    true,
+						},
+					},
+				},
+				{
+					Name:        "enabled",
+					Description: "Change the enabled status",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionBool{
+							Name:        "enabled",
+							Description: "The enabled status",
+							Required:    true,
+						},
+					},
+				},
+			},
+		},
 	},
 }
 
@@ -168,5 +229,70 @@ func HandleCustomList(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+	}
+}
+
+func HandleAISystemMessageChange(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
+
+		systemMessage := data.String("system_message")
+
+		b.Config.AISettings.System = systemMessage
+		wokkibot.SaveConfig(b.Config)
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("System message set to %v", systemMessage).Build())
+	}
+}
+
+func HandleAIModelChange(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
+
+		model := data.String("model")
+
+		b.Config.AISettings.Model = model
+		wokkibot.SaveConfig(b.Config)
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Model set to %v", model).Build())
+	}
+}
+
+func HandleAIHistoryCountChange(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
+
+		historyCount := data.Int("history_count")
+
+		b.Config.AISettings.HistoryCount = historyCount
+		wokkibot.SaveConfig(b.Config)
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("History count set to %v", historyCount).Build())
+	}
+}
+
+func HandleAIApiUrlChange(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
+
+		apiUrl := data.String("api_url")
+
+		b.Config.AISettings.ApiUrl = apiUrl
+		wokkibot.SaveConfig(b.Config)
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("API URL set to %v", apiUrl).Build())
+	}
+}
+
+func HandleAIEnableChange(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
+
+		enabled := data.Bool("enabled")
+
+		b.Config.AISettings.Enabled = enabled
+		wokkibot.SaveConfig(b.Config)
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Enabled set to %v", enabled).Build())
 	}
 }
