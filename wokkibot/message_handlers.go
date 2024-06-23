@@ -74,7 +74,7 @@ func (b *Wokkibot) HandleAIResponse(e *events.MessageCreate) {
 	mu.Lock()
 	chatHistory = append(chatHistory, Message{
 		Role:    "user",
-		Content: output,
+		Content: e.Message.Author.EffectiveName() + " says to you \"" + output + "\"",
 	})
 	mu.Unlock()
 

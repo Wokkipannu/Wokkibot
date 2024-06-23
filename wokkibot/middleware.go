@@ -7,7 +7,6 @@ import (
 
 func (b *Wokkibot) AdminMiddleware(next handler.CommandHandler) handler.CommandHandler {
 	return func(event *handler.CommandEvent) error {
-		// Get the member from the event
 		member := event.Member()
 
 		for _, admin := range b.Config.Admins {
