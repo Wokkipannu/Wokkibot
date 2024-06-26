@@ -101,7 +101,7 @@ func (b *Wokkibot) HandleAIResponse(e *events.MessageCreate) {
 		return
 	}
 
-	msg, _ := e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent("I am thinking...").SetMessageReferenceByID(e.Message.ID).Build())
+	msg, _ := e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent("I am thinking...").SetMessageReferenceByID(e.Message.ID).SetAllowedMentions(&discord.AllowedMentions{RepliedUser: false}).Build())
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
 	if err != nil {
@@ -211,7 +211,7 @@ func HandleXLinks(b *Wokkibot, e *events.MessageCreate) {
 			return
 		}
 
-		e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(fixedURL).SetMessageReferenceByID(e.Message.ID).Build())
+		e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(fixedURL).SetMessageReferenceByID(e.Message.ID).SetAllowedMentions(&discord.AllowedMentions{RepliedUser: false}).Build())
 	}
 }
 
@@ -226,7 +226,7 @@ func HandleCustomCommand(b *Wokkibot, e *events.MessageCreate) {
 
 	for _, cmd := range b.CustomCommands {
 		if cmd.Prefix == prefix && cmd.Name == name && cmd.GuildID == *e.GuildID {
-			e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(cmd.Output).SetMessageReferenceByID(e.Message.ID).Build())
+			e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(cmd.Output).SetMessageReferenceByID(e.Message.ID).SetAllowedMentions(&discord.AllowedMentions{RepliedUser: false}).Build())
 		}
 	}
 }
