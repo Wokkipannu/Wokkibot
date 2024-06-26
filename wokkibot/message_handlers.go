@@ -196,10 +196,14 @@ func HandleQuoteMessages(b *Wokkibot, e *events.MessageCreate) {
 }
 
 func HandleXLinks(b *Wokkibot, e *events.MessageCreate) {
-	prefix := "https://x.com/"
+	self, _ := b.Client.Caches().SelfUser()
+	if e.Message.Author.ID == self.ID {
+		return
+	}
+
 	message := e.Message.Content
 
-	if strings.Contains(message, prefix) {
+	if strings.Contains(message, "https://x.com") || strings.Contains(message, "http://x.com") {
 		links := xurls.Strict.FindAllString(message, -1)
 
 		fixedURL, err := utils.ReplaceDomain(links[0], "fixupx.com")
