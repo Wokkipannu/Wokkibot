@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/disgoorg/disgo/discord"
@@ -33,4 +34,25 @@ func QuoteEmbed(msg discord.Message) discord.EmbedBuilder {
 	}
 
 	return *embed
+}
+
+func ReplaceDomain(originalURL, newDomain string) (string, error) {
+	parsedURL, err := url.Parse(originalURL)
+	if err != nil {
+		return "", err
+	}
+
+	hostParts := strings.Split(newDomain, ":")
+	newHost := hostParts[0]
+	newPort := ""
+	if len(hostParts) > 1 {
+		newPort = hostParts[1]
+	}
+
+	parsedURL.Host = newHost
+	if newPort != "" {
+		parsedURL.Host = newHost + ":" + newPort
+	}
+
+	return parsedURL.String(), nil
 }

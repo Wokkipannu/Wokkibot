@@ -49,6 +49,7 @@ var (
 func (b *Wokkibot) onMessageCreate(event *events.MessageCreate) {
 	HandleQuoteMessages(b, event)
 	HandleCustomCommand(b, event)
+	HandleXLinks(b, event)
 
 	if b.Config.AISettings.Enabled {
 		self, _ := b.Client.Caches().SelfUser()
@@ -191,6 +192,22 @@ func HandleQuoteMessages(b *Wokkibot, e *events.MessageCreate) {
 		embed := utils.QuoteEmbed(*msg)
 
 		e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewLinkButton("Go to message", links[0])).Build())
+	}
+}
+
+func HandleXLinks(b *Wokkibot, e *events.MessageCreate) {
+	prefix := "https://x.com/"
+	message := e.Message.Content
+
+	if strings.Contains(message, prefix) {
+		links := xurls.Strict.FindAllString(message, -1)
+
+		fixedURL, err := utils.ReplaceDomain(links[0], "fixupx.com")
+		if err != nil {
+			return
+		}
+
+		e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(fixedURL).Build())
 	}
 }
 
