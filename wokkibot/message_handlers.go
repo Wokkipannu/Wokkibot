@@ -207,7 +207,7 @@ func HandleXLinks(b *Wokkibot, e *events.MessageCreate) {
 			return
 		}
 
-		e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(fixedURL).Build())
+		e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(fixedURL).SetMessageReferenceByID(e.Message.ID).Build())
 	}
 }
 
