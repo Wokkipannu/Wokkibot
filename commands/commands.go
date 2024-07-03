@@ -14,6 +14,7 @@ var Commands = []discord.ApplicationCommandCreate{
 	triviaCommand,
 	settingsCommand,
 	jokeCommand,
+	inspectCommand,
 	// Music commands
 	playCommand,
 	skipCommand,
