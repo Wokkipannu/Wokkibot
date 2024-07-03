@@ -241,7 +241,7 @@ func HandleAISystemMessageChange(b *wokkibot.Wokkibot) handler.CommandHandler {
 		b.Config.AISettings.System = systemMessage
 		wokkibot.SaveConfig(b.Config)
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("System message set to %v", systemMessage).Build())
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("System message updated").Build())
 	}
 }
 
@@ -293,6 +293,6 @@ func HandleAIEnableChange(b *wokkibot.Wokkibot) handler.CommandHandler {
 		b.Config.AISettings.Enabled = enabled
 		wokkibot.SaveConfig(b.Config)
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Enabled set to %v", enabled).Build())
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("AI enabled set to %v", enabled).Build())
 	}
 }
