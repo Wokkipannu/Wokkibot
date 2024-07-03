@@ -147,7 +147,7 @@ func (b *Wokkibot) HandleAIResponse(e *events.MessageCreate) {
 
 		index += 1
 
-		if index%5 == 0 {
+		if index%20 == 0 {
 			e.Client().Rest().UpdateMessage(e.ChannelID, msg.ID, discord.NewMessageUpdateBuilder().SetContent(responseString).Build())
 		}
 
