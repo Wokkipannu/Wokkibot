@@ -211,6 +211,9 @@ func HandleXLinks(b *Wokkibot, e *events.MessageCreate) {
 			return
 		}
 
+		suppressEmbeds := discord.MessageFlagSuppressEmbeds
+		e.Client().Rest().UpdateMessage(e.Message.ChannelID, e.Message.ID, discord.MessageUpdate{Flags: &suppressEmbeds})
+
 		e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(fixedURL).SetMessageReferenceByID(e.Message.ID).SetAllowedMentions(&discord.AllowedMentions{RepliedUser: false}).Build())
 	}
 }
