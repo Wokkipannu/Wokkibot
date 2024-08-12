@@ -203,7 +203,12 @@ func HandleXLinks(b *Wokkibot, e *events.MessageCreate) {
 
 	message := e.Message.Content
 
-	if strings.Contains(message, "https://x.com") || strings.Contains(message, "http://x.com") {
+	fmt.Printf("message: %v\n", message)
+
+	regexPattern := `https?:\/\/(x|twitter)\.com\/(.*\/status\/\d+)\??.*`
+	r := regexp.MustCompile(regexPattern)
+
+	if r.MatchString(message) {
 		links := xurls.Strict.FindAllString(message, -1)
 
 		fixedURL, err := utils.ReplaceDomain(links[0], "fixupx.com")
