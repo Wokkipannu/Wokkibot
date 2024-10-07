@@ -51,6 +51,7 @@ func main() {
 	// Context menu commands
 	r.Command("/Quote", commands.HandleQuote(b))
 	r.Command("/Eval", commands.HandleEval(b))
+	r.Command("/Pin", commands.HandlePin(b))
 	// Music commands
 	r.Command("/play", commands.HandlePlay(b))
 	r.Command("/skip", commands.HandleSkip(b))

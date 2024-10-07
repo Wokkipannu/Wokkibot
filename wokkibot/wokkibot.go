@@ -59,13 +59,6 @@ func (b *Wokkibot) SetupBot(r handler.Router) {
 				gateway.WithOnlineStatus(discord.OnlineStatusDND),
 			),
 		),
-		// bot.WithShardManagerConfigOpts(
-		// 	sharding.WithGatewayConfigOpts(
-		// 		gateway.WithCompress(false),
-		// 		gateway.WithIntents(gateway.IntentGuildMessages|gateway.IntentDirectMessages|gateway.IntentGuildMessageTyping|gateway.IntentDirectMessageTyping|gateway.IntentMessageContent|gateway.IntentGuilds|gateway.IntentGuildVoiceStates),
-		// 	),
-		// 	sharding.WithRateLimiter(sharding.NewNoopRateLimiter()),
-		// ),
 		bot.WithEventListeners(r),
 		bot.WithCacheConfigOpts(
 			cache.WithCaches(cache.FlagGuilds, cache.FlagMembers, cache.FlagVoiceStates),
@@ -142,8 +135,6 @@ func (b *Wokkibot) Start() {
 		slog.Error("error while opening gateway", slog.Any("err", err))
 	}
 
-	// b.Client.OpenShardManager(context.Background())
-
 	slog.Info("Wokkibot is now running. Press CTRL-C to exit.")
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
@@ -159,22 +150,9 @@ func (b *Wokkibot) Close() {
 		}
 	})
 
-	// if err := SaveConfig(b.Config); err != nil {
-	// 	slog.Error("error while saving config", slog.Any("err", err))
-	// }
 	b.Lavalink.Close()
 	b.Client.Close(context.Background())
 }
-
-// func (b *Wokkibot) RestorePlayers() {
-// 	b.Lavalink.ForPlayers(func(player disgolink.Player) {
-// 		voiceState, ok := b.Client.Caches().VoiceState(player.GuildID(), b.Client.ApplicationID())
-// 		if !ok {
-// 			return
-// 		}
-// 		player.OnVoiceStateUpdate(context.Background(), voiceState.ChannelID, voiceState.SessionID)
-// 	})
-// }
 
 func (b *Wokkibot) OnDiscordEvent(event bot.Event) {
 	switch e := event.(type) {
@@ -192,7 +170,5 @@ func (b *Wokkibot) OnDiscordEvent(event bot.Event) {
 		}
 	case *events.VoiceServerUpdate:
 		b.Lavalink.OnVoiceServerUpdate(context.TODO(), e.GuildID, e.Token, *e.Endpoint)
-		// case *events.GuildReady:
-		// 	b.RestorePlayers()
 	}
 }
