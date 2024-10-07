@@ -5,7 +5,6 @@ import (
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
-	"github.com/disgoorg/snowflake/v2"
 )
 
 var pinCommand = discord.MessageCommandCreate{
@@ -24,8 +23,7 @@ func HandlePin(b *wokkibot.Wokkibot) handler.CommandHandler {
 			ChannelID: &msg.ChannelID,
 		})
 
-		// TODO: Move this channel ID to a config. Eventually this should be configurable per server.
-		_, err := e.Client().Rest().CreateMessage(snowflake.MustParse("1292880063116611625"), m.Build())
+		_, err := e.Client().Rest().CreateMessage(b.Config.PinChannel, m.Build())
 		if err != nil {
 			return err
 		}

@@ -18,5 +18,5 @@ jobs:
         script: |
           cd ${{ secrets.FOLDER }}
           git pull
-          docker compose build wokkibot
-          docker compose up -d --no-deps wokkibot
+          sudo docker compose build wokkibot
+          sudo docker compose up -d --no-deps wokkibot

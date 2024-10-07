@@ -23,6 +23,7 @@ type Config struct {
 	TriviaToken string                 `json:"trivia_token"`
 	AISettings  AISettings             `json:"ai_settings"`
 	Admins      []snowflake.ID         `json:"admins"`
+	PinChannel  snowflake.ID           `json:"pin_channel"`
 }
 
 func LoadConfig() (*Config, error) {
