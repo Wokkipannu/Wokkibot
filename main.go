@@ -48,6 +48,7 @@ func main() {
 	})
 	r.Command("/joke", commands.HandleJoke(b))
 	r.Command("/inspect", commands.HandleInspect(b))
+	r.Command("/download", commands.HandleDownload(b))
 	// Context menu commands
 	r.Command("/Quote", commands.HandleQuote(b))
 	r.Command("/Eval", commands.HandleEval(b))
