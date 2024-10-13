@@ -16,11 +16,10 @@ RUN apk --no-cache add ca-certificates
 
 COPY --from=build /build/bot /bin/bot
 
-RUN apt-get install -y --no-install-recommends curl
-RUN apt-get install -y --no-install-recommends python3
+RUN apk --no-cache add ca-certificates curl python3 ffmpeg
 
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
-RUN chmod a+rx /usr/local/bin/yt-dlp
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+    && chmod a+rx /usr/local/bin/yt-dlp
 
 RUN chmod +x /bin/bot
 
