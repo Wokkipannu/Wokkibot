@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 	"wokkibot/wokkibot"
 
@@ -25,7 +26,22 @@ var downloadCommand = discord.SlashCommandCreate{
 	},
 }
 
+type DownloadTask struct {
+	e                 *handler.CommandEvent
+	url               string
+	filePath          string
+	filePathProcessed string
+	tempDir           string
+}
+
+var taskQueue = make(chan DownloadTask, 10)
+var once sync.Once
+
 func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
+	once.Do(func() {
+		go downloadWorker()
+	})
+
 	return func(e *handler.CommandEvent) error {
 		data := e.SlashCommandInteractionData()
 
@@ -41,6 +57,12 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 		filename := fmt.Sprintf("%v.mp4", randomFileName)
 		processedFilename := fmt.Sprintf("%v_processed.mp4", randomFileName)
 
+		if _, err := os.Stat("downloads"); os.IsNotExist(err) {
+			if err := os.MkdirAll("downloads", 0755); err != nil {
+				return fmt.Errorf("failed to create downloads directory: %w", err)
+			}
+		}
+
 		tempDir, err := os.MkdirTemp("downloads", "video_*")
 		if err != nil {
 			fmt.Printf("Failed to create temp directory: %v\n", err)
@@ -50,47 +72,68 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 		filePath := filepath.Join(tempDir, filename)
 		filePathProcessed := filepath.Join(tempDir, processedFilename)
 
-		cmd := exec.Command("yt-dlp",
-			data.String("url"),
-			"-o", filePath,
-		)
-		if err := cmd.Run(); err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while downloading video").Build())
+		task := DownloadTask{
+			e:                 e,
+			url:               data.String("url"),
+			filePath:          filePath,
+			filePathProcessed: filePathProcessed,
+			tempDir:           tempDir,
 		}
+		taskQueue <- task
 
-		conversion := exec.Command("ffmpeg",
-			"-i", filePath,
-			"-c:v", "libx264",
-			"-c:a", "aac",
-			"-pix_fmt", "yuv420p",
-			"-f", "mp4",
-			filePathProcessed,
-		)
-
-		output, cErr := conversion.CombinedOutput()
-		if cErr != nil {
-			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while processing video").Build())
-			return err
-		} else {
-			fmt.Println(string(output))
-		}
-
-		file, err := os.Open(filePathProcessed)
-		if err != nil {
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while opening file").Build())
-		}
-		defer file.Close()
-
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().AddFile(processedFilename, processedFilename, file).Build())
-		if err != nil {
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while attaching file").Build())
-		}
-
-		if err := os.RemoveAll(tempDir); err != nil {
-			fmt.Printf("Error while removing downloaded files: %v", err)
-		}
-
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Waiting for previous download tasks to finish...").Build())
 		return err
+	}
+}
+
+func downloadWorker() {
+	for task := range taskQueue {
+		handleDownloadAndConversion(task)
+	}
+}
+
+func handleDownloadAndConversion(task DownloadTask) {
+	e := task.e
+
+	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Downloading video...").Build())
+	cmd := exec.Command("yt-dlp", task.url, "-o", task.filePath)
+	if err := cmd.Run(); err != nil {
+		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while downloading video").Build())
+		return
+	}
+
+	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Converting video...").Build())
+	conversion := exec.Command("ffmpeg",
+		"-i", task.filePath,
+		"-c:v", "libx264",
+		"-c:a", "aac",
+		"-pix_fmt", "yuv420p",
+		"-f", "mp4",
+		task.filePathProcessed,
+	)
+
+	output, err := conversion.CombinedOutput()
+	if err != nil {
+		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while processing video").Build())
+		return
+	} else {
+		fmt.Println(string(output))
+	}
+
+	file, err := os.Open(task.filePathProcessed)
+	if err != nil {
+		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while opening file").Build())
+		return
+	}
+	defer file.Close()
+
+	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("").AddFile(task.filePathProcessed, task.filePathProcessed, file).Build())
+	if err != nil {
+		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while attaching file").Build())
+	}
+
+	if err := os.RemoveAll(task.tempDir); err != nil {
+		fmt.Printf("Error while removing downloaded files: %v", err)
 	}
 }
 
