@@ -105,7 +105,7 @@ func handleDownloadAndConversion(task DownloadTask) {
 	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Converting video...").Build())
 	conversion := exec.Command("ffmpeg",
 		"-i", task.filePath,
-		"-c:v", "libx264",
+		"-c:v", "libx265",
 		"-c:a", "aac",
 		"-pix_fmt", "yuv420p",
 		"-f", "mp4",
