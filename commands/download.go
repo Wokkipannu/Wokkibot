@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -95,15 +96,33 @@ func downloadWorker() {
 func handleDownloadAndConversion(task DownloadTask) {
 	e := task.e
 
+	cleanup := func() {
+		if err := os.RemoveAll(task.tempDir); err != nil {
+			fmt.Printf("Error while removing downloaded files: %v", err)
+		}
+	}
+
+	defer cleanup()
+
 	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Downloading video...").Build())
-	cmd := exec.Command("yt-dlp", task.url, "-o", task.filePath)
+
+	downloadCtx, downloadCancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer downloadCancel()
+
+	cmd := exec.CommandContext(downloadCtx, "yt-dlp", task.url, "-o", task.filePath)
 	if err := cmd.Run(); err != nil {
+		if downloadCtx.Err() == context.DeadlineExceeded {
+			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Download canceled as it took too long").Build())
+		}
 		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while downloading video").Build())
 		return
 	}
 
+	conversionCtx, conversionCancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer conversionCancel()
+
 	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Converting video...").Build())
-	conversion := exec.Command("ffmpeg",
+	conversion := exec.CommandContext(conversionCtx, "ffmpeg",
 		"-i", task.filePath,
 		"-c:v", "h264_v4l2m2m",
 		"-b:v", "1M",
@@ -113,12 +132,12 @@ func handleDownloadAndConversion(task DownloadTask) {
 		task.filePathProcessed,
 	)
 
-	output, err := conversion.CombinedOutput()
-	if err != nil {
+	if err := conversion.Run(); err != nil {
+		if conversionCtx.Err() == context.DeadlineExceeded {
+			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Conversion canceled as it took too long").Build())
+		}
 		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while processing video").Build())
 		return
-	} else {
-		fmt.Println(string(output))
 	}
 
 	file, err := os.Open(task.filePathProcessed)
@@ -131,10 +150,6 @@ func handleDownloadAndConversion(task DownloadTask) {
 	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("").AddFile(task.filePathProcessed, task.filePathProcessed, file).Build())
 	if err != nil {
 		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while attaching file").Build())
-	}
-
-	if err := os.RemoveAll(task.tempDir); err != nil {
-		fmt.Printf("Error while removing downloaded files: %v", err)
 	}
 }
 
