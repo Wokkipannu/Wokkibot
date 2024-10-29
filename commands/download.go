@@ -55,7 +55,6 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		randomFileName := RandomName(10)
-		filename := fmt.Sprintf("%v.mp4", randomFileName)
 		processedFilename := fmt.Sprintf("%v_processed.mp4", randomFileName)
 
 		if _, err := os.Stat("downloads"); os.IsNotExist(err) {
@@ -70,13 +69,11 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
-		filePath := filepath.Join(tempDir, filename)
 		filePathProcessed := filepath.Join(tempDir, processedFilename)
 
 		task := DownloadTask{
 			e:                 e,
 			url:               data.String("url"),
-			filePath:          filePath,
 			filePathProcessed: filePathProcessed,
 			tempDir:           tempDir,
 		}
@@ -109,7 +106,8 @@ func handleDownloadAndConversion(task DownloadTask) {
 	downloadCtx, downloadCancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer downloadCancel()
 
-	cmd := exec.CommandContext(downloadCtx, "yt-dlp", task.url, "-o", task.filePath)
+	downloadOutput := filepath.Join(task.tempDir, "video_download.%(ext)s")
+	cmd := exec.CommandContext(downloadCtx, "yt-dlp", task.url, "-o", downloadOutput)
 	if err := cmd.Run(); err != nil {
 		if downloadCtx.Err() == context.DeadlineExceeded {
 			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Download canceled as it took too long").Build())
@@ -118,13 +116,20 @@ func handleDownloadAndConversion(task DownloadTask) {
 		return
 	}
 
+	downloadedFiles, err := filepath.Glob(filepath.Join(task.tempDir, "video_download.*"))
+	if err != nil {
+		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while finding downloaded file").Build())
+		return
+	}
+	inputFilePath := downloadedFiles[0]
+
 	conversionCtx, conversionCancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer conversionCancel()
 
 	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Converting video...").Build())
 	conversion := exec.CommandContext(conversionCtx, "ffmpeg",
-		"-i", task.filePath,
-		"-c:v", "h264_v4l2m2m",
+		"-i", inputFilePath,
+		"-c:v", "h264",
 		"-b:v", "1M",
 		"-c:a", "aac",
 		"-pix_fmt", "yuv420p",
