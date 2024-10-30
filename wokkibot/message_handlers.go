@@ -203,8 +203,6 @@ func HandleXLinks(b *Wokkibot, e *events.MessageCreate) {
 
 	message := e.Message.Content
 
-	fmt.Printf("message: %v\n", message)
-
 	regexPattern := `https?:\/\/(x|twitter)\.com\/(.*\/status\/\d+)\??.*`
 	r := regexp.MustCompile(regexPattern)
 

@@ -1,12 +1,15 @@
 package commands
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 	"wokkibot/wokkibot"
@@ -30,7 +33,6 @@ var downloadCommand = discord.SlashCommandCreate{
 type DownloadTask struct {
 	e                 *handler.CommandEvent
 	url               string
-	filePath          string
 	filePathProcessed string
 	tempDir           string
 }
@@ -135,9 +137,59 @@ func handleDownloadAndConversion(task DownloadTask) {
 		"-pix_fmt", "yuv420p",
 		"-f", "mp4",
 		task.filePathProcessed,
+		"-progress", "pipe:1", "-nostats",
 	)
 
-	if err := conversion.Run(); err != nil {
+	totalDuration, _ := getVideoDuration(inputFilePath)
+
+	conversionStdout, err := conversion.StdoutPipe()
+	if err != nil {
+		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while getting stdout").Build())
+		return
+	}
+
+	if err := conversion.Start(); err != nil {
+		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while starting conversion").Build())
+		return
+	}
+
+	ffmpegScanner := bufio.NewScanner(conversionStdout)
+	var currentTime string
+
+	lastUpdateTime := time.Now()
+	var lastPercentage float64
+
+	for ffmpegScanner.Scan() {
+		line := ffmpegScanner.Text()
+
+		if strings.Contains(line, "out_time=") {
+			timeIndex := strings.Index(line, "out_time=")
+			if timeIndex != -1 {
+				currentTime = line[timeIndex+9:]
+
+				var progressTime float64
+				parts := strings.Split(currentTime, ":")
+				if len(parts) == 3 {
+					hours, _ := strconv.ParseFloat(parts[0], 64)
+					minutes, _ := strconv.ParseFloat(parts[1], 64)
+					seconds, _ := strconv.ParseFloat(parts[2], 64)
+					progressTime = hours*3600 + minutes*60 + seconds
+				}
+
+				if totalDuration > 0 {
+					progressPercentage := (progressTime / totalDuration) * 100
+					if time.Since(lastUpdateTime) >= 1*time.Second && progressPercentage != lastPercentage {
+						progress := progressBar(progressPercentage)
+						e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent(fmt.Sprintf("Converting video\n%s %.2f%%", progress, progressPercentage)).Build())
+						lastUpdateTime = time.Now()
+						lastPercentage = progressPercentage
+					}
+				}
+			}
+		}
+	}
+
+	if err := conversion.Wait(); err != nil {
 		if conversionCtx.Err() == context.DeadlineExceeded {
 			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Conversion canceled as it took too long").Build())
 		}
@@ -166,4 +218,28 @@ func RandomName(length int) string {
 		b[i] = characters[seed.Intn(len(characters))]
 	}
 	return string(b)
+}
+
+func getVideoDuration(videoFile string) (float64, error) {
+	cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", videoFile)
+
+	durationOutput, err := cmd.Output()
+	if err != nil {
+		return 0, fmt.Errorf("error getting duration: %w", err)
+	}
+
+	totalDuration, err := strconv.ParseFloat(strings.TrimSpace(string(durationOutput)), 64)
+	if err != nil {
+		return 0, fmt.Errorf("error parsing duration: %w", err)
+	}
+
+	return totalDuration, nil
+}
+
+func progressBar(percentage float64) string {
+	filledBlocks := int(percentage / 100 * float64(20))
+
+	bar := strings.Repeat("█", filledBlocks) + strings.Repeat("░", 20-filledBlocks)
+
+	return bar
 }
