@@ -109,8 +109,51 @@ func handleDownloadAndConversion(task DownloadTask) {
 	defer downloadCancel()
 
 	downloadOutput := filepath.Join(task.tempDir, "video_download.%(ext)s")
-	cmd := exec.CommandContext(downloadCtx, "yt-dlp", task.url, "-o", downloadOutput)
-	if err := cmd.Run(); err != nil {
+	cmd := exec.CommandContext(downloadCtx, "yt-dlp", task.url, "-o", downloadOutput, "--progress-template", "{\"progress_percentage\": \"%(progress._percent_str)s}", "--newline")
+
+	downloadStdout, err := cmd.StdoutPipe()
+	if err != nil {
+		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while getting stdout").Build())
+		return
+	}
+
+	if err := cmd.Start(); err != nil {
+		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while starting download").Build())
+		return
+	}
+
+	lastDownloadUpdateTime := time.Now()
+	var lastDownloadPercentage float64
+
+	scanner := bufio.NewScanner(downloadStdout)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		line = strings.TrimSpace(line)
+
+		if strings.Contains(line, "progress_percentage") {
+			start := strings.Index(line, ":") + 3
+			end := strings.Index(line, "%")
+
+			if start > 0 && end > start {
+				progressPercentage := strings.TrimSpace(line[start:end])
+				percentage, err := strconv.ParseFloat(strings.TrimSuffix(progressPercentage, "%"), 64)
+				if err != nil {
+					fmt.Printf("Error parsing progress percentage: %v\n", err)
+					continue
+				}
+				progress := progressBar(percentage)
+
+				if time.Since(lastDownloadUpdateTime) >= 1*time.Second && percentage != lastDownloadPercentage {
+					e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent(fmt.Sprintf("Downloading video\n%s %.2f%%", progress, percentage)).Build())
+					lastDownloadUpdateTime = time.Now()
+					lastDownloadPercentage = percentage
+				}
+			}
+		}
+	}
+
+	if err := cmd.Wait(); err != nil {
 		if downloadCtx.Err() == context.DeadlineExceeded {
 			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Download canceled as it took too long").Build())
 		}
@@ -156,8 +199,8 @@ func handleDownloadAndConversion(task DownloadTask) {
 	ffmpegScanner := bufio.NewScanner(conversionStdout)
 	var currentTime string
 
-	lastUpdateTime := time.Now()
-	var lastPercentage float64
+	lastConversionUpdateTime := time.Now()
+	var lastConversionPercentage float64
 
 	for ffmpegScanner.Scan() {
 		line := ffmpegScanner.Text()
@@ -178,11 +221,11 @@ func handleDownloadAndConversion(task DownloadTask) {
 
 				if totalDuration > 0 {
 					progressPercentage := (progressTime / totalDuration) * 100
-					if time.Since(lastUpdateTime) >= 1*time.Second && progressPercentage != lastPercentage {
+					if time.Since(lastConversionUpdateTime) >= 1*time.Second && progressPercentage != lastConversionPercentage {
 						progress := progressBar(progressPercentage)
 						e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent(fmt.Sprintf("Converting video\n%s %.2f%%", progress, progressPercentage)).Build())
-						lastUpdateTime = time.Now()
-						lastPercentage = progressPercentage
+						lastConversionUpdateTime = time.Now()
+						lastConversionPercentage = progressPercentage
 					}
 				}
 			}
@@ -206,6 +249,10 @@ func handleDownloadAndConversion(task DownloadTask) {
 
 	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("").AddFile(task.filePathProcessed, task.filePathProcessed, file).Build())
 	if err != nil {
+		if err.Error() == "40005: Request entity too large" {
+			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("File is too large to attach").Build())
+			return
+		}
 		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while attaching file").Build())
 	}
 }
