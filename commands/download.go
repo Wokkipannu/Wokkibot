@@ -109,7 +109,7 @@ func handleDownloadAndConversion(task DownloadTask) {
 	defer downloadCancel()
 
 	downloadOutput := filepath.Join(task.tempDir, "video_download.%(ext)s")
-	cmd := exec.CommandContext(downloadCtx, "yt-dlp", task.url, "-o", downloadOutput, "--progress-template", "{\"progress_percentage\": \"%(progress._percent_str)s}", "--newline")
+	cmd := exec.CommandContext(downloadCtx, "yt-dlp", task.url, "-o", downloadOutput, "--format-sort", "+res:720", "--progress-template", "{\"progress_percentage\": \"%(progress._percent_str)s}", "--newline")
 
 	downloadStdout, err := cmd.StdoutPipe()
 	if err != nil {
