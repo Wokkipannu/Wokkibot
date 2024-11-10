@@ -3,8 +3,8 @@ package commands
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/discord"
@@ -37,6 +38,17 @@ type DownloadTask struct {
 	tempDir           string
 }
 
+type DownloadProgress struct {
+	ProgressPercentage string `json:"progress_percentage"`
+}
+
+const (
+	downloadTimeout   = 3 * time.Minute
+	conversionTimeout = 5 * time.Minute
+	updateInterval    = 1 * time.Second
+	defaultBitrate    = "1M"
+)
+
 var taskQueue = make(chan DownloadTask, 10)
 var once sync.Once
 
@@ -46,9 +58,9 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 	})
 
 	return func(e *handler.CommandEvent) error {
-		data := e.SlashCommandInteractionData()
+		url := e.SlashCommandInteractionData().String("url")
 
-		if data.String("url") == "" {
+		if url == "" {
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No URL provided").Build())
 		}
 
@@ -56,32 +68,25 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
-		randomFileName := RandomName(10)
-		processedFilename := fmt.Sprintf("%v_processed.mp4", randomFileName)
-
-		if _, err := os.Stat("downloads"); os.IsNotExist(err) {
-			if err := os.MkdirAll("downloads", 0755); err != nil {
-				return fmt.Errorf("failed to create downloads directory: %w", err)
-			}
+		if err := os.MkdirAll("downloads", 0755); err != nil {
+			return err
 		}
-
 		tempDir, err := os.MkdirTemp("downloads", "video_*")
 		if err != nil {
-			fmt.Printf("Failed to create temp directory: %v\n", err)
 			return err
 		}
 
-		filePathProcessed := filepath.Join(tempDir, processedFilename)
-
 		task := DownloadTask{
 			e:                 e,
-			url:               data.String("url"),
-			filePathProcessed: filePathProcessed,
+			url:               url,
+			filePathProcessed: filepath.Join(tempDir, fmt.Sprintf("%s_processed.mp4", utils.GenerateRandomName(10))),
 			tempDir:           tempDir,
 		}
 		taskQueue <- task
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Waiting for previous download tasks to finish...").Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+			SetContent("Waiting for previous download tasks to finish...").
+			Build())
 		return err
 	}
 }
@@ -95,129 +100,125 @@ func downloadWorker() {
 func handleDownloadAndConversion(task DownloadTask) {
 	e := task.e
 
-	cleanup := func() {
-		if err := os.RemoveAll(task.tempDir); err != nil {
-			fmt.Printf("Error while removing downloaded files: %v", err)
-		}
+	defer cleanup(task.tempDir)
+
+	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+		SetContent("Starting video download...").
+		Build())
+
+	downloadedFile, err := downloadVideo(task, e)
+	if err != nil {
+		handleError(e, "Error while downloading video", err.Error())
+		return
 	}
 
-	defer cleanup()
-
-	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Downloading video...").Build())
-
-	downloadCtx, downloadCancel := context.WithTimeout(context.Background(), 3*time.Minute)
-	defer downloadCancel()
-
-	downloadOutput := filepath.Join(task.tempDir, "video_download.%(ext)s")
-	cmd := exec.CommandContext(downloadCtx, "yt-dlp", task.url, "-o", downloadOutput, "--format-sort", "res:720,codec:h264", "--merge-output-format", "mp4", "--progress-template", "{\"progress_percentage\": \"%(progress._percent_str)s}", "--newline")
-
-	downloadStdout, err := cmd.StdoutPipe()
+	processedFile, err := convertVideo(task, e, downloadedFile)
 	if err != nil {
-		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while getting stdout").Build())
+		handleError(e, "Error while converting video", err.Error())
 		return
+	}
+
+	if err := attachFile(e, processedFile); err != nil {
+		handleError(e, "Error while attaching file", err.Error())
+		return
+	}
+}
+
+func downloadVideo(task DownloadTask, e *handler.CommandEvent) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), downloadTimeout)
+	defer cancel()
+
+	output := filepath.Join(task.tempDir, "video_download.%(ext)s")
+	cmd := exec.CommandContext(ctx, "yt-dlp",
+		task.url,
+		"-o", output,
+		"--format-sort", "res:720,codec:h264",
+		"--merge-output-format", "mp4",
+		"--progress-template", "{\"progress_percentage\": \"%(progress._percent_str)s\"}",
+		"--newline",
+	)
+	return executeWithProgress(e, task, cmd, ctx, "download", "")
+}
+
+func convertVideo(task DownloadTask, e *handler.CommandEvent, downloadedFile string) (string, error) {
+	codec, err := getVideoCodec(downloadedFile)
+	if err != nil {
+		return "", err
+	}
+
+	if codec == "h264" {
+		return downloadedFile, nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), conversionTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "ffmpeg",
+		"-i", downloadedFile,
+		"-c:v", "h264",
+		"-b:v", defaultBitrate,
+		"-c:a", "aac",
+		"-pix_fmt", "yuv420p",
+		"-f", "mp4",
+		task.filePathProcessed,
+		"-progress", "pipe:1",
+		"-nostats",
+	)
+
+	return executeWithProgress(e, task, cmd, ctx, "conversion", downloadedFile)
+}
+
+func executeWithProgress(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd, ctx context.Context, operation string, downloadedFile string) (string, error) {
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return "", fmt.Errorf("error getting stdout: %w", err)
 	}
 
 	if err := cmd.Start(); err != nil {
-		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while starting download").Build())
-		return
+		return "", fmt.Errorf("error starting command: %w", err)
 	}
 
-	lastDownloadUpdateTime := time.Now()
-	var lastDownloadPercentage float64
+	scanner := bufio.NewScanner(stdout)
+	lastUpdate := time.Now()
+	var lastPercentage float64
 
-	scanner := bufio.NewScanner(downloadStdout)
+	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+		SetContent(fmt.Sprintf("Starting video %s\n%s %.2f%%", operation, createProgressBar(0.0), 0.0)).
+		Build())
+
 	for scanner.Scan() {
-		line := scanner.Text()
+		if operation == "download" {
+			if !strings.HasPrefix(scanner.Text(), "{") || !json.Valid([]byte(scanner.Text())) {
+				continue
+			}
 
-		line = strings.TrimSpace(line)
+			var progress DownloadProgress
+			if err := json.Unmarshal([]byte(scanner.Text()), &progress); err != nil {
+				continue
+			}
 
-		if strings.Contains(line, "progress_percentage") {
-			start := strings.Index(line, ":") + 3
-			end := strings.Index(line, "%")
+			percentage, _ := strconv.ParseFloat(strings.TrimSuffix(progress.ProgressPercentage, "%"), 64)
+			if time.Since(lastUpdate) >= updateInterval && percentage != lastPercentage {
+				progress := createProgressBar(percentage)
 
-			if start > 0 && end > start {
-				progressPercentage := strings.TrimSpace(line[start:end])
-				percentage, err := strconv.ParseFloat(strings.TrimSuffix(progressPercentage, "%"), 64)
-				if err != nil {
-					fmt.Printf("Error parsing progress percentage: %v\n", err)
-					continue
-				}
-				progress := progressBar(percentage)
+				e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+					SetContent(fmt.Sprintf("Downloading video\n%s %.2f%%", progress, percentage)).
+					Build())
 
-				if time.Since(lastDownloadUpdateTime) >= 1*time.Second && percentage != lastDownloadPercentage {
-					e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent(fmt.Sprintf("Downloading video\n%s %.2f%%", progress, percentage)).Build())
-					lastDownloadUpdateTime = time.Now()
-					lastDownloadPercentage = percentage
-				}
+				lastUpdate = time.Now()
+				lastPercentage = percentage
 			}
 		}
-	}
 
-	if err := cmd.Wait(); err != nil {
-		if downloadCtx.Err() == context.DeadlineExceeded {
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Download canceled as it took too long").Build())
-		}
-		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while downloading video").Build())
-		return
-	}
+		if operation == "conversion" {
+			totalDuration, _ := getVideoDuration(downloadedFile)
 
-	downloadedFiles, err := filepath.Glob(filepath.Join(task.tempDir, "video_download.*"))
-	if err != nil {
-		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while finding downloaded file").Build())
-		return
-	}
-	inputFilePath := downloadedFiles[0]
-
-	codecCheck := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=codec_name", "-of", "default=noprint_wrappers=1:nokey=1", inputFilePath)
-	output, err := codecCheck.Output()
-	if err != nil {
-		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while checking video codec").Build())
-		return
-	}
-
-	var file *os.File
-	if strings.TrimSpace(string(output)) != "h264" {
-		conversionCtx, conversionCancel := context.WithTimeout(context.Background(), 5*time.Minute)
-		defer conversionCancel()
-
-		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Converting video...").Build())
-		conversion := exec.CommandContext(conversionCtx, "ffmpeg",
-			"-i", inputFilePath,
-			"-c:v", "h264",
-			"-b:v", "1M",
-			"-c:a", "aac",
-			"-pix_fmt", "yuv420p",
-			"-f", "mp4",
-			task.filePathProcessed,
-			"-progress", "pipe:1", "-nostats",
-		)
-
-		totalDuration, _ := getVideoDuration(inputFilePath)
-
-		conversionStdout, err := conversion.StdoutPipe()
-		if err != nil {
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while getting stdout").Build())
-			return
-		}
-
-		if err := conversion.Start(); err != nil {
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while starting conversion").Build())
-			return
-		}
-
-		ffmpegScanner := bufio.NewScanner(conversionStdout)
-		var currentTime string
-
-		lastConversionUpdateTime := time.Now()
-		var lastConversionPercentage float64
-
-		for ffmpegScanner.Scan() {
-			line := ffmpegScanner.Text()
+			line := scanner.Text()
 
 			if strings.Contains(line, "out_time=") {
 				timeIndex := strings.Index(line, "out_time=")
 				if timeIndex != -1 {
-					currentTime = line[timeIndex+9:]
+					currentTime := line[timeIndex+9:]
 
 					var progressTime float64
 					parts := strings.Split(currentTime, ":")
@@ -230,58 +231,69 @@ func handleDownloadAndConversion(task DownloadTask) {
 
 					if totalDuration > 0 {
 						progressPercentage := (progressTime / totalDuration) * 100
-						if time.Since(lastConversionUpdateTime) >= 1*time.Second && progressPercentage != lastConversionPercentage {
-							progress := progressBar(progressPercentage)
-							e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent(fmt.Sprintf("Converting video\n%s %.2f%%", progress, progressPercentage)).Build())
-							lastConversionUpdateTime = time.Now()
-							lastConversionPercentage = progressPercentage
+						if time.Since(lastUpdate) >= 1*time.Second && progressPercentage != lastPercentage {
+							progress := createProgressBar(progressPercentage)
+							e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+								SetContent(fmt.Sprintf("Converting video\n%s %.2f%%", progress, progressPercentage)).
+								Build())
+							lastUpdate = time.Now()
+							lastPercentage = progressPercentage
 						}
 					}
 				}
 			}
 		}
-
-		if err := conversion.Wait(); err != nil {
-			if conversionCtx.Err() == context.DeadlineExceeded {
-				e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Conversion canceled as it took too long").Build())
-			}
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while processing video").Build())
-			return
-		}
-
-		file, err = os.Open(task.filePathProcessed)
-		if err != nil {
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while opening file").Build())
-			return
-		}
-		defer file.Close()
-	} else {
-		file, err = os.Open(inputFilePath)
-		if err != nil {
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while opening file").Build())
-			return
-		}
-		defer file.Close()
 	}
 
-	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("").AddFile(task.filePathProcessed, task.filePathProcessed, file).Build())
-	if err != nil {
-		if err.Error() == "40005: Request entity too large" {
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("File is too large to attach").Build())
-			return
+	if err := cmd.Wait(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			handleError(e, "Timed out", fmt.Sprintf("%s canceled as it took too long", utils.CapitalizeFirstLetter(operation)))
+			return "", fmt.Errorf("operation timed out")
 		}
-		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while attaching file").Build())
+		return "", fmt.Errorf("command failed: %w", err)
 	}
+
+	if operation == "download" {
+		files, err := filepath.Glob(filepath.Join(task.tempDir, "video_download.*"))
+		if err != nil {
+			return "", fmt.Errorf("error finding downloaded file: %w", err)
+		}
+
+		return files[0], nil
+	}
+
+	return task.filePathProcessed, nil
 }
 
-func RandomName(length int) string {
-	const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	seed := rand.New(rand.NewSource(time.Now().UnixNano()))
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = characters[seed.Intn(len(characters))]
+func getVideoCodec(videoFile string) (string, error) {
+	cmd := exec.Command("ffprobe",
+		"-v", "error",
+		"-select_streams", "v:0",
+		"-show_entries", "stream=codec_name",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		videoFile,
+	)
+
+	ouptut, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("error getting video codec: %w", err)
 	}
-	return string(b)
+
+	return strings.TrimSpace(string(ouptut)), nil
+}
+
+func createProgressBar(percentage float64) string {
+	filledBlocks := int(percentage / 100 * float64(20))
+
+	bar := strings.Repeat("█", filledBlocks) + strings.Repeat("░", 20-filledBlocks)
+
+	return bar
+}
+
+func cleanup(tempDir string) {
+	if err := os.RemoveAll(tempDir); err != nil {
+		fmt.Printf("Error while removing downloaded files: %v", err)
+	}
 }
 
 func getVideoDuration(videoFile string) (float64, error) {
@@ -300,10 +312,32 @@ func getVideoDuration(videoFile string) (float64, error) {
 	return totalDuration, nil
 }
 
-func progressBar(percentage float64) string {
-	filledBlocks := int(percentage / 100 * float64(20))
+func attachFile(e *handler.CommandEvent, filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while opening file").Build())
+		return err
+	}
+	defer file.Close()
 
-	bar := strings.Repeat("█", filledBlocks) + strings.Repeat("░", 20-filledBlocks)
+	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+		SetContent("").
+		AddFile(filePath, filePath, file).
+		Build())
+	if err != nil {
+		return err
+	}
 
-	return bar
+	return nil
+}
+
+func handleError(e *handler.CommandEvent, message string, err string) {
+	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+		SetEmbeds(discord.NewEmbedBuilder().
+			SetTitlef(message).
+			SetDescription(err).
+			SetColor(utils.RGBToInteger(255, 0, 0)).
+			Build()).
+		SetContent("").
+		Build())
 }

@@ -11,6 +11,8 @@ import (
 	"time"
 	"unicode"
 
+	"math/rand"
+
 	"github.com/agnivade/levenshtein"
 	"golang.org/x/text/unicode/norm"
 )
@@ -99,4 +101,14 @@ func RemoveDiacritics(input string) string {
 		return r
 	}, t)
 	return norm.NFC.String(result)
+}
+
+func GenerateRandomName(length int) string {
+	const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	seed := rand.New(rand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = characters[seed.Intn(len(characters))]
+	}
+	return string(b)
 }
