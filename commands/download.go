@@ -36,6 +36,7 @@ type DownloadTask struct {
 	url               string
 	filePathProcessed string
 	tempDir           string
+	maxFileSize       int
 }
 
 type DownloadProgress struct {
@@ -76,11 +77,14 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
+		guild, _ := e.Guild()
+
 		task := DownloadTask{
 			e:                 e,
 			url:               url,
 			filePathProcessed: filepath.Join(tempDir, fmt.Sprintf("%s_processed.mp4", utils.GenerateRandomName(10))),
 			tempDir:           tempDir,
+			maxFileSize:       calculateMaximumFileSizeForGuild(guild),
 		}
 		taskQueue <- task
 
@@ -132,6 +136,7 @@ func downloadVideo(task DownloadTask, e *handler.CommandEvent) (string, error) {
 	cmd := exec.CommandContext(ctx, "yt-dlp",
 		task.url,
 		"-o", output,
+		"--max-filesize", fmt.Sprintf("%dM", task.maxFileSize),
 		"--format-sort", "res:720,codec:h264",
 		"--merge-output-format", "mp4",
 		"--progress-template", "{\"progress_percentage\": \"%(progress._percent_str)s\"}",
@@ -188,6 +193,11 @@ func executeWithProgress(e *handler.CommandEvent, task DownloadTask, cmd *exec.C
 
 	for scanner.Scan() {
 		if operation == "download" {
+			if strings.Contains(scanner.Text(), "File is larger than max-filesize") {
+				_ = cmd.Process.Kill()
+				return "", fmt.Errorf("file size exceeds the maximum allowed size for this guild. Maximum is %dMB", task.maxFileSize)
+			}
+
 			if !strings.HasPrefix(scanner.Text(), "{") || !json.Valid([]byte(scanner.Text())) {
 				continue
 			}
@@ -315,7 +325,7 @@ func getVideoDuration(videoFile string) (float64, error) {
 func attachFile(e *handler.CommandEvent, filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
-		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContent("Error while opening file").Build())
+		handleError(e, "Error while opening file", err.Error())
 		return err
 	}
 	defer file.Close()
@@ -340,4 +350,14 @@ func handleError(e *handler.CommandEvent, message string, err string) {
 			Build()).
 		SetContent("").
 		Build())
+}
+
+func calculateMaximumFileSizeForGuild(guild discord.Guild) int {
+	if guild.PremiumTier == discord.PremiumTier2 {
+		return 50
+	} else if guild.PremiumTier == discord.PremiumTier3 {
+		return 100
+	} else {
+		return 10
+	}
 }
