@@ -79,6 +79,28 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		guild, _ := e.Guild()
 
+		// Temporary fix for specific site
+		if strings.HasPrefix(url, "https://ylilauta.org/file/") {
+			parts := strings.Split(url, "/")
+			if len(parts) == 0 {
+				handleError(e, "Invalid URL format", "Invalid URL format")
+				return fmt.Errorf("invalid URL format")
+			}
+
+			fileID := parts[len(parts)-1]
+
+			if len(fileID) < 4 {
+				handleError(e, "File ID is too short", "File ID is too short")
+				return fmt.Errorf("file ID is too short")
+			}
+
+			subPath := fmt.Sprintf("%s/%s", fileID[:2], fileID[2:4])
+
+			newURL := fmt.Sprintf("https://i.ylilauta.org/%s/%s-apple.mp4", subPath, fileID)
+
+			url = newURL
+		}
+
 		task := DownloadTask{
 			e:                 e,
 			url:               url,
