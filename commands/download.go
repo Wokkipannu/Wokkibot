@@ -100,6 +100,24 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 			url = newURL
 		}
+		// Also convert direct links to the -apple version
+		if strings.HasPrefix(url, "https://i.ylilauta.org/") {
+			parts := strings.Split(url, "/")
+			if len(parts) == 0 {
+				handleError(e, "Invalid URL format", "Invalid URL format")
+				return fmt.Errorf("invalid URL format")
+			}
+
+			filename := parts[len(parts)-1]
+			if !strings.HasSuffix(filename, "-apple.mp4") {
+				filename = strings.TrimSuffix(filename, ".mp4") + "-apple.mp4"
+
+				parts[len(parts)-1] = filename
+				newURL := strings.Join(parts, "/")
+
+				url = newURL
+			}
+		}
 
 		task := DownloadTask{
 			e:                 e,
