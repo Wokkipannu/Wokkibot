@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -219,6 +220,9 @@ func executeWithProgress(e *handler.CommandEvent, task DownloadTask, cmd *exec.C
 		return "", fmt.Errorf("error getting stdout: %w", err)
 	}
 
+	stderr := &bytes.Buffer{}
+	cmd.Stderr = stderr
+
 	if err := cmd.Start(); err != nil {
 		return "", fmt.Errorf("error starting command: %w", err)
 	}
@@ -300,7 +304,11 @@ func executeWithProgress(e *handler.CommandEvent, task DownloadTask, cmd *exec.C
 			handleError(e, "Timed out", fmt.Sprintf("%s canceled as it took too long", utils.CapitalizeFirstLetter(operation)))
 			return "", fmt.Errorf("operation timed out")
 		}
-		return "", fmt.Errorf("command failed: %w", err)
+		errMsg := stderr.String()
+		if errMsg == "" {
+			errMsg = err.Error()
+		}
+		return "", fmt.Errorf("%s failed: %s", operation, errMsg)
 	}
 
 	if operation == "download" {
