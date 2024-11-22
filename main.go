@@ -3,6 +3,7 @@ package main
 import (
 	"wokkibot/commands"
 	"wokkibot/components"
+	"wokkibot/database"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/handler"
@@ -14,6 +15,14 @@ func main() {
 	if err != nil {
 		panic("failed to load config: " + err.Error())
 	}
+
+	dbConfig := database.Config{
+		DatabaseURL: "file:wokkibot.db",
+	}
+	if err := database.Initialize(dbConfig); err != nil {
+		panic("failed to initialize database: " + err.Error())
+	}
+	defer database.Close()
 
 	customCommands, err := wokkibot.LoadCommands("custom_commands.json")
 	if err != nil {
@@ -38,12 +47,17 @@ func main() {
 			r.Command("/remove", commands.HandleCustomRemove(b))
 			r.Command("/list", commands.HandleCustomList(b))
 		})
-		r.Route("/config", func(r handler.Router) {
+		r.Route("/llm", func(r handler.Router) {
 			r.Command("/system-message", b.AdminMiddleware(commands.HandleAISystemMessageChange(b)))
 			r.Command("/model", b.AdminMiddleware(commands.HandleAIModelChange(b)))
 			r.Command("/history-count", b.AdminMiddleware(commands.HandleAIHistoryCountChange(b)))
 			r.Command("/api_url", b.AdminMiddleware(commands.HandleAIApiUrlChange(b)))
 			r.Command("/enabled", b.AdminMiddleware(commands.HandleAIEnableChange(b)))
+		})
+		r.Route("/friday", func(r handler.Router) {
+			r.Command("/add", b.AdminMiddleware(commands.HandleAddFridayClip(b)))
+			r.Command("/remove", b.AdminMiddleware(commands.HandleRemoveFridayClip(b)))
+			r.Command("/list", b.AdminMiddleware(commands.HandleListFridayClips(b)))
 		})
 	})
 	r.Command("/joke", commands.HandleJoke(b))

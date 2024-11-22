@@ -5,6 +5,8 @@ import (
 	"strings"
 	"wokkibot/wokkibot"
 
+	"wokkibot/database"
+
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 )
@@ -126,6 +128,38 @@ var settingsCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
+		discord.ApplicationCommandOptionSubCommandGroup{
+			Name:        "friday",
+			Description: "Manage friday celebration clips",
+			Options: []discord.ApplicationCommandOptionSubCommand{
+				{
+					Name:        "add",
+					Description: "Add a friday celebration clip",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionString{
+							Name:        "url",
+							Description: "The URL of the video",
+							Required:    true,
+						},
+					},
+				},
+				{
+					Name:        "remove",
+					Description: "Remove a friday celebration clip",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionString{
+							Name:        "id",
+							Description: "The id of the video",
+							Required:    true,
+						},
+					},
+				},
+				{
+					Name:        "list",
+					Description: "List all friday celebration clips",
+				},
+			},
+		},
 	},
 }
 
@@ -138,35 +172,75 @@ func HandleCustomAdd(b *wokkibot.Wokkibot) handler.CommandHandler {
 		description := data.String("description")
 		output := data.String("output")
 
-		for i, cmd := range b.CustomCommands {
-			if cmd.Prefix == prefix && cmd.Name == name && cmd.GuildID == *e.GuildID() {
-				if e.User().ID != cmd.Author {
-					return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("You don't have permission to modify %v%v", prefix, name).Build())
-				}
+		db := database.GetDB()
 
-				b.CustomCommands[i].Output = output
-				b.CustomCommands[i].Prefix = prefix
-				b.CustomCommands[i].Name = name
-				b.CustomCommands[i].Description = description
-				wokkibot.AddOrUpdateCommand("custom_commands.json", b.CustomCommands[i])
-				return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Command **%v%v** modified", prefix, name).Build())
+		var existingAuthor string
+		err := db.QueryRow("SELECT author FROM custom_commands WHERE guild_id = ? AND prefix = ? AND name = ?",
+			*e.GuildID(), prefix, name).Scan(&existingAuthor)
+
+		if err == nil {
+			if existingAuthor != e.User().ID.String() {
+				return e.CreateMessage(discord.NewMessageCreateBuilder().
+					SetContentf("You don't have permission to modify %v%v", prefix, name).Build())
 			}
+
+			_, err = db.Exec(`
+                UPDATE custom_commands 
+                SET description = ?, output = ? 
+                WHERE guild_id = ? AND prefix = ? AND name = ?`,
+				description, output, *e.GuildID(), prefix, name)
+
+			if err != nil {
+				return e.CreateMessage(discord.NewMessageCreateBuilder().
+					SetContentf("Failed to update command: %v", err).Build())
+			}
+
+			return e.CreateMessage(discord.NewMessageCreateBuilder().
+				SetContentf("Command **%v%v** updated successfully!", prefix, name).Build())
 		}
 
-		newCommand := wokkibot.Command{
-			Prefix:      prefix,
-			Name:        name,
-			Description: description,
-			Output:      output,
-			Author:      e.User().ID,
-			GuildID:     *e.GuildID(),
+		_, err = db.Exec(`
+            INSERT INTO custom_commands (guild_id, prefix, name, description, output, author) 
+            VALUES (?, ?, ?, ?, ?, ?)`,
+			*e.GuildID(), prefix, name, description, output, e.User().ID)
+
+		if err != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().
+				SetContentf("Failed to create command: %v", err).Build())
 		}
 
-		wokkibot.AddOrUpdateCommand("custom_commands.json", newCommand)
+		return e.CreateMessage(discord.NewMessageCreateBuilder().
+			SetContentf("Command **%v%v** created successfully!", prefix, name).Build())
 
-		b.CustomCommands = append(b.CustomCommands, newCommand)
+		// for i, cmd := range b.CustomCommands {
+		// 	if cmd.Prefix == prefix && cmd.Name == name && cmd.GuildID == *e.GuildID() {
+		// 		if e.User().ID != cmd.Author {
+		// 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("You don't have permission to modify %v%v", prefix, name).Build())
+		// 		}
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Command **%v%v** added", prefix, name).Build())
+		// 		b.CustomCommands[i].Output = output
+		// 		b.CustomCommands[i].Prefix = prefix
+		// 		b.CustomCommands[i].Name = name
+		// 		b.CustomCommands[i].Description = description
+		// 		wokkibot.AddOrUpdateCommand("custom_commands.json", b.CustomCommands[i])
+		// 		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Command **%v%v** modified", prefix, name).Build())
+		// 	}
+		// }
+
+		// newCommand := wokkibot.Command{
+		// 	Prefix:      prefix,
+		// 	Name:        name,
+		// 	Description: description,
+		// 	Output:      output,
+		// 	Author:      e.User().ID,
+		// 	GuildID:     *e.GuildID(),
+		// }
+
+		// wokkibot.AddOrUpdateCommand("custom_commands.json", newCommand)
+
+		// b.CustomCommands = append(b.CustomCommands, newCommand)
+
+		// return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Command **%v%v** added", prefix, name).Build())
 	}
 }
 
@@ -294,5 +368,66 @@ func HandleAIEnableChange(b *wokkibot.Wokkibot) handler.CommandHandler {
 		wokkibot.SaveConfig(b.Config)
 
 		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("AI enabled set to %v", enabled).Build())
+	}
+}
+
+func HandleAddFridayClip(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
+
+		url := data.String("url")
+
+		db := database.GetDB()
+		_, err := db.Exec("INSERT INTO friday_clips (url) VALUES (?)", url)
+		if err != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Failed to add clip: %v", err).Build())
+		}
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Clip added successfully").Build())
+	}
+}
+
+func HandleRemoveFridayClip(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		data := e.SlashCommandInteractionData()
+
+		url := data.String("id")
+
+		db := database.GetDB()
+		_, err := db.Exec("DELETE FROM friday_clips WHERE id = ?", url)
+		if err != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Failed to remove clip: %v", err).Build())
+		}
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Clip removed successfully").Build())
+	}
+}
+
+func HandleListFridayClips(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		db := database.GetDB()
+		rows, err := db.Query("SELECT id, url FROM friday_clips")
+		if err != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Failed to list clips: %v", err).Build())
+		}
+		defer rows.Close()
+
+		var clips []string
+		for rows.Next() {
+			var id, url string
+			if err := rows.Scan(&id, &url); err != nil {
+				return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Failed to list clips: %v", err).Build())
+			}
+			clips = append(clips, fmt.Sprintf("%v: <%v>", id, url))
+		}
+		if err := rows.Err(); err != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Failed to list clips: %v", err).Build())
+		}
+
+		if len(clips) == 0 {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No clips found").Build())
+		}
+
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent(strings.Join(clips, "\n")).Build())
 	}
 }
