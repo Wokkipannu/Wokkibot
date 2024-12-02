@@ -226,6 +226,10 @@ func HandleMinesweeper(b *wokkibot.Wokkibot) handler.CommandHandler {
 			mines = m
 		}
 
+		if width > 20 || height > 20 || mines > (width*height)-1 {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Width and height must be less than 20 and mines must be less than (width*height)-1").Build())
+		}
+
 		board := newBoard(width, height, mines, e.User().ID.String())
 		b.Games[e.User().ID] = board
 
