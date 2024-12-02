@@ -34,6 +34,7 @@ func New(config Config, customCommands []Command) *Wokkibot {
 			trivias: make(map[snowflake.ID]*Trivia),
 		},
 		CustomCommands: customCommands,
+		Games:          make(map[snowflake.ID]interface{}),
 	}
 }
 
@@ -45,6 +46,7 @@ type Wokkibot struct {
 	Queues         *QueueManager
 	Trivias        *TriviaManager
 	CustomCommands []Command
+	Games          map[snowflake.ID]interface{}
 }
 
 func (b *Wokkibot) SetupBot(r handler.Router) {

@@ -75,6 +75,14 @@ func main() {
 	r.Command("/disconnect", commands.HandleDisconnect(b))
 	r.Command("/seek", commands.HandleSeek(b))
 	r.Command("/volume", commands.HandleVolume(b))
+	// Minesweeper
+	r.Command("/minesweeper", commands.HandleMinesweeper(b))
+	r.Component("/minesweeper/flag", components.HandleMinesweeperFlagAction(b))
+	r.Component("/minesweeper/reveal", components.HandleMinesweeperRevealAction(b))
+	r.Component("/minesweeper/up", components.HandleMinesweeperUpAction(b))
+	r.Component("/minesweeper/down", components.HandleMinesweeperDownAction(b))
+	r.Component("/minesweeper/left", components.HandleMinesweeperLeftAction(b))
+	r.Component("/minesweeper/right", components.HandleMinesweeperRightAction(b))
 
 	b.SetupBot(r)
 	b.InitLavalink()

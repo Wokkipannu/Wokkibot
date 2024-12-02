@@ -24,4 +24,5 @@ var Commands = []discord.ApplicationCommandCreate{
 	disconnectCommand,
 	seekCommand,
 	volumeCommand,
+	minesweeperCommand,
 }

@@ -6,6 +6,7 @@ import (
 	"log"
 	"sync"
 
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	_ "modernc.org/sqlite"
 )
 
@@ -21,7 +22,7 @@ type Config struct {
 func Initialize(cfg Config) error {
 	var err error
 	dbOnce.Do(func() {
-		db, err = sql.Open("sqlite", cfg.DatabaseURL)
+		db, err = sql.Open("libsql", cfg.DatabaseURL)
 		if err != nil {
 			log.Printf("Failed to create database client: %v", err)
 			return
