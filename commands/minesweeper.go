@@ -32,7 +32,6 @@ var minesweeperCommand = discord.SlashCommandCreate{
 	},
 }
 
-// Emoji constants for the game
 const (
 	EMOJI_MINE    = "💣"
 	EMOJI_FLAG    = "🚩"
@@ -53,7 +52,6 @@ const (
 	EMOJI_CURSOR  = "🧑"
 )
 
-// Default board settings
 const (
 	DEFAULT_WIDTH  = 8
 	DEFAULT_HEIGHT = 8

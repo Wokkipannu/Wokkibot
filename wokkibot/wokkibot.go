@@ -23,7 +23,7 @@ import (
 	gopiston "github.com/milindmadhukar/go-piston"
 )
 
-func New(config Config, customCommands []Command) *Wokkibot {
+func New(config Config, customCommands []Command, version string) *Wokkibot {
 	return &Wokkibot{
 		PistonClient: gopiston.CreateDefaultClient(),
 		Config:       config,
@@ -35,6 +35,8 @@ func New(config Config, customCommands []Command) *Wokkibot {
 		},
 		CustomCommands: customCommands,
 		Games:          make(map[snowflake.ID]interface{}),
+		StartTime:      time.Now(),
+		Version:        version,
 	}
 }
 
@@ -47,6 +49,8 @@ type Wokkibot struct {
 	Trivias        *TriviaManager
 	CustomCommands []Command
 	Games          map[snowflake.ID]interface{}
+	StartTime      time.Time
+	Version        string
 }
 
 func (b *Wokkibot) SetupBot(r handler.Router) {

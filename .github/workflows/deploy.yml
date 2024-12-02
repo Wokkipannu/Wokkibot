@@ -18,5 +18,6 @@ jobs:
         script: |
           cd ${{ secrets.FOLDER }}
           git pull
-          sudo docker compose build wokkibot
+          export GIT_COMMIT=$(git rev-parse --short HEAD)
+          sudo -E docker compose build --build-arg GIT_COMMIT=$GIT_COMMIT wokkibot
           sudo docker compose up -d --no-deps wokkibot

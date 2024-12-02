@@ -10,6 +10,8 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 )
 
+var version = "dev"
+
 func main() {
 	cfg, err := wokkibot.LoadConfig()
 	if err != nil {
@@ -29,7 +31,7 @@ func main() {
 		panic("failed to load custom commands: " + err.Error())
 	}
 
-	b := wokkibot.New(*cfg, customCommands)
+	b := wokkibot.New(*cfg, customCommands, version)
 	defer b.Close()
 
 	r := handler.New()
@@ -63,6 +65,7 @@ func main() {
 	r.Command("/joke", commands.HandleJoke(b))
 	r.Command("/inspect", commands.HandleInspect(b))
 	r.Command("/download", commands.HandleDownload(b))
+	r.Command("/status", commands.HandleStatus(b))
 	// Context menu commands
 	r.Command("/Quote", commands.HandleQuote(b))
 	r.Command("/Eval", commands.HandleEval(b))

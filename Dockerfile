@@ -8,7 +8,8 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 go build -ldflags="-X 'main.version=${VERSION}'-w -s" -o bot main.go
+ARG GIT_COMMIT
+RUN CGO_ENABLED=0 go build -ldflags="-X 'main.version=${GIT_COMMIT}' -w -s" -o bot main.go
 
 FROM alpine:latest
 
