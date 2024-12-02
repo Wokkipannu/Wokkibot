@@ -8,6 +8,7 @@ require (
 	github.com/disgoorg/disgolink/v3 v3.0.3
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/mvdan/xurls v1.1.0
+	github.com/tursodatabase/libsql-client-go v0.0.0-20240902231107-85af5b9d094d
 	golang.org/x/text v0.19.0
 	modernc.org/sqlite v1.34.1
 )
@@ -18,12 +19,9 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
-	github.com/libsql/sqlite-antlr4-parser v0.0.0-20240327125255-dbf53b6cbf06 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/tursodatabase/go-libsql v0.0.0-20241113154718-293fe7f21b08 // indirect
-	github.com/tursodatabase/libsql-client-go v0.0.0-20240902231107-85af5b9d094d // indirect
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f // indirect
 	modernc.org/gc/v3 v3.0.0-20241004144649-1aea3fae8852 // indirect
 	modernc.org/libc v1.61.2 // indirect
