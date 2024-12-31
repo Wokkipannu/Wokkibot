@@ -29,6 +29,11 @@ var downloadCommand = discord.SlashCommandCreate{
 			Description: "The URL of the video",
 			Required:    true,
 		},
+		discord.ApplicationCommandOptionString{
+			Name:        "resolution",
+			Description: "Overwrite the default 720p resolution in format sort",
+			Required:    false,
+		},
 	},
 }
 
@@ -38,6 +43,7 @@ type DownloadTask struct {
 	filePathProcessed string
 	tempDir           string
 	maxFileSize       int
+	resolution        string
 }
 
 type DownloadProgress struct {
@@ -120,12 +126,20 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 			}
 		}
 
+		var res string
+		if e.SlashCommandInteractionData().String("resolution") != "" {
+			res = e.SlashCommandInteractionData().String("resolution")
+		} else {
+			res = "720p"
+		}
+
 		task := DownloadTask{
 			e:                 e,
 			url:               url,
 			filePathProcessed: filepath.Join(tempDir, fmt.Sprintf("%s_processed.mp4", utils.GenerateRandomName(10))),
 			tempDir:           tempDir,
 			maxFileSize:       calculateMaximumFileSizeForGuild(guild),
+			resolution:        res,
 		}
 		taskQueue <- task
 
@@ -178,7 +192,7 @@ func downloadVideo(task DownloadTask, e *handler.CommandEvent) (string, error) {
 		task.url,
 		"-o", output,
 		"--max-filesize", fmt.Sprintf("%dM", task.maxFileSize),
-		"--format-sort", "res:720,codec:h264",
+		"--format-sort", fmt.Sprintf("res:%s,codec:h264", task.resolution),
 		"--merge-output-format", "mp4",
 		"--progress-template", "{\"progress_percentage\": \"%(progress._percent_str)s\"}",
 		"--newline",
