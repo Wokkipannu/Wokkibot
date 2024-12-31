@@ -1,0 +1,27 @@
+package utils
+
+const (
+	COLOR_DEFAULT = 0x000000
+	COLOR_WHITE   = 0xFFFFFF
+	COLOR_BLACK   = 0x000000
+
+	COLOR_BLUE   = 0x3498DB
+	COLOR_RED    = 0xE74C3C
+	COLOR_GREEN  = 0x2ECC71
+	COLOR_YELLOW = 0xF1C40F
+
+	COLOR_PURPLE = 0x9B59B6
+	COLOR_ORANGE = 0xE67E22
+	COLOR_CYAN   = 0x1ABC9C
+	COLOR_PINK   = 0xE91E63
+
+	COLOR_BLURPLE = 0x5865F2
+	COLOR_GREYPLE = 0x99AAB5
+	COLOR_DARK    = 0x2C2F33
+	COLOR_LIGHT   = 0xFFFFFF
+)
+
+// Returns a color integer from RGB values
+func RGBToInteger(r, g, b int) int {
+	return (r << 16) + (g << 8) + b
+}

@@ -17,13 +17,14 @@ type AISettings struct {
 }
 
 type Config struct {
-	Token       string                 `json:"token"`
-	GuildID     string                 `json:"guildid"`
-	Nodes       []disgolink.NodeConfig `json:"nodes"`
-	TriviaToken string                 `json:"trivia_token"`
-	AISettings  AISettings             `json:"ai_settings"`
-	Admins      []snowflake.ID         `json:"admins"`
-	PinChannel  snowflake.ID           `json:"pin_channel"`
+	Token           string                 `json:"token"`
+	GuildID         string                 `json:"guildid"`
+	Nodes           []disgolink.NodeConfig `json:"nodes"`
+	TriviaToken     string                 `json:"trivia_token"`
+	AISettings      AISettings             `json:"ai_settings"`
+	Admins          []snowflake.ID         `json:"admins"`
+	PinChannel      snowflake.ID           `json:"pin_channel"`
+	LavalinkEnabled bool                   `json:"lavalink_enabled"`
 }
 
 func LoadConfig() (*Config, error) {

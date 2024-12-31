@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -10,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"wokkibot/database"
 	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
@@ -188,21 +190,25 @@ var triviaCommand = discord.SlashCommandCreate{
 	},
 }
 
+var db *sql.DB
+var triviaToken string
+
 func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
-		data := e.SlashCommandInteractionData()
-
 		t := b.Trivias.Get(*e.GuildID())
 
 		if t.IsActive {
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Trivia is already running. Wait for it to finish first.").Build())
 		}
 
-		if b.Config.TriviaToken == "" {
-			FetchToken(b)
+		db = database.GetDB()
+
+		err := db.QueryRow("SELECT trivia_token FROM guilds WHERE id = ?", *e.GuildID()).Scan(&triviaToken)
+		if err != nil {
+			FetchToken(e, b)
 		}
 
-		_trivia, err := FetchTrivia(b, data)
+		_trivia, err := FetchTrivia(e, b)
 		if err != nil {
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while fetching trivia. Maybe the API is down?").Build())
 		}
@@ -372,7 +378,7 @@ func ValidateTriviaAnswer(answer, correct string) bool {
 	return utils.StringMatch(strings.ToLower(answer), strings.ToLower(correct))
 }
 
-func FetchToken(b *wokkibot.Wokkibot) {
+func FetchToken(e *handler.CommandEvent, b *wokkibot.Wokkibot) error {
 	res, err := b.Client.Rest().HTTPClient().Get("https://opentdb.com/api_token.php?command=request")
 	if err != nil {
 		slog.Error("Error while getting trivia token", slog.Any("err", err))
@@ -390,17 +396,38 @@ func FetchToken(b *wokkibot.Wokkibot) {
 		slog.Error("Error while parsing trivia token", slog.Any("err", err))
 	}
 
-	b.Config.TriviaToken = tokenResponse.Token
+	result, err := db.Exec("UPDATE guilds SET trivia_token = ? WHERE id = ?", tokenResponse.Token, *e.GuildID())
+	if err != nil {
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Failed to update trivia token").Build())
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Failed to update trivia token").Build())
+	}
+
+	if rowsAffected == 0 {
+		_, err = db.Exec("INSERT INTO guilds (id, trivia_token) VALUES (?, ?)", *e.GuildID(), tokenResponse.Token)
+		if err != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Failed to update trivia token").Build())
+		}
+	}
+
+	triviaToken = tokenResponse.Token
+
+	return nil
 }
 
 var tries = 0
 
-func FetchTrivia(b *wokkibot.Wokkibot, data discord.SlashCommandInteractionData) ([]TriviaQuestion, error) {
+func FetchTrivia(e *handler.CommandEvent, b *wokkibot.Wokkibot) ([]TriviaQuestion, error) {
+	data := e.SlashCommandInteractionData()
+
 	apiEndpoint := "https://opentdb.com/api.php"
 	queryParams := url.Values{}
 
 	queryParams.Add("amount", "1")
-	queryParams.Add("token", b.Config.TriviaToken) // Random token so we don't get same questions repeated
+	queryParams.Add("token", triviaToken)
 
 	if category, ok := data.OptString("category"); ok {
 		queryParams.Add("category", category)
@@ -435,12 +462,12 @@ func FetchTrivia(b *wokkibot.Wokkibot, data discord.SlashCommandInteractionData)
 
 	switch triviaResponse.Code {
 	case 3:
-		FetchToken(b)
+		FetchToken(e, b)
 		tries++
 		if tries > 3 {
 			return nil, fmt.Errorf("token expired")
 		}
-		return FetchTrivia(b, data)
+		return FetchTrivia(e, b)
 	case 5:
 		return nil, fmt.Errorf("too many requests in a short period of time")
 	}

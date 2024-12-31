@@ -46,6 +46,10 @@ var seekCommand = discord.SlashCommandCreate{
 
 func HandleSeek(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
+		if !b.Config.LavalinkEnabled {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Lavalink connection has not been established").Build())
+		}
+
 		data := e.SlashCommandInteractionData()
 
 		player := b.Lavalink.ExistingPlayer(*e.GuildID())

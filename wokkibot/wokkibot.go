@@ -115,6 +115,7 @@ func (b *Wokkibot) InitLavalink() {
 			node, err := b.Lavalink.AddNode(ctx, cfg)
 			if err != nil {
 				slog.Error("error while adding lavalink node", slog.Any("err", err))
+				b.Config.LavalinkEnabled = false
 				return
 			}
 
@@ -131,6 +132,7 @@ func (b *Wokkibot) InitLavalink() {
 			}
 
 			slog.Info("Lavalink connection established", slog.String("node_version", version), slog.String("node_session_id", node.SessionID()))
+			b.Config.LavalinkEnabled = true
 		}()
 	}
 	wg.Wait()

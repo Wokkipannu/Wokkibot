@@ -112,44 +112,9 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		guild, _ := e.Guild()
 
-		// Temporary fix for specific site
-		if strings.HasPrefix(url, "https://ylilauta.org/file/") {
-			parts := strings.Split(url, "/")
-			if len(parts) == 0 {
-				handleError(e, "Invalid URL format", "Invalid URL format")
-				return fmt.Errorf("invalid URL format")
-			}
-
-			fileID := parts[len(parts)-1]
-
-			if len(fileID) < 4 {
-				handleError(e, "File ID is too short", "File ID is too short")
-				return fmt.Errorf("file ID is too short")
-			}
-
-			subPath := fmt.Sprintf("%s/%s", fileID[:2], fileID[2:4])
-
-			newURL := fmt.Sprintf("https://i.ylilauta.org/%s/%s-apple.mp4", subPath, fileID)
-
-			url = newURL
-		}
-		// Also convert direct links to the -apple version
-		if strings.HasPrefix(url, "https://i.ylilauta.org/") {
-			parts := strings.Split(url, "/")
-			if len(parts) == 0 {
-				handleError(e, "Invalid URL format", "Invalid URL format")
-				return fmt.Errorf("invalid URL format")
-			}
-
-			filename := parts[len(parts)-1]
-			if !strings.HasSuffix(filename, "-apple.mp4") {
-				filename = strings.TrimSuffix(filename, ".mp4") + "-apple.mp4"
-
-				parts[len(parts)-1] = filename
-				newURL := strings.Join(parts, "/")
-
-				url = newURL
-			}
+		newUrl, _ := handleSpecialScenarios(e, url)
+		if newUrl != url {
+			url = newUrl
 		}
 
 		var res string
@@ -223,7 +188,7 @@ func downloadVideo(task DownloadTask, e *handler.CommandEvent) (string, error) {
 		"--progress-template", "{\"progress_percentage\": \"%(progress._percent_str)s\"}",
 		"--newline",
 	)
-	return executeWithProgress(e, task, cmd, ctx, "download", "")
+	return executeOperation(e, task, cmd, ctx, "download", "")
 }
 
 func convertVideo(task DownloadTask, e *handler.CommandEvent, downloadedFile string) (string, error) {
@@ -251,10 +216,10 @@ func convertVideo(task DownloadTask, e *handler.CommandEvent, downloadedFile str
 		"-nostats",
 	)
 
-	return executeWithProgress(e, task, cmd, ctx, "conversion", downloadedFile)
+	return executeOperation(e, task, cmd, ctx, "conversion", downloadedFile)
 }
 
-func executeWithProgress(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd, ctx context.Context, operation string, downloadedFile string) (string, error) {
+func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd, ctx context.Context, operation string, downloadedFile string) (string, error) {
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return "", fmt.Errorf("error getting stdout: %w", err)
@@ -448,4 +413,47 @@ func calculateMaximumFileSizeForGuild(guild discord.Guild) int {
 	} else {
 		return 10
 	}
+}
+
+func handleSpecialScenarios(e *handler.CommandEvent, url string) (string, error) {
+	if strings.HasPrefix(url, "https://ylilauta.org/file/") {
+		parts := strings.Split(url, "/")
+		if len(parts) == 0 {
+			handleError(e, "Invalid URL format", "Invalid URL format")
+			return "", fmt.Errorf("invalid URL format")
+		}
+
+		fileID := parts[len(parts)-1]
+
+		if len(fileID) < 4 {
+			handleError(e, "File ID is too short", "File ID is too short")
+			return "", fmt.Errorf("file ID is too short")
+		}
+
+		subPath := fmt.Sprintf("%s/%s", fileID[:2], fileID[2:4])
+
+		newURL := fmt.Sprintf("https://i.ylilauta.org/%s/%s-apple.mp4", subPath, fileID)
+
+		url = newURL
+	}
+
+	if strings.HasPrefix(url, "https://i.ylilauta.org/") {
+		parts := strings.Split(url, "/")
+		if len(parts) == 0 {
+			handleError(e, "Invalid URL format", "Invalid URL format")
+			return "", fmt.Errorf("invalid URL format")
+		}
+
+		filename := parts[len(parts)-1]
+		if !strings.HasSuffix(filename, "-apple.mp4") {
+			filename = strings.TrimSuffix(filename, ".mp4") + "-apple.mp4"
+
+			parts[len(parts)-1] = filename
+			newURL := strings.Join(parts, "/")
+
+			url = newURL
+		}
+	}
+
+	return url, nil
 }

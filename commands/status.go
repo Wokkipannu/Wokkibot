@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime"
 	"time"
+	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/discord"
@@ -19,10 +20,11 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		statusEmbed := discord.NewEmbedBuilder().
 			SetTitle("Wokkibot Status").
-			AddField("Running Version", b.Version, true).
-			AddField("Go Version", runtime.Version(), true).
+			AddField("Version", b.Version, true).
+			AddField("Go", runtime.Version(), true).
 			AddField("Uptime", time.Since(b.StartTime).Round(time.Second).String(), true).
-			AddField("Ping", fmt.Sprintf("%dms", b.Client.Gateway().Latency().Milliseconds()), true)
+			AddField("Ping", fmt.Sprintf("%dms", b.Client.Gateway().Latency().Milliseconds()), true).
+			SetColor(utils.COLOR_GREEN)
 
 		return e.CreateMessage(discord.NewMessageCreateBuilder().
 			SetEmbeds(statusEmbed.Build()).

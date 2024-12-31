@@ -36,6 +36,7 @@ func QuoteEmbed(msg discord.Message) discord.EmbedBuilder {
 	return *embed
 }
 
+// Replaces the domain part of a URL, for example "https://example.com/path" with "https://newdomain.com/path"
 func ReplaceDomain(originalURL, newDomain string) (string, error) {
 	parsedURL, err := url.Parse(originalURL)
 	if err != nil {

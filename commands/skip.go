@@ -19,6 +19,10 @@ var skipCommand = discord.SlashCommandCreate{
 
 func HandleSkip(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
+		if !b.Config.LavalinkEnabled {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Lavalink connection has not been established").Build())
+		}
+
 		player := b.Lavalink.ExistingPlayer(*e.GuildID())
 		queue := b.Queues.Get(*e.GuildID())
 
@@ -31,18 +35,6 @@ func HandleSkip(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Skipped track").Build())
-
-		// track, ok := queue.Next()
-		// if !ok {
-		// 	player.Update(context.TODO(), lavalink.WithNullTrack())
-		// 	return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Skipped track, no more tracks in queue").Build())
-		// }
-
-		// if err := player.Update(context.TODO(), lavalink.WithTrack(track)); err != nil {
-		// 	return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Failed to skip track").Build())
-		// }
-
-		// return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Skipped track").Build())
 	}
 }
 

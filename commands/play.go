@@ -72,6 +72,10 @@ var playCommand = discord.SlashCommandCreate{
 
 func HandlePlay(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
+		if !b.Config.LavalinkEnabled {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Lavalink connection has not been established").Build())
+		}
+
 		data := e.SlashCommandInteractionData()
 
 		queue := b.Queues.Get(*e.GuildID())

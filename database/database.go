@@ -73,6 +73,10 @@ func initializeSchema() error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			url TEXT NOT NULL
 		)`,
+		`CREATE TABLE IF NOT EXISTS guilds (
+			id TEXT PRIMARY KEY,
+			trivia_token TEXT
+		)`,
 	}
 
 	for _, schema := range schemas {

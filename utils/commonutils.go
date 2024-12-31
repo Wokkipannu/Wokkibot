@@ -17,11 +17,6 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// Returns a color integer from RGB values
-func RGBToInteger(r, g, b int) int {
-	return (r << 16) + (g << 8) + b
-}
-
 // Capitalize the first letter of a string
 func CapitalizeFirstLetter(s string) string {
 	if len(s) == 0 {
