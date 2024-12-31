@@ -33,6 +33,32 @@ var downloadCommand = discord.SlashCommandCreate{
 			Name:        "resolution",
 			Description: "Overwrite the default 720p resolution in format sort",
 			Required:    false,
+			Choices: []discord.ApplicationCommandOptionChoiceString{
+				{
+					Name:  "1080p",
+					Value: "1080",
+				},
+				{
+					Name:  "720p",
+					Value: "720",
+				},
+				{
+					Name:  "480p",
+					Value: "480",
+				},
+				{
+					Name:  "360p",
+					Value: "360",
+				},
+				{
+					Name:  "240p",
+					Value: "240",
+				},
+				{
+					Name:  "144p",
+					Value: "144",
+				},
+			},
 		},
 	},
 }
