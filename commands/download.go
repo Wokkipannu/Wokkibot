@@ -130,7 +130,7 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 		if e.SlashCommandInteractionData().String("resolution") != "" {
 			res = e.SlashCommandInteractionData().String("resolution")
 		} else {
-			res = "720p"
+			res = "720"
 		}
 
 		task := DownloadTask{
