@@ -15,9 +15,6 @@ import (
 var settingsCommand = discord.SlashCommandCreate{
 	Name:        "settings",
 	Description: "Used to change server settings",
-	Contexts: []discord.InteractionContextType{
-		discord.InteractionContextTypeBotDM,
-	},
 	Options: []discord.ApplicationCommandOption{
 		// Custom command related settings
 		discord.ApplicationCommandOptionSubCommandGroup{
