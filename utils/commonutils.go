@@ -14,6 +14,8 @@ import (
 	"math/rand"
 
 	"github.com/agnivade/levenshtein"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/handler"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -106,4 +108,15 @@ func GenerateRandomName(length int) string {
 		b[i] = characters[seed.Intn(len(characters))]
 	}
 	return string(b)
+}
+
+func HandleError(e *handler.CommandEvent, message string, err string) {
+	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+		SetEmbeds(discord.NewEmbedBuilder().
+			SetTitle(message).
+			SetDescription(err).
+			SetColor(RGBToInteger(255, 0, 0)).
+			Build()).
+		SetContent("").
+		Build())
 }

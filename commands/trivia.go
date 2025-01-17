@@ -15,7 +15,9 @@ import (
 	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
+	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/snowflake/v2"
 	"golang.org/x/net/context"
@@ -246,10 +248,9 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 				}
 			}()
 
-			ec := wokkibot.NewEventCollector(b.Client, channel)
-			defer func() {
-				ec.Stop()
-			}()
+			ch, cls := bot.NewEventCollector(e.Client(), func(event *events.MessageCreate) bool {
+				return !event.Message.Author.Bot && event.ChannelID == e.Channel().ID()
+			})
 
 			ctx, clsCtx := context.WithTimeout(context.Background(), 60*time.Second)
 			defer clsCtx()
@@ -289,9 +290,10 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 						slog.Error("Error while sending timeout message", slog.Any("err", err))
 					}
 					t.SetStatus(false)
+					cls()
 					return
 
-				case messageEvent := <-ec.Events():
+				case messageEvent := <-ch:
 					if messageEvent == nil {
 						slog.Warn("Received nil message event", slog.Any("channel", channel))
 						continue
@@ -321,6 +323,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 							slog.Error("Error while sending skip message", slog.Any("err", err))
 						}
 						t.SetStatus(false)
+						cls()
 						return
 					} else {
 						addOrUpdateUser(messageEvent.Message.Author.ID, 1)
@@ -344,6 +347,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 							slog.Error("Error while sending correct answer message", slog.Any("err", err))
 						}
 						t.SetStatus(false)
+						cls()
 						return
 					}
 				}

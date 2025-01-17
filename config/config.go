@@ -1,4 +1,4 @@
-package wokkibot
+package config
 
 import (
 	"encoding/json"
@@ -8,22 +8,12 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 )
 
-type AISettings struct {
-	Model        string `json:"model"`
-	System       string `json:"system"`
-	Enabled      bool   `json:"enabled"`
-	ApiUrl       string `json:"api_url"`
-	HistoryCount int    `json:"history_count"`
-}
-
 type Config struct {
 	Token           string                 `json:"token"`
 	GuildID         string                 `json:"guildid"`
 	Nodes           []disgolink.NodeConfig `json:"nodes"`
 	TriviaToken     string                 `json:"trivia_token"`
-	AISettings      AISettings             `json:"ai_settings"`
 	Admins          []snowflake.ID         `json:"admins"`
-	PinChannel      snowflake.ID           `json:"pin_channel"`
 	LavalinkEnabled bool                   `json:"lavalink_enabled"`
 }
 

@@ -38,6 +38,12 @@ func Initialize(cfg Config) error {
 			log.Printf("Failed to initialize schema: %v", err)
 			return
 		}
+
+		err = runMigrations()
+		if err != nil {
+			log.Printf("Failed to run migrations: %v", err)
+			return
+		}
 	})
 	return err
 }
@@ -55,6 +61,10 @@ func Close() error {
 
 func initializeSchema() error {
 	schemas := []string{
+		`CREATE TABLE IF NOT EXISTS migrations (
+    	version INTEGER PRIMARY KEY,
+    	applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
 		`CREATE TABLE IF NOT EXISTS users (
 			id TEXT PRIMARY KEY,
 			username TEXT NOT NULL,
@@ -75,7 +85,8 @@ func initializeSchema() error {
 		)`,
 		`CREATE TABLE IF NOT EXISTS guilds (
 			id TEXT PRIMARY KEY,
-			trivia_token TEXT
+			trivia_token TEXT,
+			pin_channel TEXT
 		)`,
 	}
 

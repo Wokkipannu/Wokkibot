@@ -14,9 +14,10 @@ var Commands = []discord.ApplicationCommandCreate{
 	triviaCommand,
 	settingsCommand,
 	jokeCommand,
-	inspectCommand,
 	pinCommand,
 	downloadCommand,
+	minesweeperCommand,
+	statusCommand,
 	// Music commands
 	playCommand,
 	skipCommand,
@@ -24,6 +25,4 @@ var Commands = []discord.ApplicationCommandCreate{
 	disconnectCommand,
 	seekCommand,
 	volumeCommand,
-	minesweeperCommand,
-	statusCommand,
 }

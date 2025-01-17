@@ -4,7 +4,6 @@
 Wokkibot rewritten yet again. This time in GO using DisGo.
 
 The main purpose of Wokkibot was originally to play music. This has shifted a lot and these days while music playing is still possible, it is not the main focus.
-The bot currently still requires lavalink to run, but this will ideally be changed soon so that it can function without it. This would obviously disable the music related commands.
 
 # Commands
 ##### Music related commands
@@ -23,26 +22,22 @@ The bot currently still requires lavalink to run, but this will ideally be chang
 * `/flip` - Flip a coin
 * `/trivia` - Start a trivia game
 * `/joke` - Get a random joke
-* `/inspect` - Inspect an image using AI
 * `/settings`
   * `/settings commands`
     * `/settings commands add` - Add a custom command
     * `/settings commands remove` - Remove a custom command
     * `/settings commands list` - List all custom commands
-  * `/settings llm` - LLM/Ollama specific configuration
-    * `/settings llm system-message` - Change the system message for LLM
-    * `/settings llm model` - Change the model for LLM
-    * `/settings llm history-count` - Change the amount of messages to remember and send for LLM. This includes messages from user and bot, so one response is 2 messages in history.
-    * `/settings llm api-url` - Change the API URL for LLM
-    * `/settings llm enabled` - Enable or disable responding to @Wokkibot
   * `/settings friday`
     * `/settings friday add` - Add a friday celebration clip
     * `/settings friday remove` - Remove a friday celebration clip
     * `/settings friday list` - List all friday celebration clips
+  * `/settings guild`
+    * `/settings guild pinchannel` - Set the pin channel
+* `/minesweeper` - Start a minesweeper game
 ##### Context menu commands
 * Quote - Post a message quote as an embed
 * Eval - Evaluate code
-* Pin - Pin a message to pins channel. This will eventually be configurable using the settings, currently set in config.json
+* Pin - Pin a message to pins channel
 
 # Setup
 * Get [Lavalink](https://github.com/freyacodes/Lavalink)
@@ -64,18 +59,10 @@ The bot currently still requires lavalink to run, but this will ideally be chang
    "session_id": ""
   }
  ],
- "trivia_token": "",
- "ai_settings": {
-  "model": "llama3.2",
-  "system": "You are a discord bot",
-  "enabled": true,
-  "api_url": "http://127.0.0.1:11434",
-  "history_count": 10
- },
  "admins": [
   "SOME_DISCORD_USER_ID"
  ],
- "pin_channel": "SOME_DISCORD_CHANNEL_ID"
+ "lavalink_enabled": true
 }
 ```
 
@@ -87,10 +74,3 @@ Create a custom_commands.json file in the same directory as the bot and give it 
 ```
 []
 ```
-
-# TODO
-- [x] Add SQLite database for storing data
-- [ ] Make custom commands guild based (currently global)
-- [ ] Store Trivia token in database for each guild
-- [ ] Place music related commands under a music/player command as subcommands
-- [x] Store /friday command clips in database

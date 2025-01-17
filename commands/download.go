@@ -158,18 +158,18 @@ func handleDownloadAndConversion(task DownloadTask) {
 
 	downloadedFile, err := downloadVideo(task, e)
 	if err != nil {
-		handleError(e, "Error while downloading video", err.Error())
+		utils.HandleError(e, "Error while downloading video", err.Error())
 		return
 	}
 
 	processedFile, err := convertVideo(task, e, downloadedFile)
 	if err != nil {
-		handleError(e, "Error while converting video", err.Error())
+		utils.HandleError(e, "Error while converting video", err.Error())
 		return
 	}
 
 	if err := attachFile(e, processedFile); err != nil {
-		handleError(e, "Error while attaching file", err.Error())
+		utils.HandleError(e, "Error while attaching file", err.Error())
 		return
 	}
 }
@@ -306,7 +306,7 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 
 	if err := cmd.Wait(); err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
-			handleError(e, "Timed out", fmt.Sprintf("%s canceled as it took too long", utils.CapitalizeFirstLetter(operation)))
+			utils.HandleError(e, "Timed out", fmt.Sprintf("%s canceled as it took too long", utils.CapitalizeFirstLetter(operation)))
 			return "", fmt.Errorf("operation timed out")
 		}
 		errMsg := stderr.String()
@@ -378,31 +378,20 @@ func getVideoDuration(videoFile string) (float64, error) {
 func attachFile(e *handler.CommandEvent, filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
-		handleError(e, "Error while opening file", err.Error())
+		utils.HandleError(e, "Error while opening file", err.Error())
 		return err
 	}
 	defer file.Close()
 
 	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
 		SetContent("").
-		AddFile(filePath, filePath, file).
+		AddFile("video.mp4", filePath, file).
 		Build())
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func handleError(e *handler.CommandEvent, message string, err string) {
-	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-		SetEmbeds(discord.NewEmbedBuilder().
-			SetTitlef(message).
-			SetDescription(err).
-			SetColor(utils.RGBToInteger(255, 0, 0)).
-			Build()).
-		SetContent("").
-		Build())
 }
 
 func calculateMaximumFileSizeForGuild(guild discord.Guild) int {
@@ -419,14 +408,14 @@ func handleSpecialScenarios(e *handler.CommandEvent, url string) (string, error)
 	if strings.HasPrefix(url, "https://ylilauta.org/file/") {
 		parts := strings.Split(url, "/")
 		if len(parts) == 0 {
-			handleError(e, "Invalid URL format", "Invalid URL format")
+			utils.HandleError(e, "Invalid URL format", "Invalid URL format")
 			return "", fmt.Errorf("invalid URL format")
 		}
 
 		fileID := parts[len(parts)-1]
 
 		if len(fileID) < 4 {
-			handleError(e, "File ID is too short", "File ID is too short")
+			utils.HandleError(e, "File ID is too short", "File ID is too short")
 			return "", fmt.Errorf("file ID is too short")
 		}
 
@@ -440,7 +429,7 @@ func handleSpecialScenarios(e *handler.CommandEvent, url string) (string, error)
 	if strings.HasPrefix(url, "https://i.ylilauta.org/") {
 		parts := strings.Split(url, "/")
 		if len(parts) == 0 {
-			handleError(e, "Invalid URL format", "Invalid URL format")
+			utils.HandleError(e, "Invalid URL format", "Invalid URL format")
 			return "", fmt.Errorf("invalid URL format")
 		}
 

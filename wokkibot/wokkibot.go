@@ -8,6 +8,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"wokkibot/config"
 
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
@@ -23,7 +24,7 @@ import (
 	gopiston "github.com/milindmadhukar/go-piston"
 )
 
-func New(config Config, customCommands []Command, version string) *Wokkibot {
+func New(config config.Config, customCommands []Command, version string) *Wokkibot {
 	return &Wokkibot{
 		PistonClient: gopiston.CreateDefaultClient(),
 		Config:       config,
@@ -42,7 +43,7 @@ func New(config Config, customCommands []Command, version string) *Wokkibot {
 
 type Wokkibot struct {
 	Client         bot.Client
-	Config         Config
+	Config         config.Config
 	PistonClient   *gopiston.Client
 	Lavalink       disgolink.Client
 	Queues         *QueueManager
