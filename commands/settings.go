@@ -10,11 +10,15 @@ import (
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
+	"github.com/disgoorg/json"
 )
 
+var perms = json.NewNullable(discord.Permissions(discord.PermissionAdministrator))
+
 var settingsCommand = discord.SlashCommandCreate{
-	Name:        "settings",
-	Description: "Used to change server settings",
+	Name:                     "settings",
+	Description:              "Used to change server settings",
+	DefaultMemberPermissions: &perms,
 	Options: []discord.ApplicationCommandOption{
 		// Custom command related settings
 		discord.ApplicationCommandOptionSubCommandGroup{
