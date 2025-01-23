@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -200,36 +201,22 @@ func downloadVideo(task DownloadTask, e *handler.CommandEvent) (string, error) {
 	return executeOperation(e, task, cmd, ctx, "download", "")
 }
 
-// This does not currently run through the executeOperation function
-// While it works for it's intended scenario now, it would be ideal to refactor it to use the same structure as the other downloads
 func downloadVideoWithCurl(task DownloadTask, e *handler.CommandEvent) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), downloadTimeout)
 	defer cancel()
 
-	outputPath := filepath.Join(task.tempDir, fmt.Sprintf("video_download.%s", "mp4"))
+	output := filepath.Join(task.tempDir, "video_download.%(ext)s")
 
-	curlArgs := []string{
+	cmd := exec.CommandContext(ctx, "curl",
 		"-L",
 		"-f",
 		"-#",
-		"-o", outputPath,
+		"-o", output,
 		"--max-filesize", fmt.Sprintf("%d", task.maxFileSize*1024*1024),
 		task.url,
-	}
+	)
 
-	cmd := exec.CommandContext(ctx, "curl", curlArgs...)
-	stderr := &bytes.Buffer{}
-	cmd.Stderr = stderr
-
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("curl download failed: %w, details: %s", err, stderr.String())
-	}
-
-	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
-		return "", fmt.Errorf("download file does not exist: %s", outputPath)
-	}
-
-	return outputPath, nil
+	return executeOperation(e, task, cmd, ctx, "curldownload", "")
 }
 
 func convertVideo(task DownloadTask, e *handler.CommandEvent, downloadedFile string) (string, error) {
@@ -283,8 +270,6 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 
 	for scanner.Scan() {
 		if operation == "download" {
-			slog.Info("using normal download", "url", task.url)
-
 			if strings.Contains(scanner.Text(), "File is larger than max-filesize") {
 				_ = cmd.Process.Kill()
 				return "", fmt.Errorf("file size exceeds the maximum allowed size for this guild. Maximum is %dMB", task.maxFileSize)
@@ -345,6 +330,22 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 				}
 			}
 		}
+
+		if operation == "curldownload" {
+			line := scanner.Text()
+			if strings.HasPrefix(line, "###") {
+				percentage := math.Min(float64(strings.Count(line, "#"))*2, 100.0)
+
+				if time.Since(lastUpdate) >= updateInterval && percentage != lastPercentage {
+					progress := createProgressBar(percentage)
+					e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+						SetContent(fmt.Sprintf("Downloading video\n%s %.2f%%", progress, percentage)).
+						Build())
+					lastUpdate = time.Now()
+					lastPercentage = percentage
+				}
+			}
+		}
 	}
 
 	if err := cmd.Wait(); err != nil {
@@ -359,7 +360,7 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 		return "", fmt.Errorf("%s failed: %s", operation, errMsg)
 	}
 
-	if operation == "download" {
+	if operation == "download" || operation == "curldownload" {
 		files, err := filepath.Glob(filepath.Join(task.tempDir, "video_download.*"))
 		if err != nil {
 			return "", fmt.Errorf("error finding downloaded file: %w", err)
