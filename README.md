@@ -1,7 +1,10 @@
 ![Build](https://github.com/wokkipannu/Wokkibot-Go/actions/workflows/build.yml/badge.svg)
 
-# Wokkibot-Go
-Wokkibot rewritten yet again. This time in GO using DisGo.
+# Wokkibot
+This is the latest iteration of Wokkibot, build on top of [DisGo](https://github.com/disgoorg/disgo).
+
+[C# version of Wokkibot](https://github.com/Wokkipannu/Wokkibot-CSharp)
+[Original JavaScript version of Wokkibot](https://github.com/Wokkipannu/Wokkibot)
 
 The main purpose of Wokkibot was originally to play music. This has shifted a lot and these days while music playing is still possible, it is not the main focus.
 
@@ -64,13 +67,4 @@ The main purpose of Wokkibot was originally to play music. This has shifted a lo
  ],
  "lavalink_enabled": true
 }
-```
-
-### custom_commands.json
->[!NOTE]
-> Soon to be removed and moved to SQLite
-
-Create a custom_commands.json file in the same directory as the bot and give it an empty array to start with.
-```
-[]
 ```

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"wokkibot/commands"
 	"wokkibot/components"
 	"wokkibot/config"
@@ -25,10 +26,18 @@ func main() {
 	if err := database.Initialize(dbConfig); err != nil {
 		panic("failed to initialize database: " + err.Error())
 	}
+	slog.Info("Successfully connected to database")
 	defer database.Close()
 
-	b := wokkibot.New(*cfg, []wokkibot.Command{}, version)
+	b := wokkibot.New(*cfg, version)
 	defer b.Close()
+
+	customCommands, err := b.LoadCommands()
+	if err != nil {
+		panic("failed to load custom commands: " + err.Error())
+	}
+
+	b.CustomCommands = customCommands
 
 	r := handler.New()
 

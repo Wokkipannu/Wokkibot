@@ -1,20 +1,21 @@
 package commands
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"strconv"
+	"math"
+	"math/rand"
+	"strings"
+	"wokkibot/database"
+	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 )
 
-type ToppingsResponse struct {
-	Data    string `json:"data"`
-	Message string `json:"message"`
-	Status  string `json:"status"`
+type Topping struct {
+	Name  string
+	Count int64
 }
 
 var pizzaCommand = discord.SlashCommandCreate{
@@ -31,6 +32,10 @@ var pizzaCommand = discord.SlashCommandCreate{
 
 func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
+		if err := e.Respond(discord.InteractionResponseTypeDeferredCreateMessage, nil); err != nil {
+			return err
+		}
+
 		data := e.SlashCommandInteractionData()
 
 		var amount int
@@ -42,25 +47,60 @@ func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		if amount < 1 {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Choose at least 1 topping").Build())
+			utils.HandleError(e, "Choose at least 1 topping", "pizza")
+			return nil
 		}
 
-		res, err := b.Client.Rest().HTTPClient().Get("https://api.wokki.dev/api/random?amount=" + strconv.Itoa(amount))
+		db := database.GetDB()
+
+		rows, err := db.Query("SELECT name FROM pizza_toppings")
 		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while fetching data").Build())
+			utils.HandleError(e, "Error while fetching data", "pizza")
+			return err
 		}
 
-		defer res.Body.Close()
-
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while reading data").Build())
+		var allToppings []string
+		for rows.Next() {
+			var topping string
+			if err := rows.Scan(&topping); err != nil {
+				utils.HandleError(e, "Error while scanning data", "pizza")
+				return err
+			}
+			allToppings = append(allToppings, topping)
 		}
 
-		toppings := ToppingsResponse{}
-		err = json.Unmarshal(body, &toppings)
-		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while parsing data").Build())
+		if len(allToppings) == 0 {
+			utils.HandleError(e, "No toppings found in database", "pizza")
+			return nil
+		}
+
+		toppingsCount := len(allToppings)
+
+		randomToppings := make([]Topping, toppingsCount)
+		amountToRoll := int64(amount)
+
+		for amountToRoll > 0 {
+			roll := rand.Intn(toppingsCount)
+			countLimit := math.Ceil(float64(amount) / 12)
+			count := rand.Int63n(int64(countLimit))
+			if count == 0 {
+				count += 1
+			}
+
+			randomToppings[roll].Count += count
+			randomToppings[roll].Name = allToppings[roll]
+			amountToRoll -= count
+		}
+
+		var output []string
+		for _, v := range randomToppings {
+			if v.Count > 0 {
+				if v.Count > 1 {
+					output = append(output, fmt.Sprintf("%dx %s", v.Count, v.Name))
+				} else {
+					output = append(output, v.Name)
+				}
+			}
 		}
 
 		embed := discord.NewEmbedBuilder()
@@ -68,18 +108,42 @@ func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 			Name:    fmt.Sprintf("%v's pizza", e.User().EffectiveName()),
 			IconURL: *e.User().AvatarURL(),
 		}
-		runeLength := []rune(toppings.Data)
-		var outputs []string
-		if len(runeLength) > 900 {
-			outputs = append(outputs, string(runeLength[:900]))
-			outputs = append(outputs, string(runeLength[900:]))
-			embed.AddField("Toppings (1/2)", outputs[0], true)
-			embed.AddField("Toppings (2/2)", outputs[1], true)
-		} else {
-			embed.AddField("Toppings", toppings.Data, false)
-		}
-		builtEmbed := embed.Build()
+		embed.SetColor(utils.COLOR_BLURPLE)
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(builtEmbed).Build())
+		const maxFieldLength = 1024
+		var currentChunk strings.Builder
+		var chunks []string
+
+		for i, tc := range output {
+			toppingText := tc
+
+			if currentChunk.Len()+len(toppingText)+2 > maxFieldLength {
+				chunks = append(chunks, currentChunk.String())
+				currentChunk.Reset()
+			}
+
+			if currentChunk.Len() > 0 {
+				currentChunk.WriteString(", ")
+			}
+			currentChunk.WriteString(toppingText)
+
+			if i == len(output)-1 && currentChunk.Len() > 0 {
+				chunks = append(chunks, currentChunk.String())
+			}
+		}
+
+		if len(chunks) > 1 {
+			for i, chunk := range chunks {
+				embed.AddField(fmt.Sprintf("Toppings (%d/%d)", i+1, len(chunks)), chunk, false)
+			}
+		} else if len(chunks) == 1 {
+			embed.AddField("Toppings", chunks[0], false)
+		}
+
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+			SetEmbeds(embed.Build()).
+			Build())
+
+		return err
 	}
 }

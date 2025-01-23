@@ -18,6 +18,11 @@ var migrations = []Migration{
 		Description: "Add pin_channel to guilds",
 		SQL:         "ALTER TABLE guilds ADD COLUMN pin_channel TEXT;",
 	},
+	{
+		Version:     2,
+		Description: "Add data to pizza_toppings table",
+		SQL:         "INSERT INTO pizza_toppings (name) VALUES ('Ananas'), ('Aurajuusto'), ('Chili'), ('Jalopeno'), ('Tuplajuusto'), ('Kananmuna'), ('Katkarapu'), ('Kermaperunat'), ('Oliivi'), ('Pekoni'), ('Pippurikastike'), ('Punasipuli'), ('Salaatti'), ('Simpukka'), ('Smetana'), ('Tomaatti'), ('Herkkusieni'), ('Anjovis'), ('BBQ-kastike'), ('Fetajuusto'), ('Jauheliha'), ('Kana'), ('Kapris'), ('Kebab'), ('Mozzarella'), ('Paprika'), ('Pepperoni'), ('Pizzasuikale'), ('Rucola'), ('Salami'), ('Sipuli'), ('Suolakurkku'), ('Tonnikala'), ('Banaani'), ('Currykastike');",
+	},
 }
 
 func runMigrations() error {

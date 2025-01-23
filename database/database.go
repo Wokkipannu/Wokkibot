@@ -88,6 +88,10 @@ func initializeSchema() error {
 			trivia_token TEXT,
 			pin_channel TEXT
 		)`,
+		`CREATE TABLE IF NOT EXISTS pizza_toppings (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL
+		)`,
 	}
 
 	for _, schema := range schemas {

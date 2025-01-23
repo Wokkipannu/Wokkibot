@@ -66,19 +66,3 @@ func HandleXLinks(b *Wokkibot, e *events.MessageCreate) {
 		e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(fixedURL).SetMessageReferenceByID(e.Message.ID).SetAllowedMentions(&discord.AllowedMentions{RepliedUser: false}).Build())
 	}
 }
-
-func HandleCustomCommand(b *Wokkibot, e *events.MessageCreate) {
-	input := e.Message.Content
-
-	if input == "" {
-		return
-	}
-	prefix := string(input[0])
-	name := strings.TrimPrefix(input, prefix)
-
-	for _, cmd := range b.CustomCommands {
-		if cmd.Prefix == prefix && cmd.Name == name && cmd.GuildID == *e.GuildID {
-			e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(cmd.Output).SetMessageReferenceByID(e.Message.ID).SetAllowedMentions(&discord.AllowedMentions{RepliedUser: false}).Build())
-		}
-	}
-}
