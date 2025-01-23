@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -156,7 +157,15 @@ func handleDownloadAndConversion(task DownloadTask) {
 		SetContent("Starting video download...").
 		Build())
 
-	downloadedFile, err := downloadVideo(task, e)
+	var downloadedFile string
+	var err error
+
+	if strings.HasPrefix(task.url, "https://i.ylilauta.org/") {
+		downloadedFile, err = downloadVideoWithCurl(task, e)
+	} else {
+		downloadedFile, err = downloadVideo(task, e)
+	}
+
 	if err != nil {
 		utils.HandleError(e, "Error while downloading video", err.Error())
 		return
@@ -189,6 +198,38 @@ func downloadVideo(task DownloadTask, e *handler.CommandEvent) (string, error) {
 		"--newline",
 	)
 	return executeOperation(e, task, cmd, ctx, "download", "")
+}
+
+// This does not currently run through the executeOperation function
+// While it works for it's intended scenario now, it would be ideal to refactor it to use the same structure as the other downloads
+func downloadVideoWithCurl(task DownloadTask, e *handler.CommandEvent) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), downloadTimeout)
+	defer cancel()
+
+	outputPath := filepath.Join(task.tempDir, fmt.Sprintf("video_download.%s", "mp4"))
+
+	curlArgs := []string{
+		"-L",
+		"-f",
+		"-#",
+		"-o", outputPath,
+		"--max-filesize", fmt.Sprintf("%d", task.maxFileSize*1024*1024),
+		task.url,
+	}
+
+	cmd := exec.CommandContext(ctx, "curl", curlArgs...)
+	stderr := &bytes.Buffer{}
+	cmd.Stderr = stderr
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("curl download failed: %w, details: %s", err, stderr.String())
+	}
+
+	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("download file does not exist: %s", outputPath)
+	}
+
+	return outputPath, nil
 }
 
 func convertVideo(task DownloadTask, e *handler.CommandEvent, downloadedFile string) (string, error) {
@@ -242,6 +283,8 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 
 	for scanner.Scan() {
 		if operation == "download" {
+			slog.Info("using normal download", "url", task.url)
+
 			if strings.Contains(scanner.Text(), "File is larger than max-filesize") {
 				_ = cmd.Process.Kill()
 				return "", fmt.Errorf("file size exceeds the maximum allowed size for this guild. Maximum is %dMB", task.maxFileSize)
@@ -337,12 +380,17 @@ func getVideoCodec(videoFile string) (string, error) {
 		videoFile,
 	)
 
-	ouptut, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("error getting video codec: %w", err)
+		slog.Error("Error running ffprobe",
+			"error", err,
+			"output", string(output),
+			"file", videoFile,
+		)
+		return "", fmt.Errorf("ffprobe error: %w, output: %s", err, string(output))
 	}
 
-	return strings.TrimSpace(string(ouptut)), nil
+	return strings.TrimSpace(string(output)), nil
 }
 
 func createProgressBar(percentage float64) string {

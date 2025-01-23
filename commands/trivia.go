@@ -220,7 +220,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 		_trivia, err := FetchTrivia(e, b)
 		if err != nil {
 			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetContent("Error while fetching trivia. Maybe the API is down?").
+				SetContent("Trivia API did not return any trivia. This could be due to rate limiting. Please try again later.").
 				Build())
 			return err
 		}

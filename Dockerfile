@@ -17,7 +17,7 @@ RUN apk --no-cache add ca-certificates
 
 COPY --from=build /build/bot /bin/bot
 
-RUN apk --no-cache add ca-certificates curl python3 ffmpeg
+RUN apk --no-cache add ca-certificates curl python3 ffmpeg curl
 
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp
