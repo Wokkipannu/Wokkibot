@@ -23,3 +23,4 @@ services:
       - /opt/Wokkibot/config.json:/config.json
       - /opt/Wokkibot/custom_commands.json:/custom_commands.json
       - /opt/Wokkibot/wokkibot.db:/wokkibot.db
+      - /opt/Wokkibot/cookies.txt:/cookies.txt

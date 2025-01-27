@@ -195,6 +195,7 @@ func downloadVideo(task DownloadTask, e *handler.CommandEvent) (string, error) {
 		"--max-filesize", fmt.Sprintf("%dM", task.maxFileSize),
 		"--format-sort", fmt.Sprintf("res:%s,codec:h264", task.resolution),
 		"--merge-output-format", "mp4",
+		"--cookies", "cookies.txt",
 		"--progress-template", "{\"progress_percentage\": \"%(progress._percent_str)s\"}",
 		"--newline",
 	)
