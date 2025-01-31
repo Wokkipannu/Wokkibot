@@ -106,9 +106,9 @@ func (b *Wokkibot) InitLavalink() {
 	)
 
 	var wg sync.WaitGroup
-	for i := range b.Config.Nodes {
+	for i := range b.Config.Lavalink.Nodes {
 		wg.Add(1)
-		cfg := b.Config.Nodes[i]
+		cfg := b.Config.Lavalink.Nodes[i]
 		go func() {
 			defer wg.Done()
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -116,7 +116,7 @@ func (b *Wokkibot) InitLavalink() {
 			node, err := b.Lavalink.AddNode(ctx, cfg)
 			if err != nil {
 				slog.Error("error while adding lavalink node", slog.Any("err", err))
-				b.Config.LavalinkEnabled = false
+				b.Config.Lavalink.Enabled = false
 				return
 			}
 
@@ -133,7 +133,7 @@ func (b *Wokkibot) InitLavalink() {
 			}
 
 			slog.Info("Lavalink connection established", slog.String("node_version", version), slog.String("node_session_id", node.SessionID()))
-			b.Config.LavalinkEnabled = true
+			b.Config.Lavalink.Enabled = true
 		}()
 	}
 	wg.Wait()
@@ -152,9 +152,9 @@ func (b *Wokkibot) Start() {
 
 func (b *Wokkibot) Close() {
 	b.Lavalink.ForNodes(func(node disgolink.Node) {
-		for i, cfgNode := range b.Config.Nodes {
+		for i, cfgNode := range b.Config.Lavalink.Nodes {
 			if node.Config().Name == cfgNode.Name {
-				b.Config.Nodes[i].SessionID = node.SessionID()
+				b.Config.Lavalink.Nodes[i].SessionID = node.SessionID()
 			}
 		}
 	})

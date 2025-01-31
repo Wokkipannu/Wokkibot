@@ -53,18 +53,20 @@ The main purpose of Wokkibot was originally to play music. This has shifted a lo
 {
  "token": "", // Discord bot token
  "guildid": "", // Discord guild id if you want to restrict commands to a specific guild
- "nodes": [
-  {
-   "name": "",
-   "address": "localhost:2333",
-   "password": "youshallnotpass",
-   "secure": false,
-   "session_id": ""
-  }
- ],
  "admins": [
   "SOME_DISCORD_USER_ID"
  ],
- "lavalink_enabled": true
+ "lavalink": {
+  "enabled": true,
+  "nodes": [
+   {
+    "name": "Lavalink",
+    "address": "localhost:2333",
+    "password": "youshallnotpass",
+    "secure": false,
+    "session_id": ""
+   }
+  ]
+ }
 }
 ```

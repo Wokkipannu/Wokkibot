@@ -19,7 +19,7 @@ var skipCommand = discord.SlashCommandCreate{
 
 func HandleSkip(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
-		if !b.Config.LavalinkEnabled {
+		if !b.Config.Lavalink.Enabled {
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Lavalink connection has not been established").Build())
 		}
 

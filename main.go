@@ -88,7 +88,7 @@ func main() {
 	r.Component("/minesweeper/right", components.HandleMinesweeperRightAction(b))
 
 	b.SetupBot(r)
-	if cfg.LavalinkEnabled {
+	if cfg.Lavalink.Enabled {
 		b.InitLavalink()
 	}
 	if b.Config.GuildID != "" {

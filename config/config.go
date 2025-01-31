@@ -9,12 +9,16 @@ import (
 )
 
 type Config struct {
-	Token           string                 `json:"token"`
-	GuildID         string                 `json:"guildid"`
-	Nodes           []disgolink.NodeConfig `json:"nodes"`
-	TriviaToken     string                 `json:"trivia_token"`
-	Admins          []snowflake.ID         `json:"admins"`
-	LavalinkEnabled bool                   `json:"lavalink_enabled"`
+	Token       string         `json:"token"`
+	GuildID     string         `json:"guildid"`
+	TriviaToken string         `json:"trivia_token"`
+	Admins      []snowflake.ID `json:"admins"`
+	Lavalink    LavalinkConfig `json:"lavalink"`
+}
+
+type LavalinkConfig struct {
+	Enabled bool                   `json:"enabled"`
+	Nodes   []disgolink.NodeConfig `json:"nodes"`
 }
 
 func LoadConfig() (*Config, error) {
