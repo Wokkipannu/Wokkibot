@@ -1,12 +1,10 @@
 ![Build](https://github.com/wokkipannu/Wokkibot-Go/actions/workflows/build.yml/badge.svg)
 
 # Wokkibot
-This is the latest iteration of Wokkibot, build on top of [DisGo](https://github.com/disgoorg/disgo).
+Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://github.com/disgoorg/disgo) library.
 
-[C# version of Wokkibot](https://github.com/Wokkipannu/Wokkibot-CSharp)
-[Original JavaScript version of Wokkibot](https://github.com/Wokkipannu/Wokkibot)
-
-The main purpose of Wokkibot was originally to play music. This has shifted a lot and these days while music playing is still possible, it is not the main focus.
+- [C# version of Wokkibot](https://github.com/Wokkipannu/Wokkibot-CSharp) (Not maintained)
+- [Original JavaScript version of Wokkibot](https://github.com/Wokkipannu/Wokkibot) (Not maintained)
 
 # Commands
 ##### Music related commands
@@ -36,6 +34,8 @@ The main purpose of Wokkibot was originally to play music. This has shifted a lo
     * `/settings friday list` - List all friday celebration clips
   * `/settings guild`
     * `/settings guild pinchannel` - Set the pin channel
+  * `/settings lavalink`
+    * `/settings lavalink toggle` - Toggle lavalink on/off
 * `/minesweeper` - Start a minesweeper game
 ##### Context menu commands
 * Quote - Post a message quote as an embed
@@ -43,7 +43,7 @@ The main purpose of Wokkibot was originally to play music. This has shifted a lo
 * Pin - Pin a message to pins channel
 
 # Setup
-* Get [Lavalink](https://github.com/freyacodes/Lavalink)
+* Get [Lavalink](https://github.com/freyacodes/Lavalink) and required plugins ([https://github.com/lavalink-devs/youtube-source#plugin](YouTube-Source), [https://github.com/topi314/LavaSrc](LavaSrc) and [https://github.com/topi314/LavaSearch](LavaSearch))
 * Setup config.json
 * Run `go run main.go` or build
 
@@ -51,10 +51,10 @@ The main purpose of Wokkibot was originally to play music. This has shifted a lo
 ### config.json example
 ```
 {
- "token": "", // Discord bot token
- "guildid": "", // Discord guild id if you want to restrict commands to a specific guild
+ "token": "BOT_TOKEN", // Discord bot token
+ "guildid": "GUILD_ID", // Discord guild id if you want to restrict commands to a specific guild
  "admins": [
-  "SOME_DISCORD_USER_ID"
+  "ADMIN_USER_ID"
  ],
  "lavalink": {
   "enabled": true,

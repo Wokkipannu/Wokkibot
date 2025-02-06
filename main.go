@@ -2,12 +2,19 @@ package main
 
 import (
 	"log/slog"
+	"os"
 	"wokkibot/commands"
-	"wokkibot/components"
 	"wokkibot/config"
 	"wokkibot/database"
+	"wokkibot/handlers"
+	"wokkibot/queue"
 	"wokkibot/wokkibot"
 
+	"github.com/disgoorg/disgo"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/cache"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/snowflake/v2"
 )
@@ -15,11 +22,13 @@ import (
 var version = "dev"
 
 func main() {
+	// Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		panic("failed to load config: " + err.Error())
 	}
 
+	// Initialize database
 	dbConfig := database.Config{
 		DatabaseURL: "file:wokkibot.db",
 	}
@@ -29,65 +38,64 @@ func main() {
 	slog.Info("Successfully connected to database")
 	defer database.Close()
 
-	b := wokkibot.New(*cfg, version)
-	defer b.Close()
-
-	customCommands, err := b.LoadCommands()
+	// Load custom commands
+	customCommands, err := handlers.LoadCommands()
 	if err != nil {
 		panic("failed to load custom commands: " + err.Error())
 	}
 
-	b.CustomCommands = customCommands
+	// Initialize handlers
+	h := handlers.New()
 
-	r := handler.New()
+	h.CustomCommands = customCommands
 
-	r.Command("/ping", commands.HandlePing(b))
-	r.Command("/roll", commands.HandleRoll(b))
-	r.Command("/flip", commands.HandleFlip(b))
-	r.Command("/pizza", commands.HandlePizza(b))
-	r.Command("/friday", commands.HandleFriday(b))
-	r.Command("/user", commands.HandleUser(b))
-	r.Command("/trivia", commands.HandleTrivia(b))
-	r.Route("/settings", func(r handler.Router) {
-		r.Route("/commands", func(r handler.Router) {
-			r.Command("/add", commands.HandleCustomAdd(b))
-			r.Command("/remove", commands.HandleCustomRemove(b))
-			r.Command("/list", commands.HandleCustomList(b))
-		})
-		r.Route("/friday", func(r handler.Router) {
-			r.Command("/add", b.AdminMiddleware(commands.HandleAddFridayClip(b)))
-			r.Command("/remove", b.AdminMiddleware(commands.HandleRemoveFridayClip(b)))
-			r.Command("/list", b.AdminMiddleware(commands.HandleListFridayClips(b)))
-		})
-		r.Route("/guild", func(r handler.Router) {
-			r.Command("/pinchannel", b.AdminMiddleware(commands.HandlePinChannelChange(b)))
-		})
-	})
-	r.Command("/joke", commands.HandleJoke(b))
-	r.Command("/download", commands.HandleDownload(b))
-	r.Command("/status", commands.HandleStatus(b))
-	// Context menu commands
-	r.Command("/Quote", commands.HandleQuote(b))
-	r.Command("/Eval", commands.HandleEval(b))
-	r.Command("/Pin", commands.HandlePin(b))
-	// Music commands
-	r.Command("/play", commands.HandlePlay(b))
-	r.Command("/skip", commands.HandleSkip(b))
-	r.Component("/queue/skip", components.HandleQueueSkipAction(b))
-	r.Command("/queue", commands.HandleQueue(b))
-	r.Command("/disconnect", commands.HandleDisconnect(b))
-	r.Command("/seek", commands.HandleSeek(b))
-	r.Command("/volume", commands.HandleVolume(b))
-	// Minesweeper
-	r.Command("/minesweeper", commands.HandleMinesweeper(b))
-	r.Component("/minesweeper/flag", components.HandleMinesweeperFlagAction(b))
-	r.Component("/minesweeper/reveal", components.HandleMinesweeperRevealAction(b))
-	r.Component("/minesweeper/up", components.HandleMinesweeperUpAction(b))
-	r.Component("/minesweeper/down", components.HandleMinesweeperDownAction(b))
-	r.Component("/minesweeper/left", components.HandleMinesweeperLeftAction(b))
-	r.Component("/minesweeper/right", components.HandleMinesweeperRightAction(b))
+	// Initialize wokkibot
+	b := wokkibot.New(*cfg, version, h)
+	defer b.Close()
 
-	b.SetupBot(r)
+	// Initialize router
+	router := handler.New()
+
+	// Initialize queue manager
+	queue := queue.NewQueueManager()
+
+	// Register commands
+	commands.RegisterCommands(router, b, h, queue)
+
+	// Define intents
+	intents := gateway.IntentGuildMessages |
+		gateway.IntentDirectMessages |
+		gateway.IntentGuildMessageTyping |
+		gateway.IntentDirectMessageTyping |
+		gateway.IntentMessageContent |
+		gateway.IntentGuilds |
+		gateway.IntentGuildVoiceStates
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	b.Client, err = disgo.New(b.Config.Token,
+		bot.WithGatewayConfigOpts(
+			gateway.WithIntents(intents),
+			gateway.WithCompress(true),
+			gateway.WithPresenceOpts(
+				gateway.WithPlayingActivity("starting up..."),
+				gateway.WithOnlineStatus(discord.OnlineStatusDND),
+			),
+		),
+		bot.WithEventListeners(router),
+		bot.WithCacheConfigOpts(
+			cache.WithCaches(cache.FlagGuilds, cache.FlagMembers, cache.FlagVoiceStates),
+		),
+		bot.WithEventListenerFunc(b.OnDiscordEvent),
+		bot.WithEventListenerFunc(h.OnMessageCreate),
+		bot.WithLogger(logger),
+	)
+
+	if err != nil {
+		slog.Error("error while building disgo instance", slog.Any("err", err))
+		return
+	}
+
 	if cfg.Lavalink.Enabled {
 		b.InitLavalink()
 	}

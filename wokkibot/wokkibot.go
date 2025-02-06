@@ -9,14 +9,13 @@ import (
 	"syscall"
 	"time"
 	"wokkibot/config"
+	"wokkibot/handlers"
+	"wokkibot/types"
 
-	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
-	"github.com/disgoorg/disgo/cache"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
-	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/disgolink/v3/disgolink"
 	"github.com/disgoorg/disgolink/v3/lavalink"
 	"github.com/disgoorg/json"
@@ -24,60 +23,29 @@ import (
 	gopiston "github.com/milindmadhukar/go-piston"
 )
 
-func New(config config.Config, version string) *Wokkibot {
-	return &Wokkibot{
-		PistonClient: gopiston.CreateDefaultClient(),
-		Config:       config,
-		Queues: &QueueManager{
-			queues: make(map[snowflake.ID]*Queue),
-		},
-		Trivias: &TriviaManager{
-			trivias: make(map[snowflake.ID]*Trivia),
-		},
-		CustomCommands: []Command{},
-		Games:          make(map[snowflake.ID]interface{}),
-		StartTime:      time.Now(),
-		Version:        version,
-	}
-}
-
 type Wokkibot struct {
 	Client         bot.Client
 	Config         config.Config
 	PistonClient   *gopiston.Client
 	Lavalink       disgolink.Client
-	Queues         *QueueManager
-	Trivias        *TriviaManager
-	CustomCommands []Command
+	CustomCommands []types.Command
+	Trivias        *handlers.TriviaManager
 	Games          map[snowflake.ID]interface{}
 	StartTime      time.Time
 	Version        string
+	handlers       *handlers.Handler
 }
 
-func (b *Wokkibot) SetupBot(r handler.Router) {
-	var err error
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	b.Client, err = disgo.New(b.Config.Token,
-		bot.WithGatewayConfigOpts(
-			gateway.WithIntents(gateway.IntentGuildMessages|gateway.IntentDirectMessages|gateway.IntentGuildMessageTyping|gateway.IntentDirectMessageTyping|gateway.IntentMessageContent|gateway.IntentGuilds|gateway.IntentGuildVoiceStates),
-			gateway.WithCompress(true),
-			gateway.WithPresenceOpts(
-				gateway.WithPlayingActivity("starting up..."),
-				gateway.WithOnlineStatus(discord.OnlineStatusDND),
-			),
-		),
-		bot.WithEventListeners(r),
-		bot.WithCacheConfigOpts(
-			cache.WithCaches(cache.FlagGuilds, cache.FlagMembers, cache.FlagVoiceStates),
-		),
-		bot.WithEventListenerFunc(b.OnDiscordEvent),
-		bot.WithEventListenerFunc(b.onMessageCreate),
-		bot.WithLogger(logger),
-	)
-
-	if err != nil {
-		slog.Error("error while building disgo instance", slog.Any("err", err))
-		return
+func New(config config.Config, version string, handlers *handlers.Handler) *Wokkibot {
+	return &Wokkibot{
+		PistonClient:   gopiston.CreateDefaultClient(),
+		Config:         config,
+		handlers:       handlers,
+		CustomCommands: []types.Command{},
+		Trivias:        handlers.TriviaManager,
+		Games:          make(map[snowflake.ID]interface{}),
+		StartTime:      time.Now(),
+		Version:        version,
 	}
 }
 
@@ -95,14 +63,14 @@ func (b *Wokkibot) SyncGlobalCommands(commands []discord.ApplicationCommandCreat
 
 func (b *Wokkibot) InitLavalink() {
 	b.Lavalink = disgolink.New(b.Client.ApplicationID(),
-		disgolink.WithListenerFunc(b.onPlayerPause),
-		disgolink.WithListenerFunc(b.onPlayerResume),
-		disgolink.WithListenerFunc(b.onTrackStart),
-		disgolink.WithListenerFunc(b.onTrackEnd),
-		disgolink.WithListenerFunc(b.onTrackException),
-		disgolink.WithListenerFunc(b.onTrackStuck),
-		disgolink.WithListenerFunc(b.onWebSocketClosed),
-		disgolink.WithListenerFunc(b.onUnknownEvent),
+		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnPlayerPause),
+		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnPlayerResume),
+		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnTrackStart),
+		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnTrackEnd),
+		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnTrackException),
+		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnTrackStuck),
+		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnWebSocketClosed),
+		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnUnknownEvent),
 	)
 
 	var wg sync.WaitGroup
@@ -137,6 +105,8 @@ func (b *Wokkibot) InitLavalink() {
 		}()
 	}
 	wg.Wait()
+
+	b.Config.Lavalink.Enabled = true
 }
 
 func (b *Wokkibot) Start() {
@@ -175,7 +145,7 @@ func (b *Wokkibot) OnDiscordEvent(event bot.Event) {
 		}
 		b.Lavalink.OnVoiceStateUpdate(context.TODO(), e.VoiceState.GuildID, e.VoiceState.ChannelID, e.VoiceState.SessionID)
 		if e.VoiceState.ChannelID == nil {
-			b.Queues.Delete(e.VoiceState.GuildID)
+			b.handlers.PlayerHandler.Queues.Delete(e.VoiceState.GuildID)
 		}
 	case *events.VoiceServerUpdate:
 		b.Lavalink.OnVoiceServerUpdate(context.TODO(), e.GuildID, e.Token, *e.Endpoint)
