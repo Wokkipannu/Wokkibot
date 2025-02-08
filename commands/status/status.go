@@ -27,12 +27,12 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 		self, _ := e.Client().Caches().SelfUser()
 
 		statusEmbed := discord.NewEmbedBuilder().
-			SetTitle("Wokkibot Status").
+			SetTitlef("%s Status", self.Username).
 			SetThumbnail(self.EffectiveAvatarURL()).
 			AddField("Version", fmt.Sprintf("[%s](https://github.com/Wokkipannu/Wokkibot/commit/%s)", b.Version, b.Version), false).
-			AddField("Go", runtime.Version(), false).
-			AddField("yt-dlp", getYtdlpVersion(), false).
-			AddField("FFmpeg", getFfmpegVersion(), false).
+			AddField("Go", runtime.Version(), true).
+			AddField("yt-dlp", getYtdlpVersion(), true).
+			AddField("FFmpeg", getFfmpegVersion(), true).
 			AddField("Uptime", time.Since(b.StartTime).Round(time.Second).String(), true).
 			AddField("Ping", fmt.Sprintf("%dms", b.Client.Gateway().Latency().Milliseconds()), true).
 			SetColor(utils.COLOR_GREEN)
@@ -53,11 +53,11 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 func getYtdlpVersion() string {
 	cmd := exec.Command("yt-dlp", "--version")
 	output, err := cmd.Output()
-	ytDlpVersion := "Not found"
+	ytdlpVersion := "Not found"
 	if err == nil {
-		ytDlpVersion = strings.TrimSpace(string(output))
+		ytdlpVersion = strings.TrimSpace(string(output))
 	}
-	return ytDlpVersion
+	return ytdlpVersion
 }
 
 func getFfmpegVersion() string {
