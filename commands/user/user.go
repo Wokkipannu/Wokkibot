@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 	"wokkibot/common"
+	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/discord"
@@ -75,7 +76,7 @@ func HandleUser(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		if user.BannerURL() != nil {
-			formatOpt := SetCDNOptions(discord.FileFormatPNG, discord.QueryValues{"size": 1024})
+			formatOpt := utils.SetCDNOptions(discord.FileFormatPNG, discord.QueryValues{"size": 1024})
 			embed.SetImage(*user.BannerURL(formatOpt))
 		}
 
@@ -85,11 +86,4 @@ func HandleUser(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 func DaysSince(date time.Time) int {
 	return int(time.Since(date).Hours() / 24)
-}
-
-func SetCDNOptions(format discord.FileFormat, values discord.QueryValues) discord.CDNOpt {
-	return func(config *discord.CDNConfig) {
-		config.Format = format
-		config.Values = values
-	}
 }

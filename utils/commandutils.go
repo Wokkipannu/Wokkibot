@@ -57,3 +57,10 @@ func ReplaceDomain(originalURL, newDomain string) (string, error) {
 
 	return parsedURL.String(), nil
 }
+
+func SetCDNOptions(format discord.FileFormat, values discord.QueryValues) discord.CDNOpt {
+	return func(config *discord.CDNConfig) {
+		config.Format = format
+		config.Values = values
+	}
+}
