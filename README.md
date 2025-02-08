@@ -4,7 +4,7 @@
 Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://github.com/disgoorg/disgo) library.
 
 - [C# version of Wokkibot](https://github.com/Wokkipannu/Wokkibot-CSharp) (Not maintained)
-- [Original JavaScript version of Wokkibot](https://github.com/Wokkipannu/Wokkibot) (Not maintained)
+- [Original JavaScript version of Wokkibot](https://github.com/Wokkipannu/WokkibotJS) (Not maintained)
 
 # Commands
 ##### Music related commands
@@ -69,4 +69,21 @@ Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://git
   ]
  }
 }
+```
+
+# Custom commands
+Custom commands can include attributes to do specific things. Currently the supported attributes are:
+* `{{time|timezone}}` - Returns the current time in the specified timezone
+* `{{random|choices;separated;by;semicolons}}` - Returns a random choice from the provided choices
+* `{{user|attribute}}` - Returns a user attribute
+
+Example:
+```
+{{time|Europe/Helsinki}}
+{{random|Hello;World;This;Is;A;Random;Choice}}
+{{user|name}}
+{{user|id}}
+{{user|avatar}}
+{{user|mention}}
+{{user|created}}
 ```

@@ -79,7 +79,7 @@ func (h *Handler) HandleCustomCommand(e *events.MessageCreate) {
 
 	for _, cmd := range h.CustomCommands {
 		if cmd.Prefix == prefix && cmd.Name == name && cmd.GuildID == *e.GuildID {
-			output := handleVariables(cmd.Output)
+			output := handleVariables(cmd.Output, e)
 
 			e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().
 				SetContent(output).
@@ -90,8 +90,10 @@ func (h *Handler) HandleCustomCommand(e *events.MessageCreate) {
 	}
 }
 
-func handleVariables(text string) string {
+func handleVariables(text string, e *events.MessageCreate) string {
 	re := regexp.MustCompile(`\{\{(\w+)\|([^}]+)\}\}`)
+
+	author := e.Message.Author
 
 	return re.ReplaceAllStringFunc(text, func(match string) string {
 		parts := re.FindStringSubmatch(match)
@@ -117,6 +119,21 @@ func handleVariables(text string) string {
 			}
 			randomIndex := rand.Intn(len(choices))
 			return strings.TrimSpace(choices[randomIndex])
+		case "user":
+			switch value {
+			case "name":
+				return author.Username
+			case "id":
+				return author.ID.String()
+			case "avatar":
+				return author.EffectiveAvatarURL()
+			case "mention":
+				return author.Mention()
+			case "created":
+				return author.ID.Time().Format("2006-01-02 15:04:05")
+			default:
+				return "INVALID USER ATTRIBUTE"
+			}
 		default:
 			return match
 		}
