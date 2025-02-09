@@ -386,18 +386,9 @@ func ShuffleOptions(options []string) []string {
 }
 
 func ValidateTriviaAnswer(answer, correct string) bool {
-	if utils.IsNumeric(answer) {
-		cleanedUserAnswer := utils.CleanNumericAnswer(answer)
-		cleanedCorrectAnswer := utils.CleanNumericAnswer(correct)
-		return cleanedUserAnswer == cleanedCorrectAnswer
-	}
+	validator := NewAnswerValidator(correct)
 
-	if _, err := utils.ExtractYear(answer); err == nil {
-		cleanedUserAnswer := utils.CleanNumericAnswer(answer)
-		return cleanedUserAnswer == utils.CleanNumericAnswer(correct)
-	}
-
-	return utils.StringMatch(strings.ToLower(answer), strings.ToLower(correct))
+	return validator.ValidateAnswer(answer)
 }
 
 func FetchToken(e *handler.CommandEvent, b *wokkibot.Wokkibot) error {

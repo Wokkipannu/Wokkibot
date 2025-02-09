@@ -13,7 +13,6 @@ import (
 
 	"math/rand"
 
-	"github.com/agnivade/levenshtein"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"golang.org/x/text/unicode/norm"
@@ -25,46 +24,6 @@ func CapitalizeFirstLetter(s string) string {
 		return ""
 	}
 	return strings.ToUpper(string(s[0])) + s[1:]
-}
-
-func IsNumeric(s string) bool {
-	_, err := strconv.Atoi(s)
-	return err == nil
-}
-
-func CleanNumericAnswer(input string) string {
-	re := regexp.MustCompile(`[^\d]`)
-	cleaned := re.ReplaceAllString(input, "")
-	return cleaned
-}
-
-func StringMatch(a, b string) bool {
-	a = RemoveDiacritics(a)
-	b = RemoveDiacritics(b)
-
-	distance := levenshtein.ComputeDistance(a, b)
-	threshold := 2
-
-	longest := float64(len(a))
-	if len(b) > len(a) {
-		longest = float64(len(b))
-	}
-	similarityRatio := (longest - float64(distance)) / longest
-
-	lengthDifference := float64(len(a)) / float64(len(b))
-	return distance <= threshold && similarityRatio > 0.8 && lengthDifference > 0.75 && lengthDifference < 1.25
-}
-
-// Dump goroutines for debugging
-func DumpGoroutines() {
-	timestamp := time.Now().Format("2006-01-02T15-04-05")
-	filename := fmt.Sprintf("goroutine_dump_%v.txt", timestamp)
-	f, err := os.Create(filename)
-	if err != nil {
-		log.Fatal("could not create goroutine dump file:", err)
-	}
-	defer f.Close()
-	pprof.Lookup("goroutine").WriteTo(f, 1)
 }
 
 func ExtractYear(dateStr string) (string, error) {
@@ -87,6 +46,18 @@ func ExtractYear(dateStr string) (string, error) {
 	}
 
 	return "", fmt.Errorf("no valid year found")
+}
+
+// Dump goroutines for debugging
+func DumpGoroutines() {
+	timestamp := time.Now().Format("2006-01-02T15-04-05")
+	filename := fmt.Sprintf("goroutine_dump_%v.txt", timestamp)
+	f, err := os.Create(filename)
+	if err != nil {
+		log.Fatal("could not create goroutine dump file:", err)
+	}
+	defer f.Close()
+	pprof.Lookup("goroutine").WriteTo(f, 1)
 }
 
 func RemoveDiacritics(input string) string {
