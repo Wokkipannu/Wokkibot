@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 	"wokkibot/utils"
@@ -31,6 +32,7 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 			SetThumbnail(self.EffectiveAvatarURL()).
 			AddField("Version", fmt.Sprintf("[%s](https://github.com/Wokkipannu/Wokkibot/commit/%s)", b.Version, b.Version), false).
 			AddField("Go", runtime.Version(), true).
+			AddField("Disgo", getDisgoVersion(), true).
 			AddField("yt-dlp", getYtdlpVersion(), true).
 			AddField("FFmpeg", getFfmpegVersion(), true).
 			AddField("Uptime", time.Since(b.StartTime).Round(time.Second).String(), true).
@@ -78,4 +80,15 @@ func getFfmpegVersion() string {
 	}
 
 	return parts[2]
+}
+
+func getDisgoVersion() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, dep := range info.Deps {
+			if dep.Path == "github.com/disgoorg/disgo" {
+				return dep.Version
+			}
+		}
+	}
+	return "Unknown"
 }
