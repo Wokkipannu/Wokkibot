@@ -43,7 +43,7 @@ Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://git
 * Pin - Pin a message to pins channel
 
 # Setup
-* Get [Lavalink](https://github.com/freyacodes/Lavalink) and required plugins ([https://github.com/lavalink-devs/youtube-source#plugin](YouTube-Source), [https://github.com/topi314/LavaSrc](LavaSrc) and [https://github.com/topi314/LavaSearch](LavaSearch))
+* Get [Lavalink](https://github.com/freyacodes/Lavalink) and required plugins ([YouTube-Source](https://github.com/lavalink-devs/youtube-source#plugin), [LavaSrc](https://github.com/topi314/LavaSrc) and [LavaSearch](https://github.com/topi314/LavaSearch))
 * Setup config.json
 * Run `go run main.go` or build
 
