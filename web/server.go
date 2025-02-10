@@ -27,7 +27,7 @@ type Server struct {
 }
 
 func NewServer(config OAuthConfig, bot *wokkibot.Wokkibot, h *handlers.Handler) *Server {
-	engine := html.New("./web/views", ".html")
+	engine := html.New("/app/web/views", ".html")
 	store := session.New(session.Config{
 		Expiration:   24 * time.Hour,
 		KeyLookup:    "cookie:session_id",

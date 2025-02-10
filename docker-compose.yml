@@ -17,6 +17,8 @@ services:
         - GIT_COMMIT=${GIT_COMMIT:-dev}
     container_name: wokkibot
     restart: always
+    ports:
+      - "3000:3000"
     depends_on:
       - lavalink
     volumes:
