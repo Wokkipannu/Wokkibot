@@ -8,6 +8,7 @@ import (
 	"wokkibot/database"
 	"wokkibot/handlers"
 	"wokkibot/queue"
+	"wokkibot/web"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo"
@@ -104,5 +105,21 @@ func main() {
 	} else {
 		b.SyncGlobalCommands(commands.Commands)
 	}
+
+	// Initialize web server
+	webConfig := web.OAuthConfig{
+		ClientID:     cfg.Web.ClientID,
+		ClientSecret: cfg.Web.ClientSecret,
+		RedirectURI:  cfg.Web.RedirectURI,
+		AdminUserIDs: cfg.Web.AdminUserIDs,
+	}
+
+	webServer := web.NewServer(webConfig, b, h)
+	go func() {
+		if err := webServer.Start(":3000"); err != nil {
+			slog.Error("error starting web server", slog.Any("err", err))
+		}
+	}()
+
 	b.Start()
 }

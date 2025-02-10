@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8 flex items-center gap-4">
+            <img v-if="'{{.User.avatar_url}}'" src="{{.User.avatar_url}}" class="w-10 h-10 rounded-full" />
+            <h1 class="text-2xl font-bold">Welcome, {{.User.username}}</h1>
+        </div>
+
+        <!-- Custom Commands -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Custom Commands</h2>
+            <div class="space-y-4">
+                <div v-for="cmd in commands" :key="cmd.id" class="flex items-center justify-between border-b pb-2">
+                    <div>
+                        <span class="font-semibold">${cmd.prefix}${cmd.name}</span>
+                        <p class="text-sm text-gray-600">${cmd.description}</p>
+                        <p class="text-xs text-gray-500">Guild: ${cmd.guild_id} | Author: ${cmd.author}</p>
+                    </div>
+                    <div class="space-x-2">
+                        <button @click="editCommand(cmd)" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+                        <button @click="deleteCommand(cmd.id)" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
+                    </div>
+                </div>
+                <button @click="showCommandModal()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Add Command</button>
+            </div>
+        </div>
+
+        <!-- Friday Clips -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Friday Clips</h2>
+            <div class="space-y-4">
+                <div v-for="clip in fridayClips" :key="clip.id" class="flex items-center justify-between border-b pb-2">
+                    <div class="truncate flex-1 mr-4">
+                        <a :href="clip.url" target="_blank" class="text-blue-500 hover:underline">${clip.url}</a>
+                    </div>
+                    <button @click="deleteClip(clip.id)" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
+                </div>
+                <div class="flex gap-2">
+                    <input v-model="newClipUrl" type="text" placeholder="Enter clip URL" class="flex-1 px-3 py-2 border rounded">
+                    <button @click="addClip" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Add Clip</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pizza Toppings -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Pizza Toppings</h2>
+            <div class="space-y-4">
+                <div v-for="topping in pizzaToppings" :key="topping.id" class="flex items-center justify-between border-b pb-2">
+                    <span>${topping.name}</span>
+                    <button @click="deleteTopping(topping.id)" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
+                </div>
+                <div class="flex gap-2">
+                    <input v-model="newTopping" type="text" placeholder="Enter topping name" class="flex-1 px-3 py-2 border rounded">
+                    <button @click="addTopping" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Add Topping</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Command Modal -->
+        <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white rounded-lg p-6 w-full max-w-lg">
+                <h3 class="text-xl font-bold mb-4">${editingCommand.id ? 'Edit' : 'Add'} Command</h3>
+                <form @submit.prevent="saveCommand" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Guild ID</label>
+                        <input v-model="editingCommand.guild_id" type="text" required
+                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Prefix</label>
+                        <input v-model="editingCommand.prefix" type="text" required
+                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Name</label>
+                        <input v-model="editingCommand.name" type="text" required
+                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Description</label>
+                        <input v-model="editingCommand.description" type="text" required
+                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Output</label>
+                        <textarea v-model="editingCommand.output" required
+                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Author</label>
+                        <input v-model="editingCommand.author" type="text" required
+                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm">
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button type="button" @click="closeModal" 
+                            class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Cancel</button>
+                        <button type="submit" 
+                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            delimiters: ['${', '}'],
+            data() {
+                return {
+                    commands: [],
+                    fridayClips: [],
+                    pizzaToppings: [],
+                    newClipUrl: '',
+                    newTopping: '',
+                    showModal: false,
+                    editingCommand: {
+                        id: null,
+                        guild_id: '',
+                        prefix: '',
+                        name: '',
+                        description: '',
+                        output: '',
+                        author: ''
+                    }
+                }
+            },
+            mounted() {
+                this.loadData()
+            },
+            methods: {
+                async loadData() {
+                    try {
+                        const [commands, clips, toppings] = await Promise.all([
+                            axios.get('/admin/api/commands').then(r => r.data),
+                            axios.get('/admin/api/friday-clips').then(r => r.data),
+                            axios.get('/admin/api/pizza-toppings').then(r => r.data)
+                        ])
+                        this.commands = commands
+                        this.fridayClips = clips
+                        this.pizzaToppings = toppings
+                    } catch (error) {
+                        alert('Error loading data: ' + error.message)
+                    }
+                },
+                showCommandModal(cmd = null) {
+                    if (cmd) {
+                        this.editingCommand = { ...cmd }
+                    } else {
+                        this.editingCommand = {
+                            id: null,
+                            guild_id: '',
+                            prefix: '',
+                            name: '',
+                            description: '',
+                            output: '',
+                            author: ''
+                        }
+                    }
+                    this.showModal = true
+                },
+                closeModal() {
+                    this.showModal = false
+                    this.editingCommand = {}
+                },
+                editCommand(cmd) {
+                    this.showCommandModal(cmd)
+                },
+                async saveCommand() {
+                    try {
+                        if (this.editingCommand.id) {
+                            await axios.put(`/admin/api/commands/${this.editingCommand.id}`, this.editingCommand)
+                        } else {
+                            await axios.post('/admin/api/commands', this.editingCommand)
+                        }
+                        this.closeModal()
+                        this.loadData()
+                    } catch (error) {
+                        alert('Error saving command: ' + error.message)
+                    }
+                },
+                async deleteCommand(id) {
+                    if (!confirm('Are you sure you want to delete this command?')) return
+                    try {
+                        await axios.delete(`/admin/api/commands/${id}`)
+                        this.loadData()
+                    } catch (error) {
+                        alert('Error deleting command: ' + error.message)
+                    }
+                },
+                async addClip() {
+                    try {
+                        await axios.post('/admin/api/friday-clips', { url: this.newClipUrl })
+                        this.newClipUrl = ''
+                        this.loadData()
+                    } catch (error) {
+                        alert('Error adding clip: ' + error.message)
+                    }
+                },
+                async deleteClip(id) {
+                    if (!confirm('Are you sure you want to delete this clip?')) return
+                    try {
+                        await axios.delete(`/admin/api/friday-clips/${id}`)
+                        this.loadData()
+                    } catch (error) {
+                        alert('Error deleting clip: ' + error.message)
+                    }
+                },
+                async addTopping() {
+                    try {
+                        await axios.post('/admin/api/pizza-toppings', { name: this.newTopping })
+                        this.newTopping = ''
+                        this.loadData()
+                    } catch (error) {
+                        alert('Error adding topping: ' + error.message)
+                    }
+                },
+                async deleteTopping(id) {
+                    if (!confirm('Are you sure you want to delete this topping?')) return
+                    try {
+                        await axios.delete(`/admin/api/pizza-toppings/${id}`)
+                        this.loadData()
+                    } catch (error) {
+                        alert('Error deleting topping: ' + error.message)
+                    }
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html> 

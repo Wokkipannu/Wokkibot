@@ -65,11 +65,11 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 			r.Command("/remove", settings.HandleCustomRemove(h))
 			r.Command("/list", settings.HandleCustomList(h))
 		})
-		r.Route("/friday", func(r handler.Router) {
-			r.Command("/add", middleware.AdminMiddleware(settings.HandleAddFridayClip(b)))
-			r.Command("/remove", middleware.AdminMiddleware(settings.HandleRemoveFridayClip(b)))
-			r.Command("/list", middleware.AdminMiddleware(settings.HandleListFridayClips(b)))
-		})
+		// r.Route("/friday", func(r handler.Router) {
+		// 	r.Command("/add", middleware.AdminMiddleware(settings.HandleAddFridayClip(b)))
+		// 	r.Command("/remove", middleware.AdminMiddleware(settings.HandleRemoveFridayClip(b)))
+		// 	r.Command("/list", middleware.AdminMiddleware(settings.HandleListFridayClips(b)))
+		// })
 		r.Route("/guild", func(r handler.Router) {
 			r.Command("/pinchannel", middleware.AdminMiddleware(settings.HandlePinChannelChange(b)))
 		})

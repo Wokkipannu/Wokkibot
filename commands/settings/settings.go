@@ -102,38 +102,38 @@ var SettingsCommand = discord.SlashCommandCreate{
 			},
 		},
 		// Settings for /friday command
-		discord.ApplicationCommandOptionSubCommandGroup{
-			Name:        "friday",
-			Description: "Manage friday celebration clips",
-			Options: []discord.ApplicationCommandOptionSubCommand{
-				{
-					Name:        "add",
-					Description: "Add a friday celebration clip",
-					Options: []discord.ApplicationCommandOption{
-						discord.ApplicationCommandOptionString{
-							Name:        "url",
-							Description: "The URL of the video",
-							Required:    true,
-						},
-					},
-				},
-				{
-					Name:        "remove",
-					Description: "Remove a friday celebration clip",
-					Options: []discord.ApplicationCommandOption{
-						discord.ApplicationCommandOptionString{
-							Name:        "id",
-							Description: "The id of the video",
-							Required:    true,
-						},
-					},
-				},
-				{
-					Name:        "list",
-					Description: "List all friday celebration clips",
-				},
-			},
-		},
+		// discord.ApplicationCommandOptionSubCommandGroup{
+		// 	Name:        "friday",
+		// 	Description: "Manage friday celebration clips",
+		// 	Options: []discord.ApplicationCommandOptionSubCommand{
+		// 		{
+		// 			Name:        "add",
+		// 			Description: "Add a friday celebration clip",
+		// 			Options: []discord.ApplicationCommandOption{
+		// 				discord.ApplicationCommandOptionString{
+		// 					Name:        "url",
+		// 					Description: "The URL of the video",
+		// 					Required:    true,
+		// 				},
+		// 			},
+		// 		},
+		// 		{
+		// 			Name:        "remove",
+		// 			Description: "Remove a friday celebration clip",
+		// 			Options: []discord.ApplicationCommandOption{
+		// 				discord.ApplicationCommandOptionString{
+		// 					Name:        "id",
+		// 					Description: "The id of the video",
+		// 					Required:    true,
+		// 				},
+		// 			},
+		// 		},
+		// 		{
+		// 			Name:        "list",
+		// 			Description: "List all friday celebration clips",
+		// 		},
+		// 	},
+		// },
 		// Guild specific settings, for now only pin channel
 		discord.ApplicationCommandOptionSubCommandGroup{
 			Name:        "guild",
