@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"log"
+
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -45,9 +47,19 @@ func generateRandomState() string {
 
 func (h *AuthHandler) HandleLogin(c *fiber.Ctx) error {
 	state := generateRandomState()
-	sess, _ := h.store.Get(c)
+	sess, err := h.store.Get(c)
+	if err != nil {
+		log.Printf("session error in login: %v", err)
+		return c.Status(fiber.StatusInternalServerError).SendString("Session error")
+	}
+
 	sess.Set("state", state)
-	sess.Save()
+	if err := sess.Save(); err != nil {
+		log.Printf("failed to save session in login: %v", err)
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to save session")
+	}
+
+	log.Printf("login: generated state: %s", state)
 
 	params := url.Values{
 		"client_id":     {h.oauthConfig.ClientID},
@@ -64,11 +76,14 @@ func (h *AuthHandler) HandleLogin(c *fiber.Ctx) error {
 func (h *AuthHandler) HandleCallback(c *fiber.Ctx) error {
 	sess, err := h.store.Get(c)
 	if err != nil {
+		log.Printf("session error in callback: %v", err)
 		return c.Status(fiber.StatusInternalServerError).SendString("Session error")
 	}
 
 	state := c.Query("state")
 	savedState := sess.Get("state")
+
+	log.Printf("callback: comparing states: received: %s, saved: %v", state, savedState)
 
 	if state == "" || state != savedState {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid state")

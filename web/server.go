@@ -29,14 +29,18 @@ type Server struct {
 func NewServer(config OAuthConfig, bot *wokkibot.Wokkibot, h *handlers.Handler) *Server {
 	engine := html.New("/app/web/views", ".html")
 	store := session.New(session.Config{
-		Expiration:   24 * time.Hour,
-		KeyLookup:    "cookie:session_id",
-		CookiePath:   "/",
-		CookieSecure: true,
+		Expiration:     24 * time.Hour,
+		KeyLookup:      "cookie:session_id",
+		CookiePath:     "/",
+		CookieSecure:   false,
+		CookieHTTPOnly: true,
 	})
 
 	app := fiber.New(fiber.Config{
-		Views: engine,
+		Views:        engine,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	})
 
 	auth := NewAuthHandler(store, config)
