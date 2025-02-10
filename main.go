@@ -111,7 +111,7 @@ func main() {
 		ClientID:     cfg.Web.ClientID,
 		ClientSecret: cfg.Web.ClientSecret,
 		RedirectURI:  cfg.Web.RedirectURI,
-		AdminUserIDs: cfg.Web.AdminUserIDs,
+		AdminUserIDs: cfg.Admins,
 	}
 
 	webServer := web.NewServer(webConfig, b, h)

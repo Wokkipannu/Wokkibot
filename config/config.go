@@ -15,11 +15,9 @@ type Config struct {
 	Admins      []snowflake.ID `json:"admins"`
 	Lavalink    LavalinkConfig `json:"lavalink"`
 	Web         struct {
-		Token        string   `json:"token"`
-		ClientID     string   `json:"client_id"`
-		ClientSecret string   `json:"client_secret"`
-		RedirectURI  string   `json:"redirect_uri"`
-		AdminUserIDs []string `json:"admin_user_ids"`
+		ClientID     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+		RedirectURI  string `json:"redirect_uri"`
 	} `json:"web"`
 }
 

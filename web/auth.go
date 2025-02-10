@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 )
@@ -21,7 +22,7 @@ type OAuthConfig struct {
 	ClientID     string
 	ClientSecret string
 	RedirectURI  string
-	AdminUserIDs []string
+	AdminUserIDs []snowflake.ID
 }
 
 type AuthHandler struct {
@@ -90,7 +91,7 @@ func (h *AuthHandler) HandleCallback(c *fiber.Ctx) error {
 
 	isAdmin := false
 	for _, adminID := range h.oauthConfig.AdminUserIDs {
-		if user.ID == adminID {
+		if snowflake.MustParse(user.ID) == adminID {
 			isAdmin = true
 			break
 		}
