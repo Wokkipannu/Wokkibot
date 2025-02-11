@@ -30,6 +30,20 @@ var PizzaCommand = discord.SlashCommandCreate{
 	},
 }
 
+func formatNumber(n int64) string {
+	str := fmt.Sprintf("%d", n)
+
+	var result strings.Builder
+	length := len(str)
+	for i, char := range str {
+		if i > 0 && (length-i)%3 == 0 {
+			result.WriteRune(' ')
+		}
+		result.WriteRune(char)
+	}
+	return result.String()
+}
+
 func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		if err := e.Respond(discord.InteractionResponseTypeDeferredCreateMessage, nil); err != nil {
@@ -96,7 +110,7 @@ func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 		for _, v := range randomToppings {
 			if v.Count > 0 {
 				if v.Count > 1 {
-					output = append(output, fmt.Sprintf("%dx %s", v.Count, v.Name))
+					output = append(output, fmt.Sprintf("%sx %s", formatNumber(v.Count), v.Name))
 				} else {
 					output = append(output, v.Name)
 				}
