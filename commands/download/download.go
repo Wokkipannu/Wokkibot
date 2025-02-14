@@ -62,6 +62,16 @@ var DownloadCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
+		discord.ApplicationCommandOptionInt{
+			Name:        "from",
+			Description: "The time to start the video from in seconds",
+			Required:    false,
+		},
+		discord.ApplicationCommandOptionInt{
+			Name:        "to",
+			Description: "The time to end the video at in seconds",
+			Required:    false,
+		},
 	},
 }
 
@@ -72,6 +82,8 @@ type DownloadTask struct {
 	tempDir           string
 	maxFileSize       int
 	resolution        string
+	from              int
+	to                int
 }
 
 type DownloadProgress struct {
@@ -133,6 +145,8 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 			tempDir:           tempDir,
 			maxFileSize:       calculateMaximumFileSizeForGuild(guild),
 			resolution:        res,
+			from:              e.SlashCommandInteractionData().Int("from"),
+			to:                e.SlashCommandInteractionData().Int("to"),
 		}
 		taskQueue <- task
 
@@ -188,6 +202,9 @@ func downloadVideo(task DownloadTask, e *handler.CommandEvent) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), downloadTimeout)
 	defer cancel()
 
+	from := task.e.SlashCommandInteractionData().Int("from")
+	to := task.e.SlashCommandInteractionData().Int("to")
+
 	output := filepath.Join(task.tempDir, "video_download.%(ext)s")
 	cmd := exec.CommandContext(ctx, "yt-dlp",
 		task.url,
@@ -199,6 +216,11 @@ func downloadVideo(task DownloadTask, e *handler.CommandEvent) (string, error) {
 		"--progress-template", "{\"progress_percentage\": \"%(progress._percent_str)s\"}",
 		"--newline",
 	)
+
+	if from != 0 && to != 0 && from < to {
+		cmd.Args = append(cmd.Args, "--download-sections", fmt.Sprintf("*%d-%d", from, to))
+	}
+
 	return executeOperation(e, task, cmd, ctx, "download", "")
 }
 
