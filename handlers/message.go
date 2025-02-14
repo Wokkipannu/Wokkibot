@@ -7,17 +7,25 @@ import (
 	"time"
 	"wokkibot/utils"
 
+	"math/rand/v2"
+
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/mvdan/xurls"
-	"golang.org/x/exp/rand"
 )
 
 func (h *Handler) OnMessageCreate(e *events.MessageCreate) {
+	if e.GuildID != nil {
+		h.EnsureGuildExists(*e.GuildID)
+	}
+
 	h.HandleQuoteMessages(e)
 	h.HandleCustomCommand(e)
-	h.HandleXLinks(e)
+
+	if guild, exists := h.Guilds[*e.GuildID]; exists && guild.ConvertXLinks {
+		h.HandleXLinks(e)
+	}
 }
 
 func (h *Handler) HandleQuoteMessages(e *events.MessageCreate) {
@@ -117,7 +125,7 @@ func handleVariables(text string, e *events.MessageCreate) string {
 			if len(choices) == 0 {
 				return "NO CHOICES PROVIDED"
 			}
-			randomIndex := rand.Intn(len(choices))
+			randomIndex := rand.IntN(len(choices))
 			return strings.TrimSpace(choices[randomIndex])
 		case "user":
 			switch value {

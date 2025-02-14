@@ -10,3 +10,10 @@ type Command struct {
 	Author      snowflake.ID `json:"author"`
 	GuildID     snowflake.ID `json:"guild_id"`
 }
+
+type Guild struct {
+	ID            snowflake.ID `json:"id"`
+	PinChannel    snowflake.ID `json:"pin_channel"`
+	TriviaToken   string       `json:"trivia_token"`
+	ConvertXLinks bool         `json:"convert_x_links"`
+}

@@ -45,10 +45,18 @@ func main() {
 		panic("failed to load custom commands: " + err.Error())
 	}
 
+	// Load guilds
+	guilds, err := handlers.LoadGuilds()
+	if err != nil {
+		panic("failed to load guilds: " + err.Error())
+	}
+
 	// Initialize handlers
 	h := handlers.New()
 
 	h.CustomCommands = customCommands
+
+	h.Guilds = guilds
 
 	// Initialize wokkibot
 	b := wokkibot.New(*cfg, version, h)
@@ -114,7 +122,7 @@ func main() {
 		AdminUserIDs: cfg.Admins,
 	}
 
-	webServer := web.NewServer(webConfig, b, h)
+	webServer := web.NewServer(webConfig, b, h, version)
 	go func() {
 		if err := webServer.Start(":3000"); err != nil {
 			slog.Error("error starting web server", slog.Any("err", err))

@@ -1,7 +1,6 @@
 package web
 
 import (
-	"wokkibot/database"
 	"wokkibot/handlers"
 	"wokkibot/types"
 	"wokkibot/wokkibot"
@@ -23,7 +22,7 @@ func NewAdminHandler(bot *wokkibot.Wokkibot, h *handlers.Handler) *AdminHandler 
 }
 
 func (h *AdminHandler) GetCustomCommands(c *fiber.Ctx) error {
-	commands, err := database.GetCustomCommands()
+	commands, err := GetCustomCommands()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -33,7 +32,7 @@ func (h *AdminHandler) GetCustomCommands(c *fiber.Ctx) error {
 }
 
 func (h *AdminHandler) AddCustomCommand(c *fiber.Ctx) error {
-	var dbCmd database.CustomCommand
+	var dbCmd CustomCommand
 	if err := c.BodyParser(&dbCmd); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
@@ -59,7 +58,7 @@ func (h *AdminHandler) AddCustomCommand(c *fiber.Ctx) error {
 }
 
 func (h *AdminHandler) UpdateCustomCommand(c *fiber.Ctx) error {
-	var dbCmd database.CustomCommand
+	var dbCmd CustomCommand
 	if err := c.BodyParser(&dbCmd); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
@@ -92,7 +91,7 @@ func (h *AdminHandler) DeleteCustomCommand(c *fiber.Ctx) error {
 		})
 	}
 
-	cmd, err := database.GetCommandByID(int64(id))
+	cmd, err := GetCommandByID(int64(id))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -109,7 +108,7 @@ func (h *AdminHandler) DeleteCustomCommand(c *fiber.Ctx) error {
 }
 
 func (h *AdminHandler) GetFridayClips(c *fiber.Ctx) error {
-	clips, err := database.GetFridayClips()
+	clips, err := GetFridayClips()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -128,7 +127,7 @@ func (h *AdminHandler) AddFridayClip(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := database.AddFridayClip(clip.URL); err != nil {
+	if err := AddFridayClip(clip.URL); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -145,7 +144,7 @@ func (h *AdminHandler) DeleteFridayClip(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := database.DeleteFridayClip(int64(id)); err != nil {
+	if err := DeleteFridayClip(int64(id)); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -155,7 +154,7 @@ func (h *AdminHandler) DeleteFridayClip(c *fiber.Ctx) error {
 }
 
 func (h *AdminHandler) GetPizzaToppings(c *fiber.Ctx) error {
-	toppings, err := database.GetPizzaToppings()
+	toppings, err := GetPizzaToppings()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -174,7 +173,7 @@ func (h *AdminHandler) AddPizzaTopping(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := database.AddPizzaTopping(topping.Name); err != nil {
+	if err := AddPizzaTopping(topping.Name); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -191,7 +190,7 @@ func (h *AdminHandler) DeletePizzaTopping(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := database.DeletePizzaTopping(int64(id)); err != nil {
+	if err := DeletePizzaTopping(int64(id)); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})

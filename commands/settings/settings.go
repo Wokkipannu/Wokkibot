@@ -8,8 +8,6 @@ import (
 	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
-	"wokkibot/database"
-
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/json"
@@ -101,39 +99,6 @@ var SettingsCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
-		// Settings for /friday command
-		// discord.ApplicationCommandOptionSubCommandGroup{
-		// 	Name:        "friday",
-		// 	Description: "Manage friday celebration clips",
-		// 	Options: []discord.ApplicationCommandOptionSubCommand{
-		// 		{
-		// 			Name:        "add",
-		// 			Description: "Add a friday celebration clip",
-		// 			Options: []discord.ApplicationCommandOption{
-		// 				discord.ApplicationCommandOptionString{
-		// 					Name:        "url",
-		// 					Description: "The URL of the video",
-		// 					Required:    true,
-		// 				},
-		// 			},
-		// 		},
-		// 		{
-		// 			Name:        "remove",
-		// 			Description: "Remove a friday celebration clip",
-		// 			Options: []discord.ApplicationCommandOption{
-		// 				discord.ApplicationCommandOptionString{
-		// 					Name:        "id",
-		// 					Description: "The id of the video",
-		// 					Required:    true,
-		// 				},
-		// 			},
-		// 		},
-		// 		{
-		// 			Name:        "list",
-		// 			Description: "List all friday celebration clips",
-		// 		},
-		// 	},
-		// },
 		// Guild specific settings, for now only pin channel
 		discord.ApplicationCommandOptionSubCommandGroup{
 			Name:        "guild",
@@ -147,6 +112,27 @@ var SettingsCommand = discord.SlashCommandCreate{
 							Name:        "channel",
 							Description: "The channel to set as the pin channel",
 							Required:    true,
+						},
+					},
+				},
+				{
+					Name:        "xlinks",
+					Description: "Toggles the conversion of x.com links to fixupx.com links",
+					Options: []discord.ApplicationCommandOption{
+						discord.ApplicationCommandOptionString{
+							Name:        "state",
+							Description: "Enable or disable the conversion of x.com links to fixupx.com links",
+							Required:    true,
+							Choices: []discord.ApplicationCommandOptionChoiceString{
+								{
+									Name:  "On",
+									Value: "on",
+								},
+								{
+									Name:  "Off",
+									Value: "off",
+								},
+							},
 						},
 					},
 				},
@@ -183,6 +169,9 @@ var SettingsCommand = discord.SlashCommandCreate{
 	},
 }
 
+/**
+ * Custom command settings
+ */
 func HandleCustomAdd(h *handlers.Handler) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		if err := e.Respond(discord.InteractionResponseTypeDeferredCreateMessage, nil); err != nil {
@@ -275,67 +264,9 @@ func HandleCustomList(h *handlers.Handler) handler.CommandHandler {
 	}
 }
 
-func HandleAddFridayClip(b *wokkibot.Wokkibot) handler.CommandHandler {
-	return func(e *handler.CommandEvent) error {
-		data := e.SlashCommandInteractionData()
-
-		url := data.String("url")
-
-		db := database.GetDB()
-		_, err := db.Exec("INSERT INTO friday_clips (url) VALUES (?)", url)
-		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Failed to add clip: %v", err).Build())
-		}
-
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Clip added successfully").Build())
-	}
-}
-
-func HandleRemoveFridayClip(b *wokkibot.Wokkibot) handler.CommandHandler {
-	return func(e *handler.CommandEvent) error {
-		data := e.SlashCommandInteractionData()
-
-		url := data.String("id")
-
-		db := database.GetDB()
-		_, err := db.Exec("DELETE FROM friday_clips WHERE id = ?", url)
-		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Failed to remove clip: %v", err).Build())
-		}
-
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Clip removed successfully").Build())
-	}
-}
-
-func HandleListFridayClips(b *wokkibot.Wokkibot) handler.CommandHandler {
-	return func(e *handler.CommandEvent) error {
-		db := database.GetDB()
-		rows, err := db.Query("SELECT id, url FROM friday_clips")
-		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Failed to list clips: %v", err).Build())
-		}
-		defer rows.Close()
-
-		var clips []string
-		for rows.Next() {
-			var id, url string
-			if err := rows.Scan(&id, &url); err != nil {
-				return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Failed to list clips: %v", err).Build())
-			}
-			clips = append(clips, fmt.Sprintf("%v: <%v>", id, url))
-		}
-		if err := rows.Err(); err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Failed to list clips: %v", err).Build())
-		}
-
-		if len(clips) == 0 {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No clips found").Build())
-		}
-
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent(strings.Join(clips, "\n")).Build())
-	}
-}
-
+/**
+ * Guild settings
+ */
 func HandlePinChannelChange(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		if err := e.Respond(discord.InteractionResponseTypeDeferredCreateMessage, nil); err != nil {
@@ -346,14 +277,9 @@ func HandlePinChannelChange(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		channel := data.Channel("channel")
 
-		db := database.GetDB()
-		_, err := db.Exec("UPDATE guilds SET pin_channel = ? WHERE id = ?", channel.ID, *e.GuildID())
-		if err != nil {
-			utils.HandleError(e, "Failed to update pin channel", err.Error())
-			return err
-		}
+		b.Handlers.SetPinChannel(*e.GuildID(), channel.ID)
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
 			SetContent("Pin channel updated successfully").
 			Build())
 
@@ -361,6 +287,35 @@ func HandlePinChannelChange(b *wokkibot.Wokkibot) handler.CommandHandler {
 	}
 }
 
+func HandleXLinksToggle(b *wokkibot.Wokkibot) handler.CommandHandler {
+	return func(e *handler.CommandEvent) error {
+		if err := e.Respond(discord.InteractionResponseTypeDeferredCreateMessage, nil); err != nil {
+			return err
+		}
+
+		data := e.SlashCommandInteractionData()
+		state := data.String("state")
+
+		var message string
+		if state == "on" {
+			b.Handlers.ToggleGuildXLinks(*e.GuildID(), true)
+			message = "X links have been enabled"
+		} else {
+			b.Handlers.ToggleGuildXLinks(*e.GuildID(), false)
+			message = "X links have been disabled"
+		}
+
+		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+			SetContent(message).
+			Build())
+
+		return err
+	}
+}
+
+/**
+ * Lavalink settings
+ */
 func HandleInitLavalink(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		b.InitLavalink()

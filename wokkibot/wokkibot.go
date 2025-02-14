@@ -10,7 +10,6 @@ import (
 	"time"
 	"wokkibot/config"
 	"wokkibot/handlers"
-	"wokkibot/types"
 
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
@@ -24,28 +23,26 @@ import (
 )
 
 type Wokkibot struct {
-	Client         bot.Client
-	Config         config.Config
-	PistonClient   *gopiston.Client
-	Lavalink       disgolink.Client
-	CustomCommands []types.Command
-	Trivias        *handlers.TriviaManager
-	Games          map[snowflake.ID]interface{}
-	StartTime      time.Time
-	Version        string
-	handlers       *handlers.Handler
+	Client       bot.Client
+	Config       config.Config
+	PistonClient *gopiston.Client
+	Lavalink     disgolink.Client
+	Trivias      *handlers.TriviaManager
+	Games        map[snowflake.ID]interface{}
+	StartTime    time.Time
+	Version      string
+	Handlers     *handlers.Handler
 }
 
 func New(config config.Config, version string, handlers *handlers.Handler) *Wokkibot {
 	return &Wokkibot{
-		PistonClient:   gopiston.CreateDefaultClient(),
-		Config:         config,
-		handlers:       handlers,
-		CustomCommands: []types.Command{},
-		Trivias:        handlers.TriviaManager,
-		Games:          make(map[snowflake.ID]interface{}),
-		StartTime:      time.Now(),
-		Version:        version,
+		PistonClient: gopiston.CreateDefaultClient(),
+		Config:       config,
+		Handlers:     handlers,
+		Trivias:      handlers.TriviaManager,
+		Games:        make(map[snowflake.ID]interface{}),
+		StartTime:    time.Now(),
+		Version:      version,
 	}
 }
 
@@ -63,14 +60,14 @@ func (b *Wokkibot) SyncGlobalCommands(commands []discord.ApplicationCommandCreat
 
 func (b *Wokkibot) InitLavalink() {
 	b.Lavalink = disgolink.New(b.Client.ApplicationID(),
-		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnPlayerPause),
-		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnPlayerResume),
-		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnTrackStart),
-		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnTrackEnd),
-		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnTrackException),
-		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnTrackStuck),
-		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnWebSocketClosed),
-		disgolink.WithListenerFunc(b.handlers.PlayerHandler.OnUnknownEvent),
+		disgolink.WithListenerFunc(b.Handlers.PlayerHandler.OnPlayerPause),
+		disgolink.WithListenerFunc(b.Handlers.PlayerHandler.OnPlayerResume),
+		disgolink.WithListenerFunc(b.Handlers.PlayerHandler.OnTrackStart),
+		disgolink.WithListenerFunc(b.Handlers.PlayerHandler.OnTrackEnd),
+		disgolink.WithListenerFunc(b.Handlers.PlayerHandler.OnTrackException),
+		disgolink.WithListenerFunc(b.Handlers.PlayerHandler.OnTrackStuck),
+		disgolink.WithListenerFunc(b.Handlers.PlayerHandler.OnWebSocketClosed),
+		disgolink.WithListenerFunc(b.Handlers.PlayerHandler.OnUnknownEvent),
 	)
 
 	var wg sync.WaitGroup
@@ -145,7 +142,7 @@ func (b *Wokkibot) OnDiscordEvent(event bot.Event) {
 		}
 		b.Lavalink.OnVoiceStateUpdate(context.TODO(), e.VoiceState.GuildID, e.VoiceState.ChannelID, e.VoiceState.SessionID)
 		if e.VoiceState.ChannelID == nil {
-			b.handlers.PlayerHandler.Queues.Delete(e.VoiceState.GuildID)
+			b.Handlers.PlayerHandler.Queues.Delete(e.VoiceState.GuildID)
 		}
 	case *events.VoiceServerUpdate:
 		b.Lavalink.OnVoiceServerUpdate(context.TODO(), e.GuildID, e.Token, *e.Endpoint)

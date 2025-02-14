@@ -1,7 +1,8 @@
-package database
+package web
 
 import (
 	"database/sql"
+	"wokkibot/database"
 )
 
 type CustomCommand struct {
@@ -26,6 +27,8 @@ type PizzaTopping struct {
 
 // Custom Commands
 func GetCustomCommands() ([]CustomCommand, error) {
+	db := database.GetDB()
+
 	rows, err := db.Query("SELECT id, guild_id, prefix, name, description, output, author FROM custom_commands")
 	if err != nil {
 		return nil, err
@@ -45,6 +48,8 @@ func GetCustomCommands() ([]CustomCommand, error) {
 }
 
 func AddCustomCommand(cmd CustomCommand) error {
+	db := database.GetDB()
+
 	_, err := db.Exec(
 		"INSERT INTO custom_commands (guild_id, prefix, name, description, output, author) VALUES (?, ?, ?, ?, ?, ?)",
 		cmd.GuildID, cmd.Prefix, cmd.Name, cmd.Description, cmd.Output, cmd.Author,
@@ -53,6 +58,8 @@ func AddCustomCommand(cmd CustomCommand) error {
 }
 
 func UpdateCustomCommand(cmd CustomCommand) error {
+	db := database.GetDB()
+
 	result, err := db.Exec(
 		"UPDATE custom_commands SET guild_id=?, prefix=?, name=?, description=?, output=?, author=? WHERE id=?",
 		cmd.GuildID, cmd.Prefix, cmd.Name, cmd.Description, cmd.Output, cmd.Author, cmd.ID,
@@ -71,6 +78,8 @@ func UpdateCustomCommand(cmd CustomCommand) error {
 }
 
 func DeleteCustomCommand(id int64) error {
+	db := database.GetDB()
+
 	result, err := db.Exec("DELETE FROM custom_commands WHERE id=?", id)
 	if err != nil {
 		return err
@@ -87,6 +96,8 @@ func DeleteCustomCommand(id int64) error {
 
 // Friday Clips
 func GetFridayClips() ([]FridayClip, error) {
+	db := database.GetDB()
+
 	rows, err := db.Query("SELECT id, url FROM friday_clips")
 	if err != nil {
 		return nil, err
@@ -106,11 +117,15 @@ func GetFridayClips() ([]FridayClip, error) {
 }
 
 func AddFridayClip(url string) error {
+	db := database.GetDB()
+
 	_, err := db.Exec("INSERT INTO friday_clips (url) VALUES (?)", url)
 	return err
 }
 
 func DeleteFridayClip(id int64) error {
+	db := database.GetDB()
+
 	result, err := db.Exec("DELETE FROM friday_clips WHERE id=?", id)
 	if err != nil {
 		return err
@@ -127,6 +142,8 @@ func DeleteFridayClip(id int64) error {
 
 // Pizza Toppings
 func GetPizzaToppings() ([]PizzaTopping, error) {
+	db := database.GetDB()
+
 	rows, err := db.Query("SELECT id, name FROM pizza_toppings")
 	if err != nil {
 		return nil, err
@@ -146,11 +163,15 @@ func GetPizzaToppings() ([]PizzaTopping, error) {
 }
 
 func AddPizzaTopping(name string) error {
+	db := database.GetDB()
+
 	_, err := db.Exec("INSERT INTO pizza_toppings (name) VALUES (?)", name)
 	return err
 }
 
 func DeletePizzaTopping(id int64) error {
+	db := database.GetDB()
+
 	result, err := db.Exec("DELETE FROM pizza_toppings WHERE id=?", id)
 	if err != nil {
 		return err
@@ -166,6 +187,8 @@ func DeletePizzaTopping(id int64) error {
 }
 
 func GetCommandByID(id int64) (*CustomCommand, error) {
+	db := database.GetDB()
+
 	var cmd CustomCommand
 	err := db.QueryRow("SELECT id, guild_id, prefix, name, description, output, author FROM custom_commands WHERE id = ?", id).
 		Scan(&cmd.ID, &cmd.GuildID, &cmd.Prefix, &cmd.Name, &cmd.Description, &cmd.Output, &cmd.Author)

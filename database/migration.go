@@ -23,6 +23,11 @@ var migrations = []Migration{
 		Description: "Add data to pizza_toppings table",
 		SQL:         "INSERT INTO pizza_toppings (name) VALUES ('Ananas'), ('Aurajuusto'), ('Chili'), ('Jalopeno'), ('Tuplajuusto'), ('Kananmuna'), ('Katkarapu'), ('Kermaperunat'), ('Oliivi'), ('Pekoni'), ('Pippurikastike'), ('Punasipuli'), ('Salaatti'), ('Simpukka'), ('Smetana'), ('Tomaatti'), ('Herkkusieni'), ('Anjovis'), ('BBQ-kastike'), ('Fetajuusto'), ('Jauheliha'), ('Kana'), ('Kapris'), ('Kebab'), ('Mozzarella'), ('Paprika'), ('Pepperoni'), ('Pizzasuikale'), ('Rucola'), ('Salami'), ('Sipuli'), ('Suolakurkku'), ('Tonnikala'), ('Banaani'), ('Currykastike');",
 	},
+	{
+		Version:     3,
+		Description: "Add convert_x_links to guilds",
+		SQL:         "ALTER TABLE guilds ADD COLUMN convert_x_links BOOLEAN DEFAULT TRUE;",
+	},
 }
 
 func runMigrations() error {

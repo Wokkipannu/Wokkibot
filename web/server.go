@@ -24,10 +24,16 @@ type Server struct {
 	store       *session.Store
 	oauthConfig OAuthConfig
 	admin       *AdminHandler
+	version     string
 }
 
-func NewServer(config OAuthConfig, bot *wokkibot.Wokkibot, h *handlers.Handler) *Server {
-	engine := html.New("/app/web/views", ".html")
+func NewServer(config OAuthConfig, bot *wokkibot.Wokkibot, h *handlers.Handler, version string) *Server {
+	templatePath := "./web/views"
+	if version != "dev" {
+		templatePath = "/app/web/views"
+	}
+
+	engine := html.New(templatePath, ".html")
 	store := session.New(session.Config{
 		Expiration:     24 * time.Hour,
 		KeyLookup:      "cookie:session_id",
@@ -52,6 +58,7 @@ func NewServer(config OAuthConfig, bot *wokkibot.Wokkibot, h *handlers.Handler) 
 		store:       store,
 		oauthConfig: config,
 		admin:       admin,
+		version:     version,
 	}
 
 	server.setupRoutes()
@@ -64,6 +71,10 @@ func (s *Server) setupRoutes() {
 	s.app.Use(func(c *fiber.Ctx) error {
 		fmt.Printf("Request: %s %s\n", c.Method(), c.Path())
 		return c.Next()
+	})
+
+	s.app.Get("/", func(c *fiber.Ctx) error {
+		return c.Render("index", fiber.Map{})
 	})
 
 	s.app.Get("/login", s.auth.HandleLogin)
@@ -114,10 +125,48 @@ func (s *Server) handleDashboard(c *fiber.Ctx) error {
 	userMap["avatar_url"] = avatarURL
 
 	return c.Render("dashboard", fiber.Map{
-		"User": userMap,
+		"User":     userMap,
+		"Version":  s.admin.bot.Version,
+		"Uptime":   s.GetUptime(),
+		"Presence": s.GetPresence(),
+		"Guilds":   s.GetGuildsCount(),
+		"Users":    s.GetUsersCount(),
 	})
 }
 
 func (s *Server) Start(addr string) error {
 	return s.app.Listen(addr)
+}
+
+func (s *Server) GetPresence() string {
+	activity := s.admin.bot.Client.Gateway().Presence().Activities[0]
+
+	switch activity.Type {
+	case 0: // Playing
+		return fmt.Sprintf("Playing %s", activity.Name)
+	case 1: // Streaming
+		return fmt.Sprintf("Streaming %s", activity.Name)
+	case 2: // Listening
+		return fmt.Sprintf("Listening to %s", activity.Name)
+	case 3: // Watching
+		return fmt.Sprintf("Watching %s", activity.Name)
+	case 4: // Custom
+		return activity.Name
+	case 5: // Competing
+		return fmt.Sprintf("Competing in %s", activity.Name)
+	default:
+		return activity.Name
+	}
+}
+
+func (s *Server) GetUptime() string {
+	return time.Since(s.admin.bot.StartTime).Round(time.Second).String()
+}
+
+func (s *Server) GetGuildsCount() int {
+	return s.admin.bot.Client.Caches().GuildsLen()
+}
+
+func (s *Server) GetUsersCount() int {
+	return s.admin.bot.Client.Caches().MembersAllLen()
 }

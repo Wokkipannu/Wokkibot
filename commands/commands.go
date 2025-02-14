@@ -72,6 +72,7 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 		// })
 		r.Route("/guild", func(r handler.Router) {
 			r.Command("/pinchannel", middleware.AdminMiddleware(settings.HandlePinChannelChange(b)))
+			r.Command("/xlinks", middleware.AdminMiddleware(settings.HandleXLinksToggle(b)))
 		})
 		r.Route("/lavalink", func(r handler.Router) {
 			r.Command("/toggle", middleware.AdminMiddleware(settings.HandleLavalinkToggle(b)))

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Dashboard</title>
+    <title>Wokkibot - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -11,6 +11,35 @@
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8 flex items-center gap-4">
             <img v-if="'{{.User.avatar_url}}'" src="{{.User.avatar_url}}" class="w-10 h-10 rounded-full" />
             <h1 class="text-2xl font-bold">Welcome, {{.User.username}}</h1>
+        </div>
+
+        <!-- New Bot Status section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Bot Status</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-semibold text-gray-600">Version</h3>
+                    <p class="text-lg">{{.Version}}</p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-semibold text-gray-600">Uptime</h3>
+                    <p class="text-lg">{{.Uptime}}</p>
+                </div>
+                {{if .Presence}}
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-semibold text-gray-600">Status</h3>
+                    <p class="text-lg">{{.Presence}}</p>
+                </div>
+                {{end}}
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-semibold text-gray-600">Guilds</h3>
+                    <p class="text-lg">{{.Guilds}}</p>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-semibold text-gray-600">Users</h3>
+                    <p class="text-lg">{{.Users}}</p>
+                </div>
+            </div>
         </div>
 
         <!-- Custom Commands -->
