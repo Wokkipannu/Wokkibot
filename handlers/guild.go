@@ -23,13 +23,17 @@ func LoadGuilds() (map[snowflake.ID]types.Guild, error) {
 		var guild types.Guild
 		var idStr string
 		var pinChannelStr sql.NullString
-		if err := rows.Scan(&idStr, &guild.TriviaToken, &pinChannelStr, &guild.ConvertXLinks); err != nil {
+		var triviaTokenStr sql.NullString
+		if err := rows.Scan(&idStr, &triviaTokenStr, &pinChannelStr, &guild.ConvertXLinks); err != nil {
 			return nil, fmt.Errorf("failed to scan guild row: %v", err)
 		}
 
 		guild.ID = snowflake.MustParse(idStr)
 		if pinChannelStr.Valid {
 			guild.PinChannel = snowflake.MustParse(pinChannelStr.String)
+		}
+		if triviaTokenStr.Valid {
+			guild.TriviaToken = triviaTokenStr.String
 		}
 
 		guilds[guild.ID] = guild
