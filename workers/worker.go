@@ -19,7 +19,7 @@ func NewWorker(bot *wokkibot.Wokkibot) *Worker {
 }
 
 func (w *Worker) Start() {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(15 * time.Second)
 	go func() {
 		for range ticker.C {
 			w.checkReminders()
