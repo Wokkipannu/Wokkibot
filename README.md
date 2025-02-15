@@ -45,6 +45,7 @@ Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://git
 # Setup
 * Get [Lavalink](https://github.com/freyacodes/Lavalink) and required plugins ([YouTube-Source](https://github.com/lavalink-devs/youtube-source#plugin), [LavaSrc](https://github.com/topi314/LavaSrc) and [LavaSearch](https://github.com/topi314/LavaSearch))
 * Setup config.json
+* For the /download command to work you need to have [yt-dlp](https://github.com/yt-dlp/yt-dlp) and ffmpeg installed
 * Run `go run main.go` or build
 
 # Configuration

@@ -39,13 +39,15 @@ func (h *Handler) AddOrUpdateCommand(newCommand types.Command) error {
 
 	var exists bool
 	var existingAuthor snowflake.ID
-	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM custom_commands WHERE name = $1 AND prefix = $2)", newCommand.Name, newCommand.Prefix).Scan(&exists)
+	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM custom_commands WHERE name = $1 AND prefix = $2 AND guild_id = $3)",
+		newCommand.Name, newCommand.Prefix, newCommand.GuildID).Scan(&exists)
 	if err != nil {
 		return err
 	}
 
 	if exists {
-		err = db.QueryRow("SELECT author FROM custom_commands WHERE name = $1 AND prefix = $2", newCommand.Name, newCommand.Prefix).Scan(&existingAuthor)
+		err = db.QueryRow("SELECT author FROM custom_commands WHERE name = $1 AND prefix = $2 AND guild_id = $3",
+			newCommand.Name, newCommand.Prefix, newCommand.GuildID).Scan(&existingAuthor)
 		if err != nil {
 			return err
 		}
@@ -54,11 +56,11 @@ func (h *Handler) AddOrUpdateCommand(newCommand types.Command) error {
 			return fmt.Errorf("only the original author can update this command")
 		}
 
-		_, err = db.Exec("UPDATE custom_commands SET description = $1, output = $2, guild_id = $3 WHERE name = $4 AND prefix = $5",
-			newCommand.Description, newCommand.Output, newCommand.GuildID, newCommand.Name, newCommand.Prefix)
+		_, err = db.Exec("UPDATE custom_commands SET description = $1, output = $2 WHERE name = $3 AND prefix = $4 AND guild_id = $5",
+			newCommand.Description, newCommand.Output, newCommand.Name, newCommand.Prefix, newCommand.GuildID)
 
 		for i, cmd := range h.CustomCommands {
-			if cmd.Name == newCommand.Name && cmd.Prefix == newCommand.Prefix {
+			if cmd.Name == newCommand.Name && cmd.Prefix == newCommand.Prefix && cmd.GuildID == newCommand.GuildID {
 				h.CustomCommands[i] = newCommand
 				break
 			}

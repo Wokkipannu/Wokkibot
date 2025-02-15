@@ -130,7 +130,6 @@ func (s *Server) handleDashboard(c *fiber.Ctx) error {
 		"Uptime":   s.GetUptime(),
 		"Presence": s.GetPresence(),
 		"Guilds":   s.GetGuildsCount(),
-		"Users":    s.GetUsersCount(),
 	})
 }
 
@@ -165,8 +164,4 @@ func (s *Server) GetUptime() string {
 
 func (s *Server) GetGuildsCount() int {
 	return s.admin.bot.Client.Caches().GuildsLen()
-}
-
-func (s *Server) GetUsersCount() int {
-	return s.admin.bot.Client.Caches().MembersAllLen()
 }
