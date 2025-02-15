@@ -182,9 +182,12 @@ func (s *Server) GetCommands() ([]discord.ApplicationCommand, []discord.Applicat
 		return nil, nil, err
 	}
 
-	GuildCommands, err := s.admin.bot.Client.Rest().GetGuildCommands(s.admin.bot.Client.ApplicationID(), snowflake.MustParse(s.admin.bot.Config.GuildID), false)
-	if err != nil {
-		return nil, nil, err
+	var GuildCommands []discord.ApplicationCommand
+	if s.admin.bot.Config.GuildID != "" {
+		GuildCommands, err = s.admin.bot.Client.Rest().GetGuildCommands(s.admin.bot.Client.ApplicationID(), snowflake.MustParse(s.admin.bot.Config.GuildID), false)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	return GlobalCommands, GuildCommands, nil
