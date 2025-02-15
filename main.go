@@ -10,6 +10,7 @@ import (
 	"wokkibot/queue"
 	"wokkibot/web"
 	"wokkibot/wokkibot"
+	"wokkibot/workers"
 
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
@@ -51,12 +52,20 @@ func main() {
 		panic("failed to load guilds: " + err.Error())
 	}
 
+	// Load reminders
+	reminders, err := handlers.NewReminderHandler().LoadReminders()
+	if err != nil {
+		panic("failed to load reminders: " + err.Error())
+	}
+
 	// Initialize handlers
 	h := handlers.New()
 
 	h.CustomCommands = customCommands
 
 	h.Guilds = guilds
+
+	h.ReminderHandler.Reminders = reminders
 
 	// Initialize wokkibot
 	b := wokkibot.New(*cfg, version, h)
@@ -128,6 +137,10 @@ func main() {
 			slog.Error("error starting web server", slog.Any("err", err))
 		}
 	}()
+
+	// Initialize worker, currently only handles reminders
+	worker := workers.NewWorker(b)
+	worker.Start()
 
 	b.Start()
 }

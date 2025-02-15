@@ -28,6 +28,11 @@ var migrations = []Migration{
 		Description: "Add convert_x_links to guilds",
 		SQL:         "ALTER TABLE guilds ADD COLUMN convert_x_links BOOLEAN DEFAULT TRUE;",
 	},
+	{
+		Version:     4,
+		Description: "Add reminders table",
+		SQL:         "CREATE TABLE IF NOT EXISTS reminders (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, channel_id TEXT NOT NULL, message TEXT NOT NULL, remind_at DATETIME NOT NULL);",
+	},
 }
 
 func runMigrations() error {

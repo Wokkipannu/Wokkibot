@@ -93,6 +93,13 @@ func initializeSchema() error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			name TEXT NOT NULL
 		)`,
+		`CREATE TABLE IF NOT EXISTS reminders (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id TEXT NOT NULL,
+			channel_id TEXT NOT NULL,
+			message TEXT NOT NULL,
+			remind_at DATETIME NOT NULL
+		)`,
 	}
 
 	for _, schema := range schemas {

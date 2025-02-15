@@ -12,6 +12,7 @@ import (
 	"wokkibot/commands/ping"
 	"wokkibot/commands/pizza"
 	"wokkibot/commands/quote"
+	"wokkibot/commands/remind"
 	"wokkibot/commands/roll"
 	"wokkibot/commands/settings"
 	"wokkibot/commands/status"
@@ -42,6 +43,7 @@ var Commands = []discord.ApplicationCommandCreate{
 	download.DownloadCommand,
 	minesweeper.MinesweeperCommand,
 	status.StatusCommand,
+	remind.RemindCommand,
 	// Music commands
 	music.PlayCommand,
 	music.SkipCommand,
@@ -81,6 +83,7 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 	r.Command("/joke", joke.HandleJoke(b))
 	r.Command("/download", download.HandleDownload(b))
 	r.Command("/status", status.HandleStatus(b))
+	r.Command("/remind", remind.HandleRemind(b))
 	// Context menu commands
 	r.Command("/Quote", quote.HandleQuote(b))
 	r.Command("/Eval", eval.HandleEval(b))
