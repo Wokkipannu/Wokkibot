@@ -3,11 +3,14 @@ package web
 import (
 	"encoding/gob"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"wokkibot/handlers"
 	"wokkibot/wokkibot"
 
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -124,12 +127,19 @@ func (s *Server) handleDashboard(c *fiber.Ctx) error {
 	}
 	userMap["avatar_url"] = avatarURL
 
+	GlobalCommands, GuildCommands, err := s.GetCommands()
+	if err != nil {
+		slog.Error("error getting commands for web view", "error", err)
+	}
+
 	return c.Render("dashboard", fiber.Map{
-		"User":     userMap,
-		"Version":  s.admin.bot.Version,
-		"Uptime":   s.GetUptime(),
-		"Presence": s.GetPresence(),
-		"Guilds":   s.GetGuildsCount(),
+		"User":           userMap,
+		"Version":        s.admin.bot.Version,
+		"Uptime":         s.GetUptime(),
+		"Presence":       s.GetPresence(),
+		"Guilds":         s.GetGuildsCount(),
+		"GlobalCommands": GlobalCommands,
+		"GuildCommands":  GuildCommands,
 	})
 }
 
@@ -164,4 +174,18 @@ func (s *Server) GetUptime() string {
 
 func (s *Server) GetGuildsCount() int {
 	return s.admin.bot.Client.Caches().GuildsLen()
+}
+
+func (s *Server) GetCommands() ([]discord.ApplicationCommand, []discord.ApplicationCommand, error) {
+	GlobalCommands, err := s.admin.bot.Client.Rest().GetGlobalCommands(s.admin.bot.Client.ApplicationID(), false)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	GuildCommands, err := s.admin.bot.Client.Rest().GetGuildCommands(s.admin.bot.Client.ApplicationID(), snowflake.MustParse(s.admin.bot.Config.GuildID), false)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return GlobalCommands, GuildCommands, nil
 }

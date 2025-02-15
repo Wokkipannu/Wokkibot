@@ -35,6 +35,59 @@
                     <h3 class="text-sm font-semibold text-gray-600">Guilds</h3>
                     <p class="text-lg">{{.Guilds}}</p>
                 </div>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <button @click="showCommands = !showCommands" class="w-full flex justify-between items-center text-left hover:bg-gray-100 p-2 rounded-md transition-colors duration-150">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15l-4-4h8l-4 4z" />
+                            </svg>
+                            <h3 class="text-sm font-semibold text-gray-600">Bot Commands</h3>
+                        </div>
+                        <svg :class="{'rotate-180': showCommands}" class="w-4 h-4 transform transition-transform text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    
+                    <div v-show="showCommands" class="mt-4 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-white p-3 rounded-md shadow-sm">
+                                <h4 class="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M21 12a9 9 0 11-18 0 9 9 0 0118 0z M9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
+                                    </svg>
+                                    Global Commands
+                                </h4>
+                                <ul class="space-y-1">
+                                    {{range .GlobalCommands}}
+                                    {{if eq .Type 1}}
+                                    <li class="text-sm text-gray-700 hover:bg-gray-50 px-2 py-1 rounded-md transition-colors">
+                                        <code class="text-blue-600">/{{.Name}}</code>
+                                    </li>
+                                    {{end}}
+                                    {{end}}
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-white p-3 rounded-md shadow-sm">
+                                <h4 class="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                    Guild Commands
+                                </h4>
+                                <ul class="space-y-1">
+                                    {{range .GuildCommands}}
+                                    {{if eq .Type 1}}
+                                    <li class="text-sm text-gray-700 hover:bg-gray-50 px-2 py-1 rounded-md transition-colors">
+                                        <code class="text-purple-600">/{{.Name}}</code>
+                                    </li>
+                                    {{end}}
+                                    {{end}}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -142,6 +195,7 @@
             delimiters: ['${', '}'],
             data() {
                 return {
+                    showCommands: false,
                     commands: [],
                     fridayClips: [],
                     pizzaToppings: [],
