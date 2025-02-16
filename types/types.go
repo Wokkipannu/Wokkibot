@@ -26,6 +26,7 @@ type Reminder struct {
 	ID        int          `json:"id"`
 	UserID    snowflake.ID `json:"user_id"`
 	ChannelID snowflake.ID `json:"channel_id"`
+	GuildID   snowflake.ID `json:"guild_id"`
 	Message   string       `json:"message"`
 	RemindAt  time.Time    `json:"remind_at"`
 }

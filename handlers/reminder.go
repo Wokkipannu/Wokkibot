@@ -3,6 +3,8 @@ package handlers
 import (
 	"wokkibot/database"
 	"wokkibot/types"
+
+	"github.com/disgoorg/snowflake/v2"
 )
 
 type ReminderHandler struct {
@@ -39,8 +41,8 @@ func (h *ReminderHandler) LoadReminders() ([]types.Reminder, error) {
 func (h *ReminderHandler) AddReminder(reminder types.Reminder) error {
 	db := database.GetDB()
 
-	result, err := db.Exec("INSERT INTO reminders (user_id, channel_id, message, remind_at) VALUES (?, ?, ?, ?)",
-		reminder.UserID, reminder.ChannelID, reminder.Message, reminder.RemindAt)
+	result, err := db.Exec("INSERT INTO reminders (user_id, channel_id, guild_id, message, remind_at) VALUES (?, ?, ?, ?, ?)",
+		reminder.UserID, reminder.ChannelID, reminder.GuildID, reminder.Message, reminder.RemindAt)
 	if err != nil {
 		return err
 	}
@@ -80,4 +82,14 @@ func (h *ReminderHandler) RemoveReminder(id int) error {
 	h.Reminders = newReminders
 
 	return nil
+}
+
+func (h *ReminderHandler) GetRemindersByUserID(userID snowflake.ID) ([]types.Reminder, error) {
+	var reminders []types.Reminder
+	for _, reminder := range h.Reminders {
+		if reminder.UserID == userID {
+			reminders = append(reminders, reminder)
+		}
+	}
+	return reminders, nil
 }

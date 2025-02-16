@@ -140,11 +140,15 @@ func (b *Wokkibot) OnDiscordEvent(event bot.Event) {
 		if e.VoiceState.UserID != b.Client.ApplicationID() {
 			return
 		}
-		b.Lavalink.OnVoiceStateUpdate(context.TODO(), e.VoiceState.GuildID, e.VoiceState.ChannelID, e.VoiceState.SessionID)
-		if e.VoiceState.ChannelID == nil {
-			b.Handlers.PlayerHandler.Queues.Delete(e.VoiceState.GuildID)
+		if b.Config.Lavalink.Enabled {
+			b.Lavalink.OnVoiceStateUpdate(context.TODO(), e.VoiceState.GuildID, e.VoiceState.ChannelID, e.VoiceState.SessionID)
+			if e.VoiceState.ChannelID == nil {
+				b.Handlers.PlayerHandler.Queues.Delete(e.VoiceState.GuildID)
+			}
 		}
 	case *events.VoiceServerUpdate:
-		b.Lavalink.OnVoiceServerUpdate(context.TODO(), e.GuildID, e.Token, *e.Endpoint)
+		if b.Config.Lavalink.Enabled {
+			b.Lavalink.OnVoiceServerUpdate(context.TODO(), e.GuildID, e.Token, *e.Endpoint)
+		}
 	}
 }

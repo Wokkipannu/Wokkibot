@@ -97,6 +97,7 @@ func initializeSchema() error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id TEXT NOT NULL,
 			channel_id TEXT NOT NULL,
+			guild_id TEXT NOT NULL,
 			message TEXT NOT NULL,
 			remind_at DATETIME NOT NULL
 		)`,

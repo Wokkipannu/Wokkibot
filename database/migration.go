@@ -33,6 +33,11 @@ var migrations = []Migration{
 		Description: "Add reminders table",
 		SQL:         "CREATE TABLE IF NOT EXISTS reminders (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, channel_id TEXT NOT NULL, message TEXT NOT NULL, remind_at DATETIME NOT NULL);",
 	},
+	{
+		Version:     5,
+		Description: "Add guild_id to reminders",
+		SQL:         "ALTER TABLE reminders ADD COLUMN guild_id TEXT;",
+	},
 }
 
 func runMigrations() error {

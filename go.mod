@@ -10,7 +10,6 @@ require (
 	github.com/gofiber/template/html/v2 v2.1.3
 	github.com/mvdan/xurls v1.1.0
 	github.com/tursodatabase/libsql-client-go v0.0.0-20240902231107-85af5b9d094d
-	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3
 	golang.org/x/text v0.22.0
 	modernc.org/sqlite v1.34.5
 )
@@ -33,6 +32,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
+	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3 // indirect
 	modernc.org/libc v1.61.12 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.8.2 // indirect

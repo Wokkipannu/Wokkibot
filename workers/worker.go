@@ -1,7 +1,7 @@
 package workers
 
 import (
-	"log"
+	"log/slog"
 	"time"
 	"wokkibot/wokkibot"
 
@@ -33,8 +33,10 @@ func (w *Worker) checkReminders() {
 			_, err := w.Bot.Client.Rest().CreateMessage(reminder.ChannelID, discord.NewMessageCreateBuilder().
 				SetContentf("<@%s> %s", reminder.UserID.String(), reminder.Message).
 				Build())
+
 			if err != nil {
-				log.Printf("Error sending reminder: %v", err)
+				slog.Error("Error sending reminder", "error", err)
+				continue
 			}
 
 			w.Bot.Handlers.ReminderHandler.RemoveReminder(reminder.ID)
