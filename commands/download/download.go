@@ -62,14 +62,14 @@ var DownloadCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
-		discord.ApplicationCommandOptionInt{
+		discord.ApplicationCommandOptionString{
 			Name:        "from",
-			Description: "The time to start the video from in seconds",
+			Description: "The time to start the video from (e.g. 1:30 or 90)",
 			Required:    false,
 		},
-		discord.ApplicationCommandOptionInt{
+		discord.ApplicationCommandOptionString{
 			Name:        "to",
-			Description: "The time to end the video at in seconds",
+			Description: "The time to end the video at (e.g. 2:45 or 165). If left empty, the video will be downloaded until the end.",
 			Required:    false,
 		},
 	},
@@ -82,8 +82,8 @@ type DownloadTask struct {
 	tempDir           string
 	maxFileSize       int
 	resolution        string
-	from              int
-	to                int
+	from              string
+	to                string
 }
 
 type DownloadProgress struct {
@@ -145,8 +145,8 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 			tempDir:           tempDir,
 			maxFileSize:       calculateMaximumFileSizeForGuild(guild),
 			resolution:        res,
-			from:              e.SlashCommandInteractionData().Int("from"),
-			to:                e.SlashCommandInteractionData().Int("to"),
+			from:              e.SlashCommandInteractionData().String("from"),
+			to:                e.SlashCommandInteractionData().String("to"),
 		}
 		taskQueue <- task
 
@@ -176,9 +176,9 @@ func handleDownloadAndConversion(task DownloadTask) {
 	var err error
 
 	if strings.HasPrefix(task.url, "https://i.ylilauta.org/") {
-		downloadedFile, err = downloadVideoWithCurl(task, e)
+		downloadedFile, err = downloadFileWithCurl(task, e)
 	} else {
-		downloadedFile, err = downloadVideo(task, e)
+		downloadedFile, err = downloadFile(task, e)
 	}
 
 	if err != nil {
@@ -198,12 +198,12 @@ func handleDownloadAndConversion(task DownloadTask) {
 	}
 }
 
-func downloadVideo(task DownloadTask, e *handler.CommandEvent) (string, error) {
+func downloadFile(task DownloadTask, e *handler.CommandEvent) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), downloadTimeout)
 	defer cancel()
 
-	from := task.e.SlashCommandInteractionData().Int("from")
-	to := task.e.SlashCommandInteractionData().Int("to")
+	from := task.from
+	to := task.to
 
 	output := filepath.Join(task.tempDir, "video_download.%(ext)s")
 	cmd := exec.CommandContext(ctx, "yt-dlp",
@@ -217,14 +217,18 @@ func downloadVideo(task DownloadTask, e *handler.CommandEvent) (string, error) {
 		"--newline",
 	)
 
-	if from != 0 && to != 0 && from < to {
-		cmd.Args = append(cmd.Args, "--download-sections", fmt.Sprintf("*%d-%d", from, to))
+	if from != "" {
+		toValue := "inf"
+		if to != "" {
+			toValue = to
+		}
+		cmd.Args = append(cmd.Args, "--download-sections", fmt.Sprintf("*%s-%s", from, toValue))
 	}
 
 	return executeOperation(e, task, cmd, ctx, "download", "")
 }
 
-func downloadVideoWithCurl(task DownloadTask, e *handler.CommandEvent) (string, error) {
+func downloadFileWithCurl(task DownloadTask, e *handler.CommandEvent) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), downloadTimeout)
 	defer cancel()
 
@@ -243,12 +247,16 @@ func downloadVideoWithCurl(task DownloadTask, e *handler.CommandEvent) (string, 
 }
 
 func convertVideo(task DownloadTask, e *handler.CommandEvent, downloadedFile string) (string, error) {
-	codec, err := getVideoCodec(downloadedFile)
+	codec, err := getCodec(downloadedFile)
 	if err != nil {
 		return "", err
 	}
 
 	if codec == "h264" {
+		return downloadedFile, nil
+	}
+
+	if codec == "mp3" {
 		return downloadedFile, nil
 	}
 
@@ -395,21 +403,34 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 	return task.filePathProcessed, nil
 }
 
-func getVideoCodec(videoFile string) (string, error) {
+func getCodec(file string) (string, error) {
 	cmd := exec.Command("ffprobe",
 		"-v", "error",
 		"-select_streams", "v:0",
 		"-show_entries", "stream=codec_name",
 		"-of", "default=noprint_wrappers=1:nokey=1",
-		videoFile,
+		file,
 	)
 
 	output, err := cmd.CombinedOutput()
+	if err == nil && strings.TrimSpace(string(output)) != "" {
+		return strings.TrimSpace(string(output)), nil
+	}
+
+	cmd = exec.Command("ffprobe",
+		"-v", "error",
+		"-select_streams", "a:0",
+		"-show_entries", "stream=codec_name",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		file,
+	)
+
+	output, err = cmd.CombinedOutput()
 	if err != nil {
 		slog.Error("Error running ffprobe",
 			"error", err,
 			"output", string(output),
-			"file", videoFile,
+			"file", file,
 		)
 		return "", fmt.Errorf("ffprobe error: %w, output: %s", err, string(output))
 	}
@@ -455,9 +476,23 @@ func attachFile(e *handler.CommandEvent, filePath string) error {
 	}
 	defer file.Close()
 
+	codec, err := getCodec(filePath)
+	if err != nil {
+		utils.HandleError(e, "Error getting codec", err.Error())
+		return err
+	}
+
+	var outputFileName string
+	switch codec {
+	case "mp3":
+		outputFileName = "audio.mp3"
+	default:
+		outputFileName = "video.mp4"
+	}
+
 	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
 		SetContent("").
-		AddFile("video.mp4", filePath, file).
+		AddFile(outputFileName, filePath, file).
 		Build())
 	if err != nil {
 		return err

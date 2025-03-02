@@ -23,17 +23,18 @@ Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://git
 * `/flip` - Flip a coin
 * `/trivia` - Start a trivia game
 * `/joke` - Get a random joke
+* `/remind`
+  * `/remind set` - Set a reminder
+  * `/remind delete` - Delete a reminder
+  * `/remind list` - List all reminders
 * `/settings`
   * `/settings commands`
     * `/settings commands add` - Add a custom command
     * `/settings commands remove` - Remove a custom command
     * `/settings commands list` - List all custom commands
-  * `/settings friday`
-    * `/settings friday add` - Add a friday celebration clip
-    * `/settings friday remove` - Remove a friday celebration clip
-    * `/settings friday list` - List all friday celebration clips
   * `/settings guild`
     * `/settings guild pinchannel` - Set the pin channel
+    * `/settings guild xlinks` - Set the conversion of x links to fixupx links on or off
   * `/settings lavalink`
     * `/settings lavalink toggle` - Toggle lavalink on/off
 * `/minesweeper` - Start a minesweeper game
