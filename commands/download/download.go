@@ -63,12 +63,12 @@ var DownloadCommand = discord.SlashCommandCreate{
 			},
 		},
 		discord.ApplicationCommandOptionString{
-			Name:        "from",
+			Name:        "start",
 			Description: "The time to start the video from (e.g. 1:30 or 90)",
 			Required:    false,
 		},
 		discord.ApplicationCommandOptionString{
-			Name:        "to",
+			Name:        "end",
 			Description: "The time to end the video at (e.g. 2:45 or 165). If left empty, the video will be downloaded until the end.",
 			Required:    false,
 		},
@@ -146,8 +146,8 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 			tempDir:           tempDir,
 			maxFileSize:       calculateMaximumFileSizeForGuild(guild),
 			resolution:        res,
-			from:              e.SlashCommandInteractionData().String("from"),
-			to:                e.SlashCommandInteractionData().String("to"),
+			from:              e.SlashCommandInteractionData().String("start"),
+			to:                e.SlashCommandInteractionData().String("end"),
 		}
 		taskQueue <- task
 
