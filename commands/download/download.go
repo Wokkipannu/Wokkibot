@@ -95,6 +95,7 @@ const (
 	conversionTimeout = 5 * time.Minute
 	updateInterval    = 1 * time.Second
 	defaultBitrate    = "1M"
+	defaultResolution = "720"
 )
 
 var taskQueue = make(chan DownloadTask, 10)
@@ -135,7 +136,7 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 		if e.SlashCommandInteractionData().String("resolution") != "" {
 			res = e.SlashCommandInteractionData().String("resolution")
 		} else {
-			res = "720"
+			res = defaultResolution
 		}
 
 		task := DownloadTask{
