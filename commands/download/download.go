@@ -69,7 +69,7 @@ var DownloadCommand = discord.SlashCommandCreate{
 		},
 		discord.ApplicationCommandOptionString{
 			Name:        "end",
-			Description: "The time to end the video at (e.g. 2:45 or 165). If left empty, the video will be downloaded until the end.",
+			Description: "The time to end the video at (e.g. 2:45 or 165)",
 			Required:    false,
 		},
 	},
