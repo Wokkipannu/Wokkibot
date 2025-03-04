@@ -101,6 +101,8 @@ func (s *Server) setupRoutes() {
 	api.Get("/pizza-toppings", s.admin.GetPizzaToppings)
 	api.Post("/pizza-toppings", s.admin.AddPizzaTopping)
 	api.Delete("/pizza-toppings/:id", s.admin.DeletePizzaTopping)
+
+	api.Delete("/global-commands/:id", s.handleDeleteGlobalCommand)
 }
 
 func (s *Server) handleDashboard(c *fiber.Ctx) error {
@@ -141,6 +143,25 @@ func (s *Server) handleDashboard(c *fiber.Ctx) error {
 		"GlobalCommands": GlobalCommands,
 		"GuildCommands":  GuildCommands,
 	})
+}
+
+func (s *Server) handleDeleteGlobalCommand(c *fiber.Ctx) error {
+	commandID := c.Params("id")
+	if commandID == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "command ID is required"})
+	}
+
+	cID, err := snowflake.Parse(commandID)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid command ID"})
+	}
+
+	err = s.admin.bot.Client.Rest().DeleteGlobalCommand(s.admin.bot.Client.ApplicationID(), cID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to delete command"})
+	}
+
+	return c.SendStatus(200)
 }
 
 func (s *Server) Start(addr string) error {
