@@ -23,6 +23,7 @@ Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://git
 * `/flip` - Flip a coin
 * `/trivia` - Start a trivia game
 * `/joke` - Get a random joke
+* `/name` - Gives a random 2 part name from names.txt
 * `/remind`
   * `/remind set` - Set a reminder
   * `/remind delete` - Delete a reminder

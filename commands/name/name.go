@@ -2,8 +2,9 @@ package name
 
 import (
 	"bufio"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,11 +62,25 @@ func HandleName(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
-		firstIndex := rand.Intn(len(names))
-		secondIndex := rand.Intn(len(names))
+		namesLen := big.NewInt(int64(len(names)))
+		firstBig, err := rand.Int(rand.Reader, namesLen)
+		if err != nil {
+			utils.HandleError(e, "Error generating random number", err.Error())
+			return err
+		}
+		firstIndex := int(firstBig.Int64())
 
-		for secondIndex == firstIndex {
-			secondIndex = rand.Intn(len(names))
+		var secondIndex int
+		for {
+			secondBig, err := rand.Int(rand.Reader, namesLen)
+			if err != nil {
+				utils.HandleError(e, "Error generating random number", err.Error())
+				return err
+			}
+			secondIndex = int(secondBig.Int64())
+			if secondIndex != firstIndex {
+				break
+			}
 		}
 
 		randomName := fmt.Sprintf("You are **%s%s**", names[firstIndex], names[secondIndex])
