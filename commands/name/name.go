@@ -33,7 +33,7 @@ func HandleName(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
-		namesFile := filepath.Join(cmdDir, "commands", "name", "names.txt")
+		namesFile := filepath.Join(cmdDir, "names.txt")
 
 		file, err := os.Open(namesFile)
 		if err != nil {

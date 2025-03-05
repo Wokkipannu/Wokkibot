@@ -26,3 +26,4 @@ services:
       - /opt/Wokkibot/custom_commands.json:/custom_commands.json
       - /opt/Wokkibot/wokkibot.db:/wokkibot.db
       - /opt/Wokkibot/cookies.txt:/cookies.txt
+      - /opt/Wokkibot/names.txt:/names.txt
