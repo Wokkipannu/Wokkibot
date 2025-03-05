@@ -8,6 +8,7 @@ import (
 	"wokkibot/commands/joke"
 	"wokkibot/commands/minesweeper"
 	"wokkibot/commands/music"
+	"wokkibot/commands/name"
 	"wokkibot/commands/pin"
 	"wokkibot/commands/ping"
 	"wokkibot/commands/pizza"
@@ -44,6 +45,7 @@ var Commands = []discord.ApplicationCommandCreate{
 	minesweeper.MinesweeperCommand,
 	status.StatusCommand,
 	remind.RemindCommand,
+	name.NameCommand,
 	// Music commands
 	music.PlayCommand,
 	music.SkipCommand,
@@ -95,6 +97,7 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 	r.Command("/disconnect", music.HandleDisconnect(b))
 	r.Command("/seek", music.HandleSeek(b))
 	r.Command("/volume", music.HandleVolume(b))
+	r.Command("/name", name.HandleName(b))
 	// Minesweeper
 	r.Command("/minesweeper", minesweeper.HandleMinesweeper(b))
 	r.Component("/minesweeper/flag", minesweeper.HandleMinesweeperFlagActionComponent(b))
