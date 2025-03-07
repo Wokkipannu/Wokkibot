@@ -8,12 +8,13 @@
 </head>
 <body class="bg-gray-100">
     <div id="app" class="container mx-auto px-4 py-8">
+        <!-- Header -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8 flex items-center gap-4">
             <img v-if="'{{.User.avatar_url}}'" src="{{.User.avatar_url}}" class="w-10 h-10 rounded-full" />
             <h1 class="text-2xl font-bold">Welcome, {{.User.username}}</h1>
         </div>
 
-        <!-- New Bot Status section -->
+        <!-- Bot Status -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
             <h2 class="text-xl font-bold mb-4">Bot Status</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -35,90 +36,94 @@
                     <h3 class="text-sm font-semibold text-gray-600">Guilds</h3>
                     <p class="text-lg">{{.Guilds}}</p>
                 </div>
-                <div class="p-4 bg-gray-50 rounded-lg">
-                    <button @click="showCommands = !showCommands" class="w-full flex justify-between items-center text-left hover:bg-gray-100 p-2 rounded-md transition-colors duration-150">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15l-4-4h8l-4 4z" />
-                            </svg>
-                            <h3 class="text-sm font-semibold text-gray-600">Bot Commands</h3>
-                        </div>
-                        <svg :class="{'rotate-180': showCommands}" class="w-4 h-4 transform transition-transform text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
+            </div>
+        </div>
+
+        <!-- Main Content Tabs -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <!-- Tab Navigation -->
+            <div class="border-b mb-6">
+                <nav class="flex space-x-4" aria-label="Tabs">
+                    <button 
+                        v-for="tab in tabs" 
+                        :key="tab.id"
+                        @click="currentTab = tab.id"
+                        :class="['px-3 py-2 text-sm font-medium rounded-t-lg', 
+                                currentTab === tab.id 
+                                    ? 'bg-blue-100 text-blue-700 border-b-2 border-blue-700' 
+                                    : 'text-gray-500 hover:text-gray-700']"
+                    >
+                        ${tab.name}
                     </button>
+                </nav>
+            </div>
+
+            <!-- Commands Tab -->
+            <div v-show="currentTab === 'commands'" class="space-y-4">
+                <h2 class="text-xl font-bold mb-4">Commands</h2>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-white p-3 rounded-md shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Global Commands
+                        </h4>
+                        <ul class="space-y-1">
+                            {{range .GlobalCommands}}
+                            {{if eq .Type 1}}
+                            <li class="text-sm text-gray-700 hover:bg-gray-50 px-2 py-1 rounded-md transition-colors flex justify-between items-center">
+                                <code class="text-blue-600">/{{.Name}}</code>
+                                <button @click="confirmDeleteGlobalCommand('{{.ID}}', '{{.Name}}')" class="text-red-500 hover:text-red-700">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </li>
+                            {{end}}
+                            {{end}}
+                        </ul>
+                    </div>
                     
-                    <div v-show="showCommands" class="mt-4 space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="bg-white p-3 rounded-md shadow-sm">
-                                <h4 class="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M21 12a9 9 0 11-18 0 9 9 0 0118 0z M9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
-                                    </svg>
-                                    Global Commands
-                                </h4>
-                                <ul class="space-y-1">
-                                    {{range .GlobalCommands}}
-                                    {{if eq .Type 1}}
-                                    <li class="text-sm text-gray-700 hover:bg-gray-50 px-2 py-1 rounded-md transition-colors flex justify-between items-center">
-                                        <code class="text-blue-600">/{{.Name}}</code>
-                                        <button @click="confirmDeleteGlobalCommand('{{.ID}}', '{{.Name}}')" class="text-red-500 hover:text-red-700">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </li>
-                                    {{end}}
-                                    {{end}}
-                                </ul>
-                            </div>
-                            
-                            <div class="bg-white p-3 rounded-md shadow-sm">
-                                <h4 class="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                    Guild Commands
-                                </h4>
-                                <ul class="space-y-1">
-                                    {{range .GuildCommands}}
-                                    {{if eq .Type 1}}
-                                    <li class="text-sm text-gray-700 hover:bg-gray-50 px-2 py-1 rounded-md transition-colors">
-                                        <code class="text-purple-600">/{{.Name}}</code>
-                                    </li>
-                                    {{end}}
-                                    {{end}}
-                                </ul>
-                            </div>
+                    <div class="bg-white p-3 rounded-md shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Guild Commands
+                        </h4>
+                        <ul class="space-y-1">
+                            {{range .GuildCommands}}
+                            {{if eq .Type 1}}
+                            <li class="text-sm text-gray-700 hover:bg-gray-50 px-2 py-1 rounded-md transition-colors">
+                                <code class="text-purple-600">/{{.Name}}</code>
+                            </li>
+                            {{end}}
+                            {{end}}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold">Custom Commands</h3>
+                    <div v-for="cmd in commands" :key="cmd.id" class="flex items-center justify-between border-b pb-2">
+                        <div>
+                            <span class="font-semibold">${cmd.prefix}${cmd.name}</span>
+                            <p class="text-sm text-gray-600">${cmd.description}</p>
+                            <p class="text-xs text-gray-500">Guild: ${cmd.guild_id} | Author: ${cmd.author}</p>
+                        </div>
+                        <div class="space-x-2">
+                            <button @click="editCommand(cmd)" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+                            <button @click="deleteCommand(cmd.id)" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
                         </div>
                     </div>
+                    <button @click="showCommandModal()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Add Command</button>
                 </div>
             </div>
-        </div>
 
-        <!-- Custom Commands -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 class="text-xl font-bold mb-4">Custom Commands</h2>
-            <div class="space-y-4">
-                <div v-for="cmd in commands" :key="cmd.id" class="flex items-center justify-between border-b pb-2">
-                    <div>
-                        <span class="font-semibold">${cmd.prefix}${cmd.name}</span>
-                        <p class="text-sm text-gray-600">${cmd.description}</p>
-                        <p class="text-xs text-gray-500">Guild: ${cmd.guild_id} | Author: ${cmd.author}</p>
-                    </div>
-                    <div class="space-x-2">
-                        <button @click="editCommand(cmd)" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
-                        <button @click="deleteCommand(cmd.id)" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
-                    </div>
-                </div>
-                <button @click="showCommandModal()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Add Command</button>
-            </div>
-        </div>
-
-        <!-- Friday Clips -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 class="text-xl font-bold mb-4">Friday Clips</h2>
-            <div class="space-y-4">
+            <!-- Friday Clips Tab -->
+            <div v-show="currentTab === 'clips'" class="space-y-4">
+                <h2 class="text-xl font-bold mb-4">Friday Clips</h2>
                 <div v-for="clip in fridayClips" :key="clip.id" class="flex items-center justify-between border-b pb-2">
                     <div class="truncate flex-1 mr-4">
                         <a :href="clip.url" target="_blank" class="text-blue-500 hover:underline">${clip.url}</a>
@@ -130,19 +135,168 @@
                     <button @click="addClip" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Add Clip</button>
                 </div>
             </div>
-        </div>
 
-        <!-- Pizza Toppings -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h2 class="text-xl font-bold mb-4">Pizza Toppings</h2>
-            <div class="space-y-4">
-                <div v-for="topping in pizzaToppings" :key="topping.id" class="flex items-center justify-between border-b pb-2">
-                    <span>${topping.name}</span>
-                    <button @click="deleteTopping(topping.id)" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
+            <!-- Pizza Toppings Tab -->
+            <div v-show="currentTab === 'pizza'" class="space-y-4">
+                <h2 class="text-xl font-bold mb-4">Pizza Toppings</h2>
+                
+                <!-- Add Topping Form -->
+                <div class="bg-white p-4 rounded-lg shadow-sm mb-4">
+                    <div class="flex gap-2">
+                        <input v-model="newTopping" type="text" placeholder="Enter topping name" 
+                            class="flex-1 px-3 py-2 border rounded"
+                            @keyup.enter="addTopping">
+                        <button @click="addTopping" 
+                            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                            Add Topping
+                        </button>
+                    </div>
                 </div>
-                <div class="flex gap-2">
-                    <input v-model="newTopping" type="text" placeholder="Enter topping name" class="flex-1 px-3 py-2 border rounded">
-                    <button @click="addTopping" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Add Topping</button>
+
+                <!-- Search and Page Size -->
+                <div class="flex gap-4 mb-4">
+                    <div class="flex-1">
+                        <input v-model="toppingSearch" type="text" 
+                            placeholder="Search toppings..." 
+                            class="w-full px-3 py-2 border rounded"
+                            @input="filterToppings">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600">Per page:</label>
+                        <select v-model="toppingsPerPage" class="border rounded px-2 py-1"
+                            @change="updateToppingsPagination">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Toppings List -->
+                <div class="bg-white rounded-lg shadow-sm">
+                    <div v-for="topping in paginatedToppings" :key="topping.id" 
+                        class="flex items-center justify-between p-2 border-b last:border-b-0">
+                        <span>${topping.name}</span>
+                        <button @click="deleteTopping(topping.id)" 
+                            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                            Delete
+                        </button>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div v-if="paginatedToppings.length === 0" class="p-4 text-center text-gray-500">
+                        ${filteredToppings.length === 0 ? 'No toppings found' : 'No toppings match your search'}
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div v-if="filteredToppings.length > toppingsPerPage" class="flex justify-between items-center mt-4">
+                    <div class="text-sm text-gray-600">
+                        Showing ${(currentToppingsPage - 1) * toppingsPerPage + 1} to 
+                        ${Math.min(currentToppingsPage * toppingsPerPage, filteredToppings.length)} 
+                        of ${filteredToppings.length} toppings
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="currentToppingsPage = Math.max(1, currentToppingsPage - 1)"
+                            :disabled="currentToppingsPage === 1"
+                            :class="['px-3 py-1 rounded', 
+                                    currentToppingsPage === 1 
+                                    ? 'bg-gray-300 cursor-not-allowed' 
+                                    : 'bg-blue-500 text-white hover:bg-blue-600']">
+                            Previous
+                        </button>
+                        <button @click="currentToppingsPage = Math.min(totalToppingsPages, currentToppingsPage + 1)"
+                            :disabled="currentToppingsPage === totalToppingsPages"
+                            :class="['px-3 py-1 rounded', 
+                                    currentToppingsPage === totalToppingsPages 
+                                    ? 'bg-gray-300 cursor-not-allowed' 
+                                    : 'bg-blue-500 text-white hover:bg-blue-600']">
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Names Tab -->
+            <div v-show="currentTab === 'names'" class="space-y-4">
+                <h2 class="text-xl font-bold mb-4">Names</h2>
+                
+                <!-- Add Name Form -->
+                <div class="bg-white p-4 rounded-lg shadow-sm mb-4">
+                    <div class="flex gap-2">
+                        <input v-model="newName" type="text" placeholder="Enter name" 
+                            class="flex-1 px-3 py-2 border rounded"
+                            @keyup.enter="addName">
+                        <button @click="addName" 
+                            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                            Add Name
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search and Page Size -->
+                <div class="flex gap-4 mb-4">
+                    <div class="flex-1">
+                        <input v-model="nameSearch" type="text" 
+                            placeholder="Search names..." 
+                            class="w-full px-3 py-2 border rounded"
+                            @input="filterNames">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600">Per page:</label>
+                        <select v-model="namesPerPage" class="border rounded px-2 py-1"
+                            @change="updateNamesPagination">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Names List -->
+                <div class="bg-white rounded-lg shadow-sm">
+                    <div v-for="name in paginatedNames" :key="name.id" 
+                        class="flex items-center justify-between p-2 border-b last:border-b-0">
+                        <span>${name.name}</span>
+                        <button @click="deleteName(name.id)" 
+                            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                            Delete
+                        </button>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div v-if="paginatedNames.length === 0" class="p-4 text-center text-gray-500">
+                        ${filteredNames.length === 0 ? 'No names found' : 'No names match your search'}
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div v-if="filteredNames.length > namesPerPage" class="flex justify-between items-center mt-4">
+                    <div class="text-sm text-gray-600">
+                        Showing ${(currentNamesPage - 1) * namesPerPage + 1} to 
+                        ${Math.min(currentNamesPage * namesPerPage, filteredNames.length)} 
+                        of ${filteredNames.length} names
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="currentNamesPage = Math.max(1, currentNamesPage - 1)"
+                            :disabled="currentNamesPage === 1"
+                            :class="['px-3 py-1 rounded', 
+                                    currentNamesPage === 1 
+                                    ? 'bg-gray-300 cursor-not-allowed' 
+                                    : 'bg-blue-500 text-white hover:bg-blue-600']">
+                            Previous
+                        </button>
+                        <button @click="currentNamesPage = Math.min(totalNamesPages, currentNamesPage + 1)"
+                            :disabled="currentNamesPage === totalNamesPages"
+                            :class="['px-3 py-1 rounded', 
+                                    currentNamesPage === totalNamesPages 
+                                    ? 'bg-gray-300 cursor-not-allowed' 
+                                    : 'bg-blue-500 text-white hover:bg-blue-600']">
+                            Next
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -214,12 +368,21 @@
             delimiters: ['${', '}'],
             data() {
                 return {
+                    currentTab: 'commands',
+                    tabs: [
+                        { id: 'commands', name: 'Commands' },
+                        { id: 'clips', name: 'Friday Clips' },
+                        { id: 'pizza', name: 'Pizza Toppings' },
+                        { id: 'names', name: 'Names' }
+                    ],
                     showCommands: false,
                     commands: [],
                     fridayClips: [],
                     pizzaToppings: [],
+                    names: [],
                     newClipUrl: '',
                     newTopping: '',
+                    newName: '',
                     showModal: false,
                     showDeleteGlobalCommandModal: false,
                     deletingGlobalCommand: {
@@ -234,7 +397,45 @@
                         description: '',
                         output: '',
                         author: ''
-                    }
+                    },
+                    nameSearch: '',
+                    namesPerPage: 25,
+                    currentNamesPage: 1,
+                    toppingSearch: '',
+                    toppingsPerPage: 25,
+                    currentToppingsPage: 1
+                }
+            },
+            computed: {
+                filteredNames() {
+                    if (!this.nameSearch) return this.names
+                    const search = this.nameSearch.toLowerCase()
+                    return this.names.filter(name => 
+                        name.name.toLowerCase().includes(search)
+                    )
+                },
+                totalNamesPages() {
+                    return Math.ceil(this.filteredNames.length / this.namesPerPage)
+                },
+                paginatedNames() {
+                    const start = (this.currentNamesPage - 1) * this.namesPerPage
+                    const end = start + this.namesPerPage
+                    return this.filteredNames.slice(start, end)
+                },
+                filteredToppings() {
+                    if (!this.toppingSearch) return this.pizzaToppings
+                    const search = this.toppingSearch.toLowerCase()
+                    return this.pizzaToppings.filter(topping => 
+                        topping.name.toLowerCase().includes(search)
+                    )
+                },
+                totalToppingsPages() {
+                    return Math.ceil(this.filteredToppings.length / this.toppingsPerPage)
+                },
+                paginatedToppings() {
+                    const start = (this.currentToppingsPage - 1) * this.toppingsPerPage
+                    const end = start + this.toppingsPerPage
+                    return this.filteredToppings.slice(start, end)
                 }
             },
             mounted() {
@@ -243,14 +444,16 @@
             methods: {
                 async loadData() {
                     try {
-                        const [commands, clips, toppings] = await Promise.all([
+                        const [commands, clips, toppings, names] = await Promise.all([
                             axios.get('/admin/api/commands').then(r => r.data),
                             axios.get('/admin/api/friday-clips').then(r => r.data),
-                            axios.get('/admin/api/pizza-toppings').then(r => r.data)
+                            axios.get('/admin/api/pizza-toppings').then(r => r.data),
+                            axios.get('/admin/api/names').then(r => r.data)
                         ])
                         this.commands = commands
                         this.fridayClips = clips
                         this.pizzaToppings = toppings
+                        this.names = names
                     } catch (error) {
                         alert('Error loading data: ' + error.message)
                     }
@@ -318,7 +521,52 @@
                         alert('Error deleting clip: ' + error.message)
                     }
                 },
+                filterNames() {
+                    this.currentNamesPage = 1
+                },
+                updateNamesPagination() {
+                    this.currentNamesPage = 1
+                },
+                async addName() {
+                    if (!this.newName.trim()) return
+                    try {
+                        await axios.post('/admin/api/names', { name: this.newName })
+                        this.newName = ''
+                        this.loadData()
+                    } catch (error) {
+                        alert('Error adding name: ' + error.message)
+                    }
+                },
+                async deleteName(id) {
+                    if (!confirm('Are you sure you want to delete this name?')) return
+                    try {
+                        await axios.delete(`/admin/api/names/${id}`)
+                        this.loadData()
+                    } catch (error) {
+                        alert('Error deleting name: ' + error.message)
+                    }
+                },
+                confirmDeleteGlobalCommand(id, name) {
+                    this.deletingGlobalCommand = { id, name }
+                    this.showDeleteGlobalCommandModal = true
+                },
+                async deleteGlobalCommand() {
+                    try {
+                        await axios.delete(`/admin/api/global-commands/${this.deletingGlobalCommand.id}`)
+                        this.showDeleteGlobalCommandModal = false
+                        window.location.reload()
+                    } catch (error) {
+                        alert('Error deleting global command: ' + error.message)
+                    }
+                },
+                filterToppings() {
+                    this.currentToppingsPage = 1
+                },
+                updateToppingsPagination() {
+                    this.currentToppingsPage = 1
+                },
                 async addTopping() {
+                    if (!this.newTopping.trim()) return
                     try {
                         await axios.post('/admin/api/pizza-toppings', { name: this.newTopping })
                         this.newTopping = ''
@@ -334,19 +582,6 @@
                         this.loadData()
                     } catch (error) {
                         alert('Error deleting topping: ' + error.message)
-                    }
-                },
-                confirmDeleteGlobalCommand(id, name) {
-                    this.deletingGlobalCommand = { id, name }
-                    this.showDeleteGlobalCommandModal = true
-                },
-                async deleteGlobalCommand() {
-                    try {
-                        await axios.delete(`/admin/api/global-commands/${this.deletingGlobalCommand.id}`)
-                        this.showDeleteGlobalCommandModal = false
-                        window.location.reload()
-                    } catch (error) {
-                        alert('Error deleting global command: ' + error.message)
                     }
                 }
             }

@@ -1,13 +1,8 @@
 package name
 
 import (
-	"bufio"
-	"crypto/rand"
 	"fmt"
-	"math/big"
-	"os"
-	"path/filepath"
-	"strings"
+	"wokkibot/database"
 	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
@@ -28,62 +23,31 @@ func HandleName(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
-		cmdDir, err := os.Getwd()
+		db := database.GetDB()
+
+		rows, err := db.Query("SELECT name FROM names ORDER BY RANDOM() LIMIT 2")
 		if err != nil {
-			utils.HandleError(e, "Error while getting current directory", err.Error())
+			utils.HandleError(e, "Error while fetching names", err.Error())
 			return err
 		}
-
-		namesFile := filepath.Join(cmdDir, "names.txt")
-
-		file, err := os.Open(namesFile)
-		if err != nil {
-			utils.HandleError(e, "Error while opening names file", err.Error())
-			return err
-		}
-		defer file.Close()
+		defer rows.Close()
 
 		var names []string
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			name := strings.TrimSpace(scanner.Text())
-			if name != "" {
-				names = append(names, name)
+		for rows.Next() {
+			var name string
+			if err := rows.Scan(&name); err != nil {
+				utils.HandleError(e, "Error while scanning names", err.Error())
+				return err
 			}
-		}
-
-		if err := scanner.Err(); err != nil {
-			utils.HandleError(e, "Error while scanning names file", err.Error())
-			return err
+			names = append(names, name)
 		}
 
 		if len(names) < 2 {
-			utils.HandleError(e, "Not enough names in the file", "")
-			return err
+			utils.HandleError(e, "Not enough names in the database", "")
+			return fmt.Errorf("not enough names in database")
 		}
 
-		namesLen := big.NewInt(int64(len(names)))
-		firstBig, err := rand.Int(rand.Reader, namesLen)
-		if err != nil {
-			utils.HandleError(e, "Error generating random number", err.Error())
-			return err
-		}
-		firstIndex := int(firstBig.Int64())
-
-		var secondIndex int
-		for {
-			secondBig, err := rand.Int(rand.Reader, namesLen)
-			if err != nil {
-				utils.HandleError(e, "Error generating random number", err.Error())
-				return err
-			}
-			secondIndex = int(secondBig.Int64())
-			if secondIndex != firstIndex {
-				break
-			}
-		}
-
-		randomName := fmt.Sprintf("You are **%s%s**", names[firstIndex], names[secondIndex])
+		randomName := fmt.Sprintf("You are **%s%s**", names[0], names[1])
 
 		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
 			SetContent(randomName).

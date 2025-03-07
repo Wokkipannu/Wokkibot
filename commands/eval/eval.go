@@ -24,12 +24,12 @@ func HandleEval(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		runtimes, err := b.PistonClient.GetRuntimes()
 		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while getting runtimes").Build())
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while getting runtimes").SetFlags(discord.MessageFlagEphemeral).Build())
 		}
 
 		matches := discordCodeblockRegex.FindStringSubmatch(msg.Content)
 		if len(matches) == 0 {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No codeblock found").Build())
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No codeblock found").SetFlags(discord.MessageFlagEphemeral).Build())
 		}
 		rawLanguage := matches[discordCodeblockRegex.SubexpIndex("language")]
 		code := matches[discordCodeblockRegex.SubexpIndex("code")]
@@ -50,7 +50,7 @@ func HandleEval(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		if language == "" {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Language %s not supported", rawLanguage).Build())
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Language %s not supported", rawLanguage).SetFlags(discord.MessageFlagEphemeral).Build())
 		}
 
 		if err = e.Respond(discord.InteractionResponseTypeDeferredCreateMessage, nil); err != nil {

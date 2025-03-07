@@ -102,6 +102,10 @@ func (s *Server) setupRoutes() {
 	api.Post("/pizza-toppings", s.admin.AddPizzaTopping)
 	api.Delete("/pizza-toppings/:id", s.admin.DeletePizzaTopping)
 
+	api.Get("/names", s.admin.GetNames)
+	api.Post("/names", s.admin.AddName)
+	api.Delete("/names/:id", s.admin.DeleteName)
+
 	api.Delete("/global-commands/:id", s.handleDeleteGlobalCommand)
 }
 

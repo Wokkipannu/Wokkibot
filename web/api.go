@@ -25,6 +25,11 @@ type PizzaTopping struct {
 	Name string `json:"name"`
 }
 
+type Name struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
 // Custom Commands
 func GetCustomCommands() ([]CustomCommand, error) {
 	db := database.GetDB()
@@ -196,4 +201,50 @@ func GetCommandByID(id int64) (*CustomCommand, error) {
 		return nil, err
 	}
 	return &cmd, nil
+}
+
+// Names
+func GetNames() ([]Name, error) {
+	db := database.GetDB()
+
+	rows, err := db.Query("SELECT id, name FROM names")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var names []Name
+	for rows.Next() {
+		var name Name
+		err := rows.Scan(&name.ID, &name.Name)
+		if err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, nil
+}
+
+func AddName(name string) error {
+	db := database.GetDB()
+
+	_, err := db.Exec("INSERT INTO names (name) VALUES (?)", name)
+	return err
+}
+
+func DeleteName(id int64) error {
+	db := database.GetDB()
+
+	result, err := db.Exec("DELETE FROM names WHERE id=?", id)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }

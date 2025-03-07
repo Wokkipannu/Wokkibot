@@ -101,6 +101,10 @@ func initializeSchema() error {
 			message TEXT NOT NULL,
 			remind_at DATETIME NOT NULL
 		)`,
+		`CREATE TABLE IF NOT EXISTS names (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL UNIQUE
+		)`,
 	}
 
 	for _, schema := range schemas {

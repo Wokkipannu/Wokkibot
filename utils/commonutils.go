@@ -81,13 +81,20 @@ func GenerateRandomName(length int) string {
 	return string(b)
 }
 
-func HandleError(e *handler.CommandEvent, message string, err string) {
-	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+func HandleError(e *handler.CommandEvent, message string, errorMessage string) error {
+	_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
 		SetEmbeds(discord.NewEmbedBuilder().
 			SetTitle(message).
-			SetDescription(err).
+			SetDescription(errorMessage).
 			SetColor(RGBToInteger(255, 0, 0)).
 			Build()).
 		SetContent("").
+		SetFlags(discord.MessageFlagEphemeral).
 		Build())
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
