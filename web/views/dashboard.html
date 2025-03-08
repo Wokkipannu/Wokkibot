@@ -1,361 +1,612 @@
 <!DOCTYPE html>
-<html>
+<html class="dark">
 <head>
     <title>Wokkibot - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        border: "hsl(var(--border))",
+                        input: "hsl(var(--input))",
+                        ring: "hsl(var(--ring))",
+                        background: "hsl(var(--background))",
+                        foreground: "hsl(var(--foreground))",
+                        primary: {
+                            DEFAULT: "hsl(var(--primary))",
+                            foreground: "hsl(var(--primary-foreground))",
+                        },
+                        secondary: {
+                            DEFAULT: "hsl(var(--secondary))",
+                            foreground: "hsl(var(--secondary-foreground))",
+                        },
+                        destructive: {
+                            DEFAULT: "hsl(var(--destructive))",
+                            foreground: "hsl(var(--destructive-foreground))",
+                        },
+                        muted: {
+                            DEFAULT: "hsl(var(--muted))",
+                            foreground: "hsl(var(--muted-foreground))",
+                        },
+                        accent: {
+                            DEFAULT: "hsl(var(--accent))",
+                            foreground: "hsl(var(--accent-foreground))",
+                        },
+                        popover: {
+                            DEFAULT: "hsl(var(--popover))",
+                            foreground: "hsl(var(--popover-foreground))",
+                        },
+                        card: {
+                            DEFAULT: "hsl(var(--card))",
+                            foreground: "hsl(var(--card-foreground))",
+                        },
+                    },
+                    borderRadius: {
+                        lg: "var(--radius)",
+                        md: "calc(var(--radius) - 2px)",
+                        sm: "calc(var(--radius) - 4px)",
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        :root {
+            --background: 222 47% 11%;
+            --foreground: 213 31% 91%;
+            --card: 222 47% 13%;
+            --card-foreground: 213 31% 91%;
+            --popover: 222 47% 13%;
+            --popover-foreground: 213 31% 91%;
+            --primary: 224 64% 58%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 222 47% 20%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 222 47% 17%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 216 34% 27%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 63% 31%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 222 47% 20%;
+            --input: 222 47% 20%;
+            --ring: 224 64% 58%;
+            --radius: 0.75rem;
+        }
+
+        .dark {
+            --background: 222 47% 11%;
+            --foreground: 213 31% 91%;
+            --card: 222 47% 13%;
+            --card-foreground: 213 31% 91%;
+            --popover: 222 47% 13%;
+            --popover-foreground: 213 31% 91%;
+            --primary: 224 64% 58%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 222 47% 20%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 222 47% 17%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 216 34% 27%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 63% 31%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 222 47% 20%;
+            --input: 222 47% 20%;
+            --ring: 224 64% 58%;
+        }
+
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .bg-gradient {
+            background: linear-gradient(to bottom right, hsl(var(--card)), hsl(var(--background)));
+        }
+
+        .bg-card {
+            background-color: hsl(var(--card));
+        }
+
+        .bg-muted {
+            background-color: hsl(var(--muted));
+        }
+
+        .bg-primary {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .bg-destructive {
+            background-color: hsl(var(--destructive));
+            color: hsl(var(--destructive-foreground));
+        }
+
+        .bg-secondary {
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+
+        .border-border {
+            border-color: hsl(var(--border));
+        }
+
+        .text-card-foreground {
+            color: hsl(var(--card-foreground));
+        }
+
+        .text-muted-foreground {
+            color: hsl(var(--muted-foreground));
+        }
+
+        .text-primary {
+            color: hsl(var(--primary));
+        }
+
+        .text-destructive {
+            color: hsl(var(--destructive));
+        }
+
+        input, select, textarea {
+            background-color: hsl(var(--muted));
+            color: hsl(var(--card-foreground));
+            border-color: hsl(var(--border));
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            ring: 2px solid hsl(var(--ring));
+            border-color: hsl(var(--primary));
+        }
+
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+        }
+
+        /* New styles for enhanced UI */
+        .card-hover {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .gradient-border {
+            position: relative;
+            border: 1px solid transparent;
+            background: linear-gradient(to right, hsl(var(--card)), hsl(var(--background))) padding-box,
+                        linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent))) border-box;
+        }
+
+        .tab-active {
+            position: relative;
+        }
+
+        .tab-active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div id="app" class="container mx-auto px-4 py-8">
+<body class="bg-background text-foreground min-h-screen">
+    <div id="app" class="container mx-auto px-6 py-12 max-w-7xl">
         <!-- Header -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8 flex items-center gap-4">
-            <img v-if="'{{.User.avatar_url}}'" src="{{.User.avatar_url}}" class="w-10 h-10 rounded-full" />
-            <h1 class="text-2xl font-bold">Welcome, {{.User.username}}</h1>
+        <div class="bg-gradient rounded-2xl shadow-2xl p-8 mb-12 flex items-center gap-6 gradient-border">
+            <div class="relative">
+                <div class="absolute inset-0 bg-primary/20 rounded-full blur-lg"></div>
+                <img v-if="'{{.User.avatar_url}}'" src="{{.User.avatar_url}}" class="w-16 h-16 rounded-full relative z-10 border-2 border-primary/50" />
+            </div>
+            <div>
+                <h1 class="text-4xl font-bold text-card-foreground mb-2">Welcome, {{.User.username}}</h1>
+                <p class="text-muted-foreground">Manage your bot settings and configurations</p>
+            </div>
         </div>
 
         <!-- Bot Status -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 class="text-xl font-bold mb-4">Bot Status</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="p-4 bg-gray-50 rounded-lg">
-                    <h3 class="text-sm font-semibold text-gray-600">Version</h3>
-                    <p class="text-lg">{{.Version}}</p>
+        <div class="bg-gradient rounded-2xl shadow-2xl p-8 mb-12 gradient-border">
+            <h2 class="text-2xl font-bold mb-6 text-card-foreground flex items-center gap-2">
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Bot Status
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="p-6 bg-muted rounded-xl card-hover">
+                    <h3 class="text-sm font-semibold text-muted-foreground mb-2">Version</h3>
+                    <p class="text-2xl font-bold text-card-foreground">{{.Version}}</p>
                 </div>
-                <div class="p-4 bg-gray-50 rounded-lg">
-                    <h3 class="text-sm font-semibold text-gray-600">Uptime</h3>
-                    <p class="text-lg">{{.Uptime}}</p>
+                <div class="p-6 bg-muted rounded-xl card-hover">
+                    <h3 class="text-sm font-semibold text-muted-foreground mb-2">Uptime</h3>
+                    <p class="text-2xl font-bold text-card-foreground">{{.Uptime}}</p>
                 </div>
                 {{if .Presence}}
-                <div class="p-4 bg-gray-50 rounded-lg">
-                    <h3 class="text-sm font-semibold text-gray-600">Status</h3>
-                    <p class="text-lg">{{.Presence}}</p>
+                <div class="p-6 bg-muted rounded-xl card-hover">
+                    <h3 class="text-sm font-semibold text-muted-foreground mb-2">Status</h3>
+                    <p class="text-2xl font-bold text-card-foreground">{{.Presence}}</p>
                 </div>
                 {{end}}
-                <div class="p-4 bg-gray-50 rounded-lg">
-                    <h3 class="text-sm font-semibold text-gray-600">Guilds</h3>
-                    <p class="text-lg">{{.Guilds}}</p>
+                <div class="p-6 bg-muted rounded-xl card-hover">
+                    <h3 class="text-sm font-semibold text-muted-foreground mb-2">Guilds</h3>
+                    <p class="text-2xl font-bold text-card-foreground">{{.Guilds}}</p>
                 </div>
             </div>
         </div>
 
         <!-- Main Content Tabs -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="bg-gradient rounded-2xl shadow-2xl p-8 gradient-border">
             <!-- Tab Navigation -->
-            <div class="border-b mb-6">
-                <nav class="flex space-x-4" aria-label="Tabs">
+            <div class="border-b border-border/40 mb-8">
+                <nav class="flex space-x-8" aria-label="Tabs">
                     <button 
                         v-for="tab in tabs" 
                         :key="tab.id"
                         @click="currentTab = tab.id"
-                        :class="['px-3 py-2 text-sm font-medium rounded-t-lg', 
+                        :class="['px-4 py-4 text-sm font-medium transition-colors relative', 
                                 currentTab === tab.id 
-                                    ? 'bg-blue-100 text-blue-700 border-b-2 border-blue-700' 
-                                    : 'text-gray-500 hover:text-gray-700']"
+                                    ? 'text-primary tab-active' 
+                                    : 'text-muted-foreground hover:text-card-foreground']"
                     >
                         ${tab.name}
                     </button>
                 </nav>
             </div>
 
-            <!-- Commands Tab -->
-            <div v-show="currentTab === 'commands'" class="space-y-4">
-                <h2 class="text-xl font-bold mb-4">Commands</h2>
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div class="bg-white p-3 rounded-md shadow-sm">
-                        <h4 class="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
-                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <!-- Tab Content -->
+            <div class="space-y-8">
+                <!-- Commands Tab -->
+                <div v-show="currentTab === 'commands'" class="space-y-6">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-2xl font-bold text-card-foreground">Commands</h2>
+                        <button @click="showCommandModal()" 
+                            class="btn px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
-                            Global Commands
-                        </h4>
-                        <ul class="space-y-1">
-                            {{range .GlobalCommands}}
-                            {{if eq .Type 1}}
-                            <li class="text-sm text-gray-700 hover:bg-gray-50 px-2 py-1 rounded-md transition-colors flex justify-between items-center">
-                                <code class="text-blue-600">/{{.Name}}</code>
-                                <button @click="confirmDeleteGlobalCommand('{{.ID}}', '{{.Name}}')" class="text-red-500 hover:text-red-700">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </li>
-                            {{end}}
-                            {{end}}
-                        </ul>
+                            Add Command
+                        </button>
                     </div>
+
+                    <!-- Commands Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Global Commands -->
+                        <div class="bg-muted p-6 rounded-xl">
+                            <h4 class="text-lg font-semibold text-card-foreground mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Global Commands
+                            </h4>
+                            <div class="space-y-2">
+                                {{range .GlobalCommands}}
+                                {{if eq .Type 1}}
+                                <div class="flex items-center justify-between p-3 bg-card rounded-lg card-hover">
+                                    <code class="text-primary font-medium">/{{.Name}}</code>
+                                    <button @click="confirmDeleteGlobalCommand('{{.ID}}', '{{.Name}}')" 
+                                        class="btn p-2 text-destructive hover:bg-destructive hover:text-destructive-foreground rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                {{end}}
+                                {{end}}
+                            </div>
+                        </div>
+
+                        <!-- Guild Commands -->
+                        <div class="bg-muted p-6 rounded-xl">
+                            <h4 class="text-lg font-semibold text-card-foreground mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                Guild Commands
+                            </h4>
+                            <div class="space-y-2">
+                                {{range .GuildCommands}}
+                                {{if eq .Type 1}}
+                                <div class="p-3 bg-card rounded-lg">
+                                    <code class="text-primary font-medium">/{{.Name}}</code>
+                                </div>
+                                {{end}}
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Commands List -->
+                    <div class="space-y-4 mt-8">
+                        <h3 class="text-xl font-semibold text-card-foreground">Custom Commands</h3>
+                        <div class="space-y-4">
+                            <div v-for="cmd in commands" :key="cmd.id" 
+                                class="bg-muted p-6 rounded-xl card-hover flex items-center justify-between">
+                                <div>
+                                    <span class="font-semibold text-card-foreground text-lg">${cmd.prefix}${cmd.name}</span>
+                                    <p class="text-muted-foreground mt-1">${cmd.description}</p>
+                                    <p class="text-sm text-muted-foreground mt-2">Guild: ${cmd.guild_id} | Author: ${cmd.author}</p>
+                                </div>
+                                <div class="flex gap-3">
+                                    <button @click="editCommand(cmd)" 
+                                        class="btn px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90">Edit</button>
+                                    <button @click="deleteCommand(cmd.id)" 
+                                        class="btn px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Friday Clips Tab -->
+                <div v-show="currentTab === 'clips'" class="space-y-4">
+                    <h2 class="text-xl font-bold mb-4 text-card-foreground">Friday Clips</h2>
+                    <div v-for="clip in fridayClips" :key="clip.id" class="flex items-center justify-between border-b border-border pb-2">
+                        <div class="truncate flex-1 mr-4">
+                            <a :href="clip.url" target="_blank" class="text-primary hover:underline">${clip.url}</a>
+                        </div>
+                        <button @click="deleteClip(clip.id)" class="px-3 py-1 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90">Delete</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <input v-model="newClipUrl" type="text" placeholder="Enter clip URL" 
+                            class="flex-1 px-3 py-2 bg-muted text-card-foreground border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
+                        <button @click="addClip" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">Add Clip</button>
+                    </div>
+                </div>
+
+                <!-- Pizza Toppings Tab -->
+                <div v-show="currentTab === 'pizza'" class="space-y-4">
+                    <h2 class="text-xl font-bold mb-4 text-card-foreground">Pizza Toppings</h2>
                     
-                    <div class="bg-white p-3 rounded-md shadow-sm">
-                        <h4 class="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
-                            <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            Guild Commands
-                        </h4>
-                        <ul class="space-y-1">
-                            {{range .GuildCommands}}
-                            {{if eq .Type 1}}
-                            <li class="text-sm text-gray-700 hover:bg-gray-50 px-2 py-1 rounded-md transition-colors">
-                                <code class="text-purple-600">/{{.Name}}</code>
-                            </li>
-                            {{end}}
-                            {{end}}
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <h3 class="text-lg font-semibold">Custom Commands</h3>
-                    <div v-for="cmd in commands" :key="cmd.id" class="flex items-center justify-between border-b pb-2">
-                        <div>
-                            <span class="font-semibold">${cmd.prefix}${cmd.name}</span>
-                            <p class="text-sm text-gray-600">${cmd.description}</p>
-                            <p class="text-xs text-gray-500">Guild: ${cmd.guild_id} | Author: ${cmd.author}</p>
-                        </div>
-                        <div class="space-x-2">
-                            <button @click="editCommand(cmd)" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
-                            <button @click="deleteCommand(cmd.id)" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
+                    <!-- Add Topping Form -->
+                    <div class="bg-card p-4 rounded-lg border border-border mb-4">
+                        <div class="flex gap-2">
+                            <input v-model="newTopping" type="text" placeholder="Enter topping name" 
+                                class="flex-1 px-3 py-2 bg-muted text-card-foreground border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                                @keyup.enter="addTopping">
+                            <button @click="addTopping" 
+                                class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                                Add Topping
+                            </button>
                         </div>
                     </div>
-                    <button @click="showCommandModal()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Add Command</button>
-                </div>
-            </div>
 
-            <!-- Friday Clips Tab -->
-            <div v-show="currentTab === 'clips'" class="space-y-4">
-                <h2 class="text-xl font-bold mb-4">Friday Clips</h2>
-                <div v-for="clip in fridayClips" :key="clip.id" class="flex items-center justify-between border-b pb-2">
-                    <div class="truncate flex-1 mr-4">
-                        <a :href="clip.url" target="_blank" class="text-blue-500 hover:underline">${clip.url}</a>
-                    </div>
-                    <button @click="deleteClip(clip.id)" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
-                </div>
-                <div class="flex gap-2">
-                    <input v-model="newClipUrl" type="text" placeholder="Enter clip URL" class="flex-1 px-3 py-2 border rounded">
-                    <button @click="addClip" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Add Clip</button>
-                </div>
-            </div>
-
-            <!-- Pizza Toppings Tab -->
-            <div v-show="currentTab === 'pizza'" class="space-y-4">
-                <h2 class="text-xl font-bold mb-4">Pizza Toppings</h2>
-                
-                <!-- Add Topping Form -->
-                <div class="bg-white p-4 rounded-lg shadow-sm mb-4">
-                    <div class="flex gap-2">
-                        <input v-model="newTopping" type="text" placeholder="Enter topping name" 
-                            class="flex-1 px-3 py-2 border rounded"
-                            @keyup.enter="addTopping">
-                        <button @click="addTopping" 
-                            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
-                            Add Topping
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Search and Page Size -->
-                <div class="flex gap-4 mb-4">
-                    <div class="flex-1">
-                        <input v-model="toppingSearch" type="text" 
-                            placeholder="Search toppings..." 
-                            class="w-full px-3 py-2 border rounded"
-                            @input="filterToppings">
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <label class="text-sm text-gray-600">Per page:</label>
-                        <select v-model="toppingsPerPage" class="border rounded px-2 py-1"
-                            @change="updateToppingsPagination">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Toppings List -->
-                <div class="bg-white rounded-lg shadow-sm">
-                    <div v-for="topping in paginatedToppings" :key="topping.id" 
-                        class="flex items-center justify-between p-2 border-b last:border-b-0">
-                        <span>${topping.name}</span>
-                        <button @click="deleteTopping(topping.id)" 
-                            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
-                            Delete
-                        </button>
+                    <!-- Search and Page Size -->
+                    <div class="flex gap-4 mb-4">
+                        <div class="flex-1">
+                            <input v-model="toppingSearch" type="text" 
+                                placeholder="Search toppings..." 
+                                class="w-full px-3 py-2 bg-muted text-card-foreground border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                                @input="filterToppings">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-muted-foreground">Per page:</label>
+                            <select v-model="toppingsPerPage" 
+                                class="bg-muted text-card-foreground border border-border rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-ring"
+                                @change="updateToppingsPagination">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <!-- Empty State -->
-                    <div v-if="paginatedToppings.length === 0" class="p-4 text-center text-gray-500">
-                        ${filteredToppings.length === 0 ? 'No toppings found' : 'No toppings match your search'}
+                    <!-- Toppings List -->
+                    <div class="bg-card rounded-lg border border-border">
+                        <div v-for="topping in paginatedToppings" :key="topping.id" 
+                            class="flex items-center justify-between p-2 border-b border-border last:border-b-0">
+                            <span class="text-card-foreground">${topping.name}</span>
+                            <button @click="deleteTopping(topping.id)" 
+                                class="px-3 py-1 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90">
+                                Delete
+                            </button>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div v-if="paginatedToppings.length === 0" class="p-4 text-center text-muted-foreground">
+                            ${filteredToppings.length === 0 ? 'No toppings found' : 'No toppings match your search'}
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div v-if="filteredToppings.length > toppingsPerPage" class="flex justify-between items-center mt-4">
+                        <div class="text-sm text-muted-foreground">
+                            Showing ${(currentToppingsPage - 1) * toppingsPerPage + 1} to 
+                            ${Math.min(currentToppingsPage * toppingsPerPage, filteredToppings.length)} 
+                            of ${filteredToppings.length} toppings
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="currentToppingsPage = Math.max(1, currentToppingsPage - 1)"
+                                :disabled="currentToppingsPage === 1"
+                                :class="['px-3 py-1 rounded-md transition-colors', 
+                                        currentToppingsPage === 1 
+                                        ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                                        : 'bg-primary text-primary-foreground hover:bg-primary/90']">
+                                Previous
+                            </button>
+                            <button @click="currentToppingsPage = Math.min(totalToppingsPages, currentToppingsPage + 1)"
+                                :disabled="currentToppingsPage === totalToppingsPages"
+                                :class="['px-3 py-1 rounded-md transition-colors', 
+                                        currentToppingsPage === totalToppingsPages 
+                                        ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                                        : 'bg-primary text-primary-foreground hover:bg-primary/90']">
+                                Next
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Pagination -->
-                <div v-if="filteredToppings.length > toppingsPerPage" class="flex justify-between items-center mt-4">
-                    <div class="text-sm text-gray-600">
-                        Showing ${(currentToppingsPage - 1) * toppingsPerPage + 1} to 
-                        ${Math.min(currentToppingsPage * toppingsPerPage, filteredToppings.length)} 
-                        of ${filteredToppings.length} toppings
-                    </div>
-                    <div class="flex gap-2">
-                        <button @click="currentToppingsPage = Math.max(1, currentToppingsPage - 1)"
-                            :disabled="currentToppingsPage === 1"
-                            :class="['px-3 py-1 rounded', 
-                                    currentToppingsPage === 1 
-                                    ? 'bg-gray-300 cursor-not-allowed' 
-                                    : 'bg-blue-500 text-white hover:bg-blue-600']">
-                            Previous
-                        </button>
-                        <button @click="currentToppingsPage = Math.min(totalToppingsPages, currentToppingsPage + 1)"
-                            :disabled="currentToppingsPage === totalToppingsPages"
-                            :class="['px-3 py-1 rounded', 
-                                    currentToppingsPage === totalToppingsPages 
-                                    ? 'bg-gray-300 cursor-not-allowed' 
-                                    : 'bg-blue-500 text-white hover:bg-blue-600']">
-                            Next
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Names Tab -->
-            <div v-show="currentTab === 'names'" class="space-y-4">
-                <h2 class="text-xl font-bold mb-4">Names</h2>
-                
-                <!-- Add Name Form -->
-                <div class="bg-white p-4 rounded-lg shadow-sm mb-4">
-                    <div class="flex gap-2">
-                        <input v-model="newName" type="text" placeholder="Enter name" 
-                            class="flex-1 px-3 py-2 border rounded"
-                            @keyup.enter="addName">
-                        <button @click="addName" 
-                            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
-                            Add Name
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Search and Page Size -->
-                <div class="flex gap-4 mb-4">
-                    <div class="flex-1">
-                        <input v-model="nameSearch" type="text" 
-                            placeholder="Search names..." 
-                            class="w-full px-3 py-2 border rounded"
-                            @input="filterNames">
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <label class="text-sm text-gray-600">Per page:</label>
-                        <select v-model="namesPerPage" class="border rounded px-2 py-1"
-                            @change="updateNamesPagination">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Names List -->
-                <div class="bg-white rounded-lg shadow-sm">
-                    <div v-for="name in paginatedNames" :key="name.id" 
-                        class="flex items-center justify-between p-2 border-b last:border-b-0">
-                        <span>${name.name}</span>
-                        <button @click="deleteName(name.id)" 
-                            class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
-                            Delete
-                        </button>
+                <!-- Names Tab -->
+                <div v-show="currentTab === 'names'" class="space-y-4">
+                    <h2 class="text-xl font-bold mb-4 text-card-foreground">Names</h2>
+                    
+                    <!-- Add Name Form -->
+                    <div class="bg-card p-4 rounded-lg border border-border mb-4">
+                        <div class="flex gap-2">
+                            <input v-model="newName" type="text" placeholder="Enter name" 
+                                class="flex-1 px-3 py-2 bg-muted text-card-foreground border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                                @keyup.enter="addName">
+                            <button @click="addName" 
+                                class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                                Add Name
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Empty State -->
-                    <div v-if="paginatedNames.length === 0" class="p-4 text-center text-gray-500">
-                        ${filteredNames.length === 0 ? 'No names found' : 'No names match your search'}
+                    <!-- Search and Page Size -->
+                    <div class="flex gap-4 mb-4">
+                        <div class="flex-1">
+                            <input v-model="nameSearch" type="text" 
+                                placeholder="Search names..." 
+                                class="w-full px-3 py-2 bg-muted text-card-foreground border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                                @input="filterNames">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-muted-foreground">Per page:</label>
+                            <select v-model="namesPerPage" 
+                                class="bg-muted text-card-foreground border border-border rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-ring"
+                                @change="updateNamesPagination">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Pagination -->
-                <div v-if="filteredNames.length > namesPerPage" class="flex justify-between items-center mt-4">
-                    <div class="text-sm text-gray-600">
-                        Showing ${(currentNamesPage - 1) * namesPerPage + 1} to 
-                        ${Math.min(currentNamesPage * namesPerPage, filteredNames.length)} 
-                        of ${filteredNames.length} names
+                    <!-- Names List -->
+                    <div class="bg-card rounded-lg border border-border">
+                        <div v-for="name in paginatedNames" :key="name.id" 
+                            class="flex items-center justify-between p-2 border-b border-border last:border-b-0">
+                            <span class="text-card-foreground">${name.name}</span>
+                            <button @click="deleteName(name.id)" 
+                                class="px-3 py-1 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90">
+                                Delete
+                            </button>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div v-if="paginatedNames.length === 0" class="p-4 text-center text-muted-foreground">
+                            ${filteredNames.length === 0 ? 'No names found' : 'No names match your search'}
+                        </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button @click="currentNamesPage = Math.max(1, currentNamesPage - 1)"
-                            :disabled="currentNamesPage === 1"
-                            :class="['px-3 py-1 rounded', 
-                                    currentNamesPage === 1 
-                                    ? 'bg-gray-300 cursor-not-allowed' 
-                                    : 'bg-blue-500 text-white hover:bg-blue-600']">
-                            Previous
-                        </button>
-                        <button @click="currentNamesPage = Math.min(totalNamesPages, currentNamesPage + 1)"
-                            :disabled="currentNamesPage === totalNamesPages"
-                            :class="['px-3 py-1 rounded', 
-                                    currentNamesPage === totalNamesPages 
-                                    ? 'bg-gray-300 cursor-not-allowed' 
-                                    : 'bg-blue-500 text-white hover:bg-blue-600']">
-                            Next
-                        </button>
+
+                    <!-- Pagination -->
+                    <div v-if="filteredNames.length > namesPerPage" class="flex justify-between items-center mt-4">
+                        <div class="text-sm text-muted-foreground">
+                            Showing ${(currentNamesPage - 1) * namesPerPage + 1} to 
+                            ${Math.min(currentNamesPage * namesPerPage, filteredNames.length)} 
+                            of ${filteredNames.length} names
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="currentNamesPage = Math.max(1, currentNamesPage - 1)"
+                                :disabled="currentNamesPage === 1"
+                                :class="['px-3 py-1 rounded-md transition-colors', 
+                                        currentNamesPage === 1 
+                                        ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                                        : 'bg-primary text-primary-foreground hover:bg-primary/90']">
+                                Previous
+                            </button>
+                            <button @click="currentNamesPage = Math.min(totalNamesPages, currentNamesPage + 1)"
+                                :disabled="currentNamesPage === totalNamesPages"
+                                :class="['px-3 py-1 rounded-md transition-colors', 
+                                        currentNamesPage === totalNamesPages 
+                                        ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                                        : 'bg-primary text-primary-foreground hover:bg-primary/90']">
+                                Next
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Command Modal -->
-        <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div class="bg-white rounded-lg p-6 w-full max-w-lg">
-                <h3 class="text-xl font-bold mb-4">${editingCommand.id ? 'Edit' : 'Add'} Command</h3>
+        <div v-if="showModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+            <div class="bg-card rounded-lg p-6 w-full max-w-lg border border-border">
+                <h3 class="text-xl font-bold mb-4 text-card-foreground">${editingCommand.id ? 'Edit' : 'Add'} Command</h3>
                 <form @submit.prevent="saveCommand" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Guild ID</label>
+                        <label class="block text-sm font-medium text-muted-foreground">Guild ID</label>
                         <input v-model="editingCommand.guild_id" type="text" required
-                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm">
+                            class="mt-1 block w-full px-3 py-2 bg-muted text-card-foreground border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Prefix</label>
+                        <label class="block text-sm font-medium text-muted-foreground">Prefix</label>
                         <input v-model="editingCommand.prefix" type="text" required
-                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm">
+                            class="mt-1 block w-full px-3 py-2 bg-muted text-card-foreground border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Name</label>
+                        <label class="block text-sm font-medium text-muted-foreground">Name</label>
                         <input v-model="editingCommand.name" type="text" required
-                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm">
+                            class="mt-1 block w-full px-3 py-2 bg-muted text-card-foreground border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Description</label>
+                        <label class="block text-sm font-medium text-muted-foreground">Description</label>
                         <input v-model="editingCommand.description" type="text" required
-                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm">
+                            class="mt-1 block w-full px-3 py-2 bg-muted text-card-foreground border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Output</label>
+                        <label class="block text-sm font-medium text-muted-foreground">Output</label>
                         <textarea v-model="editingCommand.output" required
-                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm"></textarea>
+                            class="mt-1 block w-full px-3 py-2 bg-muted text-card-foreground border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Author</label>
+                        <label class="block text-sm font-medium text-muted-foreground">Author</label>
                         <input v-model="editingCommand.author" type="text" required
-                            class="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm">
+                            class="mt-1 block w-full px-3 py-2 bg-muted text-card-foreground border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
                     </div>
                     <div class="flex justify-end space-x-2">
                         <button type="button" @click="closeModal" 
-                            class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Cancel</button>
+                            class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90">Cancel</button>
                         <button type="submit" 
-                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
+                            class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">Save</button>
                     </div>
                 </form>
             </div>
         </div>
 
         <!-- Delete Global Command Modal -->
-        <div v-if="showDeleteGlobalCommandModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                <h3 class="text-xl font-bold mb-4">Delete Global Command</h3>
-                <p class="mb-4">Are you sure you want to delete the global command "/${deletingGlobalCommand.name}"?</p>
+        <div v-if="showDeleteGlobalCommandModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+            <div class="bg-card rounded-lg p-6 w-full max-w-md border border-border">
+                <h3 class="text-xl font-bold mb-4 text-card-foreground">Delete Global Command</h3>
+                <p class="mb-4 text-card-foreground">Are you sure you want to delete the global command "/${deletingGlobalCommand.name}"?</p>
                 <div class="flex justify-end space-x-2">
                     <button @click="showDeleteGlobalCommandModal = false" 
-                        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Cancel</button>
+                        class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90">Cancel</button>
                     <button @click="deleteGlobalCommand" 
-                        class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
+                        class="px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90">Delete</button>
                 </div>
             </div>
         </div>

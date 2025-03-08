@@ -1,17 +1,176 @@
 <!DOCTYPE html>
-<html>
+<html class="dark">
 <head>
     <title>Wokkibot - Homepage</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        border: "hsl(var(--border))",
+                        input: "hsl(var(--input))",
+                        ring: "hsl(var(--ring))",
+                        background: "hsl(var(--background))",
+                        foreground: "hsl(var(--foreground))",
+                        primary: {
+                            DEFAULT: "hsl(var(--primary))",
+                            foreground: "hsl(var(--primary-foreground))",
+                        },
+                        secondary: {
+                            DEFAULT: "hsl(var(--secondary))",
+                            foreground: "hsl(var(--secondary-foreground))",
+                        },
+                        card: {
+                            DEFAULT: "hsl(var(--card))",
+                            foreground: "hsl(var(--card-foreground))",
+                        },
+                        muted: {
+                            DEFAULT: "hsl(var(--muted))",
+                            foreground: "hsl(var(--muted-foreground))",
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        :root {
+            --background: 222 47% 11%;
+            --foreground: 213 31% 91%;
+            --card: 222 47% 13%;
+            --card-foreground: 213 31% 91%;
+            --primary: 224 64% 58%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 222 47% 20%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 222 47% 17%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --border: 222 47% 20%;
+            --ring: 224 64% 58%;
+        }
+
+        .dark {
+            --background: 222 47% 11%;
+            --foreground: 213 31% 91%;
+            --card: 222 47% 13%;
+            --card-foreground: 213 31% 91%;
+            --primary: 224 64% 58%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 222 47% 20%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 222 47% 17%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --border: 222 47% 20%;
+            --ring: 224 64% 58%;
+        }
+
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .bg-card {
+            background-color: hsl(var(--card));
+        }
+
+        .bg-gradient {
+            background: linear-gradient(to bottom right, hsl(var(--card)), hsl(var(--background)));
+        }
+
+        .gradient-border {
+            position: relative;
+            border: 1px solid transparent;
+            background: linear-gradient(to right, hsl(var(--card)), hsl(var(--background))) padding-box,
+                        linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary))) border-box;
+        }
+
+        .btn {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .glow {
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(90deg, 
+                hsl(var(--primary)) 0%, 
+                hsl(var(--secondary)) 50%,
+                hsl(var(--primary)) 100%);
+            filter: blur(24px);
+            opacity: 0.2;
+            transition: opacity 0.3s ease;
+        }
+
+        .hover-glow:hover .glow {
+            opacity: 0.4;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .float {
+            animation: float 6s ease-in-out infinite;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div class="min-h-screen flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-lg p-8 text-center">
-            <h1 class="text-3xl font-bold mb-6">Welcome to Wokkibot</h1>
-            <p class="text-gray-600 mb-8">You can access the Admin panel if you are added as an Admin to the bot configuration.</p>
-            <a href="/login" class="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                Login with Discord
-            </a>
+<body class="bg-background text-foreground">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <!-- Hero Section -->
+        <div class="relative w-full max-w-2xl">
+            <div class="glow"></div>
+            <div class="bg-gradient rounded-2xl shadow-2xl p-12 text-center border border-border relative z-10 gradient-border">
+                <!-- Bot Icon/Logo -->
+                <div class="w-24 h-24 mx-auto mb-8 relative float">
+                    <div class="absolute inset-0 bg-primary/20 rounded-full blur-xl"></div>
+                    <div class="relative bg-card rounded-full p-5 border border-border">
+                        <svg class="w-full h-full text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <!-- Robot head -->
+                            <rect x="4" y="4" width="16" height="16" rx="2" stroke-width="1.5"/>
+                            <!-- Robot eyes -->
+                            <circle cx="9" cy="10" r="1.5" stroke-width="1.5"/>
+                            <circle cx="15" cy="10" r="1.5" stroke-width="1.5"/>
+                            <!-- Robot mouth -->
+                            <path stroke-width="1.5" stroke-linecap="round" d="M9 15h6"/>
+                            <!-- Robot antenna -->
+                            <path stroke-width="1.5" stroke-linecap="round" d="M12 4V2"/>
+                            <circle cx="12" cy="2" r="0.5" stroke-width="1.5"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <h1 class="text-4xl font-bold mb-4 text-card-foreground">Welcome to Wokkibot</h1>
+                <p class="text-lg text-muted-foreground mb-8 max-w-lg mx-auto">
+                    Login to access the Admin Dashboard
+                </p>
+                
+                <a href="/login" 
+                    class="btn inline-flex items-center px-8 py-4 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all hover-glow relative group">
+                    <div class="glow opacity-0 group-hover:opacity-40"></div>
+                    <span class="relative z-10 font-semibold">Login with Discord</span>
+                    <svg class="w-5 h-5 ml-2 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                </a>
+            </div>
         </div>
     </div>
 </body>
