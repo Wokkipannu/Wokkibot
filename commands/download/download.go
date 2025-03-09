@@ -144,7 +144,7 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 			url:               url,
 			filePathProcessed: filepath.Join(tempDir, fmt.Sprintf("%s_processed.mp4", utils.GenerateRandomName(10))),
 			tempDir:           tempDir,
-			maxFileSize:       calculateMaximumFileSizeForGuild(guild),
+			maxFileSize:       utils.CalculateMaximumFileSizeForGuild(guild),
 			resolution:        res,
 			from:              e.SlashCommandInteractionData().String("start"),
 			to:                e.SlashCommandInteractionData().String("end"),
@@ -500,16 +500,6 @@ func attachFile(e *handler.CommandEvent, filePath string) error {
 	}
 
 	return nil
-}
-
-func calculateMaximumFileSizeForGuild(guild discord.Guild) int {
-	if guild.PremiumTier == discord.PremiumTier2 {
-		return 50
-	} else if guild.PremiumTier == discord.PremiumTier3 {
-		return 100
-	} else {
-		return 10
-	}
 }
 
 func handleSpecialScenarios(e *handler.CommandEvent, url string) (string, error) {

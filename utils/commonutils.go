@@ -98,3 +98,13 @@ func HandleError(e *handler.CommandEvent, message string, errorMessage string) e
 
 	return nil
 }
+
+func CalculateMaximumFileSizeForGuild(guild discord.Guild) int {
+	if guild.PremiumTier == discord.PremiumTier2 {
+		return 50
+	} else if guild.PremiumTier == discord.PremiumTier3 {
+		return 100
+	} else {
+		return 10
+	}
+}
