@@ -36,7 +36,7 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 			AddField("yt-dlp", getYtdlpVersion(), true).
 			AddField("FFmpeg", getFfmpegVersion(), true).
 			AddField("Uptime", time.Since(b.StartTime).Round(time.Second).String(), true).
-			AddField("Ping", fmt.Sprintf("%dms", b.Client.Gateway().Latency().Milliseconds()), true).
+			AddField("Ping", "Checking...", true).
 			SetColor(utils.COLOR_GREEN)
 
 		if guild, found := e.Guild(); found {
@@ -55,7 +55,19 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 			SetEmbeds(statusEmbed.Build()).
 			Build())
 
-		return err
+		if err != nil {
+			return err
+		}
+
+		go func() {
+			ping := getPing(b)
+			statusEmbed.Fields[6].Value = ping
+			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+				SetEmbeds(statusEmbed.Build()).
+				Build())
+		}()
+
+		return nil
 	}
 }
 
@@ -98,4 +110,20 @@ func getDisgoVersion() string {
 		}
 	}
 	return "Unknown"
+}
+
+func getPing(b *wokkibot.Wokkibot) string {
+	maxRetries := 5
+	retryDelay := 2 * time.Second
+
+	for i := range maxRetries {
+		ping := b.Client.Gateway().Latency().Milliseconds()
+		if ping > 0 {
+			return fmt.Sprintf("%dms", ping)
+		}
+		if i < maxRetries-1 {
+			time.Sleep(retryDelay)
+		}
+	}
+	return "N/A"
 }
