@@ -39,6 +39,10 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 			AddField("Ping", fmt.Sprintf("%dms", b.Client.Gateway().Latency().Milliseconds()), true).
 			SetColor(utils.COLOR_GREEN)
 
+		if guild, found := e.Guild(); found {
+			statusEmbed.AddField("File Size limit", fmt.Sprintf("%dMB", utils.CalculateMaximumFileSizeForGuild(guild)), true)
+		}
+
 		if self.BannerURL() != nil {
 			formatOpt := utils.SetCDNOptions(discord.FileFormatPNG, discord.QueryValues{"size": 1024})
 			statusEmbed.SetImage(*self.BannerURL(formatOpt))
