@@ -43,12 +43,15 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 			statusEmbed.AddField("File Size limit", fmt.Sprintf("%dMB", utils.CalculateMaximumFileSizeForGuild(guild)), true)
 		}
 
-		if self.BannerURL() != nil {
+		// Self user does not contain BannerURL, so we must fetch it from the client rest
+		botUser, err := b.Client.Rest().GetUser(self.ID)
+
+		if err == nil && botUser.BannerURL() != nil {
 			formatOpt := utils.SetCDNOptions(discord.FileFormatPNG, discord.QueryValues{"size": 1024})
-			statusEmbed.SetImage(*self.BannerURL(formatOpt))
+			statusEmbed.SetImage(*botUser.BannerURL(formatOpt))
 		}
 
-		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
 			SetEmbeds(statusEmbed.Build()).
 			Build())
 
