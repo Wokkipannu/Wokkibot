@@ -7,6 +7,8 @@ import (
 	"runtime/debug"
 	"strings"
 	"time"
+	"wokkibot/database"
+	"wokkibot/types"
 	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
@@ -27,6 +29,13 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		self, _ := e.Client().Caches().SelfUser()
 
+		db := database.GetDB()
+		var statistics types.Statistics
+		err := db.QueryRow("SELECT video_downloads, names_given, songs_played, pizzas_generated, coins_flipped, dice_rolled, trivia_games_played, trivia_games_won, trivia_games_lost FROM statistics").Scan(&statistics.VideoDownloads, &statistics.NamesGiven, &statistics.SongsPlayed, &statistics.PizzasGenerated, &statistics.CoinsFlipped, &statistics.DiceRolled, &statistics.TriviaGamesPlayed, &statistics.TriviaGamesWon, &statistics.TriviaGamesLost)
+		if err != nil {
+			return err
+		}
+
 		statusEmbed := discord.NewEmbedBuilder().
 			SetTitlef("%s Status", self.Username).
 			SetThumbnail(self.EffectiveAvatarURL()).
@@ -37,6 +46,15 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 			AddField("FFmpeg", getFfmpegVersion(), true).
 			AddField("Uptime", time.Since(b.StartTime).Round(time.Second).String(), true).
 			AddField("Ping", "Checking...", true).
+			AddField("Video Downloads", fmt.Sprintf("%d", statistics.VideoDownloads), true).
+			AddField("Names Given", fmt.Sprintf("%d", statistics.NamesGiven), true).
+			AddField("Songs Played", fmt.Sprintf("%d", statistics.SongsPlayed), true).
+			AddField("Pizzas Generated", fmt.Sprintf("%d", statistics.PizzasGenerated), true).
+			AddField("Coins Flipped", fmt.Sprintf("%d", statistics.CoinsFlipped), true).
+			AddField("Dice Rolled", fmt.Sprintf("%d", statistics.DiceRolled), true).
+			AddField("Trivia Games Played", fmt.Sprintf("%d", statistics.TriviaGamesPlayed), true).
+			AddField("Trivia Games Won", fmt.Sprintf("%d", statistics.TriviaGamesWon), true).
+			AddField("Trivia Games Lost", fmt.Sprintf("%d", statistics.TriviaGamesLost), true).
 			SetColor(utils.COLOR_GREEN)
 
 		if guild, found := e.Guild(); found {

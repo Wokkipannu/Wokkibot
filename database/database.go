@@ -105,6 +105,18 @@ func initializeSchema() error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			name TEXT NOT NULL UNIQUE
 		)`,
+		`CREATE TABLE IF NOT EXISTS statistics (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			video_downloads INTEGER DEFAULT 0,
+			names_given INTEGER DEFAULT 0,
+			songs_played INTEGER DEFAULT 0,
+			pizzas_generated INTEGER DEFAULT 0,
+			coins_flipped INTEGER DEFAULT 0,
+			dice_rolled INTEGER DEFAULT 0,
+			trivia_games_played INTEGER DEFAULT 0,
+			trivia_games_won INTEGER DEFAULT 0,
+			trivia_games_lost INTEGER DEFAULT 0
+		)`,
 	}
 
 	for _, schema := range schemas {

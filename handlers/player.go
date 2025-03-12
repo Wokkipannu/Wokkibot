@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"wokkibot/queue"
+	"wokkibot/utils"
 
 	"github.com/disgoorg/disgolink/v3/disgolink"
 	"github.com/disgoorg/disgolink/v3/lavalink"
@@ -32,6 +33,8 @@ func (h *PlayerHandler) OnTrackStart(player disgolink.Player, event lavalink.Tra
 }
 
 func (h *PlayerHandler) OnTrackEnd(player disgolink.Player, event lavalink.TrackEndEvent) {
+	utils.UpdateStatistics("songs_played")
+
 	if !event.Reason.MayStartNext() {
 		return
 	}

@@ -38,6 +38,11 @@ var migrations = []Migration{
 		Description: "Add guild_id to reminders",
 		SQL:         "ALTER TABLE reminders ADD COLUMN guild_id TEXT;",
 	},
+	{
+		Version:     6,
+		Description: "Initialize statistics table with a single row",
+		SQL:         "INSERT INTO statistics (video_downloads, names_given, songs_played, pizzas_generated, coins_flipped, dice_rolled, trivia_games_played, trivia_games_won, trivia_games_lost) SELECT 0, 0, 0, 0, 0, 0, 0, 0, 0 WHERE NOT EXISTS (SELECT 1 FROM statistics);",
+	},
 }
 
 func runMigrations() error {

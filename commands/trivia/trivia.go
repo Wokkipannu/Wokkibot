@@ -254,6 +254,8 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 		// embed.AddField("Correct answer", fmt.Sprintf("||%v||", trivia.CorrectAnswer), true)
 		// embed.AddField("Answers", strings.Join(trivia.IncorrectAnswers, "\n"), true)
 
+		utils.UpdateStatistics("trivia_games_played")
+
 		go func(channel snowflake.ID, options []string) {
 			defer func() {
 				if r := recover(); r != nil {
@@ -304,6 +306,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 					}
 					t.SetStatus(false)
 					cls()
+					utils.UpdateStatistics("trivia_games_lost")
 					return
 
 				case messageEvent := <-ch:
@@ -337,6 +340,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 						}
 						t.SetStatus(false)
 						cls()
+						utils.UpdateStatistics("trivia_games_lost")
 						return
 					} else {
 						addOrUpdateUser(messageEvent.Message.Author.ID, 1)
@@ -361,6 +365,7 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 						}
 						t.SetStatus(false)
 						cls()
+						utils.UpdateStatistics("trivia_games_won")
 						return
 					}
 				}

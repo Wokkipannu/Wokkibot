@@ -3,6 +3,7 @@ package flip
 import (
 	"math/rand"
 	"time"
+	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/discord"
@@ -28,6 +29,8 @@ func HandleFlip(b *wokkibot.Wokkibot) handler.CommandHandler {
 		} else {
 			result = "Tails"
 		}
+
+		utils.UpdateStatistics("coins_flipped")
 
 		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent(result).Build())
 	}

@@ -499,6 +499,8 @@ func attachFile(e *handler.CommandEvent, filePath string) error {
 		return err
 	}
 
+	utils.UpdateStatistics("video_downloads")
+
 	return nil
 }
 

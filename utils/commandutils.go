@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"wokkibot/database"
 
 	"github.com/disgoorg/disgo/discord"
 )
@@ -64,4 +65,9 @@ func SetCDNOptions(format discord.FileFormat, values discord.QueryValues) discor
 		config.Format = format
 		config.Values = values
 	}
+}
+
+func UpdateStatistics(statsitic string) {
+	db := database.GetDB()
+	db.Exec("UPDATE statistics SET " + statsitic + " = " + statsitic + " + 1")
 }

@@ -158,6 +158,8 @@ func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 			SetEmbeds(embed.Build()).
 			Build())
 
+		utils.UpdateStatistics("pizzas_generated")
+
 		return err
 	}
 }

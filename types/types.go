@@ -30,3 +30,15 @@ type Reminder struct {
 	Message   string       `json:"message"`
 	RemindAt  time.Time    `json:"remind_at"`
 }
+
+type Statistics struct {
+	VideoDownloads    int `json:"video_downloads"`
+	NamesGiven        int `json:"names_given"`
+	SongsPlayed       int `json:"songs_played"`
+	PizzasGenerated   int `json:"pizzas_generated"`
+	CoinsFlipped      int `json:"coins_flipped"`
+	DiceRolled        int `json:"dice_rolled"`
+	TriviaGamesPlayed int `json:"trivia_games_played"`
+	TriviaGamesWon    int `json:"trivia_games_won"`
+	TriviaGamesLost   int `json:"trivia_games_lost"`
+}

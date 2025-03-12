@@ -53,6 +53,8 @@ func HandleName(b *wokkibot.Wokkibot) handler.CommandHandler {
 			SetContent(randomName).
 			Build())
 
+		utils.UpdateStatistics("names_given")
+
 		return err
 	}
 }
