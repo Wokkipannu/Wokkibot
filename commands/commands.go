@@ -80,6 +80,8 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 	r.Command("/joke", joke.HandleJoke(b))
 	r.Command("/download", download.HandleDownload(b))
 	r.Command("/status", status.HandleStatus(b))
+	r.Component("/status/statistics", status.HandleStatusStatistics(b))
+	r.Component("/status/status", status.HandleStatusStatus(b))
 	r.Route("/remind", func(r handler.Router) {
 		r.Command("/set", remind.HandleRemind(b))
 		r.Command("/list", remind.HandleListMyReminders(b))
