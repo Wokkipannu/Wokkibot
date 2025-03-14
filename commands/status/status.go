@@ -168,10 +168,24 @@ func HandleStatusStatistics(b *wokkibot.Wokkibot) handler.ComponentHandler {
 			AddField("Trivia Games Lost", fmt.Sprintf("%d", statistics.TriviaGamesLost), true).
 			SetColor(utils.COLOR_GREEN)
 
-		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().
+		err = e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().
 			SetEmbeds(embed.Build()).
-			AddActionRow(discord.NewPrimaryButton("Status", "/status/status").WithEmoji(discord.ComponentEmoji{Name: "📺"})).
+			AddActionRow(discord.NewPrimaryButton("Status", "/status/status").WithEmoji(discord.ComponentEmoji{Name: "📺"}).WithDisabled(true)).
 			Build())
+
+		if err != nil {
+			return err
+		}
+
+		go func() {
+			time.Sleep(5 * time.Second)
+			_, _ = e.Client().Rest().UpdateMessage(e.Channel().ID(), e.Message.ID, discord.NewMessageUpdateBuilder().
+				SetEmbeds(embed.Build()).
+				AddActionRow(discord.NewPrimaryButton("Status", "/status/status").WithEmoji(discord.ComponentEmoji{Name: "📺"}).WithDisabled(false)).
+				Build())
+		}()
+
+		return nil
 	}
 }
 
@@ -179,9 +193,23 @@ func HandleStatusStatus(b *wokkibot.Wokkibot) handler.ComponentHandler {
 	return func(e *handler.ComponentEvent) error {
 		statusEmbed := createEmbed(b, nil, e)
 
-		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().
+		err := e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().
 			SetEmbeds(statusEmbed.Build()).
-			AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"})).
+			AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"}).WithDisabled(true)).
 			Build())
+
+		if err != nil {
+			return err
+		}
+
+		go func() {
+			time.Sleep(5 * time.Second)
+			_, _ = e.Client().Rest().UpdateMessage(e.Channel().ID(), e.Message.ID, discord.NewMessageUpdateBuilder().
+				SetEmbeds(statusEmbed.Build()).
+				AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"}).WithDisabled(false)).
+				Build())
+		}()
+
+		return nil
 	}
 }
