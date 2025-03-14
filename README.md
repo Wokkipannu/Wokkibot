@@ -18,7 +18,7 @@ Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://git
 * `/download` - Download a video from URL using yt-dlp and convert using ffmpeg if needed
 * `/friday` - Post a random friday celebration clip from SQLite database
 * `/roll` - Roll a dice
-* `/pizza` - Get random pizza toppings (Currently not working due to API being down)
+* `/pizza` - Get random pizza toppings
 * `/user` - Get information about a user
 * `/flip` - Flip a coin
 * `/trivia` - Start a trivia game
