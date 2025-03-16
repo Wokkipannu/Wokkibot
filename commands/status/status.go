@@ -1,7 +1,9 @@
 package status
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os/exec"
 	"runtime"
 	"runtime/debug"
@@ -53,13 +55,22 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.ComponentEvent) *discord.EmbedBuilder {
 	self, _ := b.Client.Caches().SelfUser()
 
+	currentYtdlpVersion := getYtdlpVersion()
+	latestYtdlpVersion, err := getLatestYtdlpVersion()
+	ytdlpVersion := fmt.Sprintf("%s (Latest: %s)", currentYtdlpVersion, latestYtdlpVersion)
+	if err == nil {
+		if currentYtdlpVersion == latestYtdlpVersion {
+			ytdlpVersion = fmt.Sprintf("%s (Up to date)", currentYtdlpVersion)
+		}
+	}
+
 	embed := discord.NewEmbedBuilder().
 		SetTitlef("%s Status", self.Username).
 		SetThumbnail(self.EffectiveAvatarURL()).
 		AddField("Version", fmt.Sprintf("[%s](https://github.com/Wokkipannu/Wokkibot/commit/%s)", b.Version, b.Version), false).
 		AddField("Go", runtime.Version(), true).
 		AddField("Disgo", getDisgoVersion(), true).
-		AddField("yt-dlp", getYtdlpVersion(), true).
+		AddField("yt-dlp", ytdlpVersion, true).
 		AddField("FFmpeg", getFfmpegVersion(), true).
 		AddField("Uptime", time.Since(b.StartTime).Round(time.Second).String(), true).
 		AddField("Ping", getPing(b), true).
@@ -94,6 +105,22 @@ func getYtdlpVersion() string {
 		ytdlpVersion = strings.TrimSpace(string(output))
 	}
 	return ytdlpVersion
+}
+
+func getLatestYtdlpVersion() (string, error) {
+	resp, err := http.Get("https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var release struct {
+		TagName string `json:"tag_name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return "", err
+	}
+	return strings.TrimPrefix(release.TagName, ""), nil
 }
 
 func getFfmpegVersion() string {
