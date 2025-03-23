@@ -1,6 +1,7 @@
 package pizza
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -29,6 +30,10 @@ var PizzaCommand = discord.SlashCommandCreate{
 		},
 	},
 }
+
+const (
+	MAX_FIELD_LENGTH = 1024
+)
 
 func formatNumber(n int64) string {
 	str := fmt.Sprintf("%d", n)
@@ -65,56 +70,10 @@ func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return nil
 		}
 
-		db := database.GetDB()
-
-		rows, err := db.Query("SELECT name FROM pizza_toppings")
+		output, err := getRandomToppings(amount)
 		if err != nil {
-			utils.HandleError(e, "Error while fetching data", "pizza")
+			utils.HandleError(e, err.Error(), "pizza")
 			return err
-		}
-
-		var allToppings []string
-		for rows.Next() {
-			var topping string
-			if err := rows.Scan(&topping); err != nil {
-				utils.HandleError(e, "Error while scanning data", "pizza")
-				return err
-			}
-			allToppings = append(allToppings, topping)
-		}
-
-		if len(allToppings) == 0 {
-			utils.HandleError(e, "No toppings found in database", "pizza")
-			return nil
-		}
-
-		toppingsCount := len(allToppings)
-
-		randomToppings := make([]Topping, toppingsCount)
-		amountToRoll := int64(amount)
-
-		for amountToRoll > 0 {
-			roll := rand.Intn(toppingsCount)
-			countLimit := math.Ceil(float64(amount) / 12)
-			count := rand.Int63n(int64(countLimit))
-			if count == 0 {
-				count += 1
-			}
-
-			randomToppings[roll].Count += count
-			randomToppings[roll].Name = allToppings[roll]
-			amountToRoll -= count
-		}
-
-		var output []string
-		for _, v := range randomToppings {
-			if v.Count > 0 {
-				if v.Count > 1 {
-					output = append(output, fmt.Sprintf("%sx %s", formatNumber(v.Count), v.Name))
-				} else {
-					output = append(output, v.Name)
-				}
-			}
 		}
 
 		embed := discord.NewEmbedBuilder()
@@ -124,14 +83,13 @@ func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 		embed.SetColor(utils.COLOR_BLURPLE)
 
-		const maxFieldLength = 1024
 		var currentChunk strings.Builder
 		var chunks []string
 
 		for i, tc := range output {
 			toppingText := tc
 
-			if currentChunk.Len()+len(toppingText)+2 > maxFieldLength {
+			if currentChunk.Len()+len(toppingText)+2 > MAX_FIELD_LENGTH {
 				chunks = append(chunks, currentChunk.String())
 				currentChunk.Reset()
 			}
@@ -148,18 +106,142 @@ func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		if len(chunks) > 1 {
 			for i, chunk := range chunks {
-				embed.AddField(fmt.Sprintf("Toppings (%d/%d)", i+1, len(chunks)), chunk, false)
+				embed.AddField(fmt.Sprintf("Toppings (x%d) (%d/%d)", amount, i+1, len(chunks)), chunk, false)
 			}
 		} else if len(chunks) == 1 {
-			embed.AddField("Toppings", chunks[0], false)
+			embed.AddField(fmt.Sprintf("Toppings (x%d)", amount), chunks[0], false)
 		}
 
 		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
 			SetEmbeds(embed.Build()).
+			AddActionRow(discord.NewPrimaryButton("Rerandomize", "/pizza/randomize").WithEmoji(discord.ComponentEmoji{Name: "🍕"})).
 			Build())
 
 		utils.UpdateStatistics("pizzas_generated")
 
 		return err
 	}
+}
+
+func HandlePizzaRandomize(b *wokkibot.Wokkibot) handler.ComponentHandler {
+	return func(e *handler.ComponentEvent) error {
+		message := e.Message
+		if len(message.Embeds) == 0 {
+			return errors.New("no embeds found in message")
+		}
+
+		titleField := message.Embeds[0].Fields[0]
+		title := titleField.Name
+
+		var amount int
+		_, err := fmt.Sscanf(title, "Toppings (x%d)", &amount)
+		if err != nil {
+			amount = 4
+		}
+
+		output, err := getRandomToppings(amount)
+		if err != nil {
+			return err
+		}
+
+		embed := discord.NewEmbedBuilder()
+		embed.Author = &discord.EmbedAuthor{
+			Name:    fmt.Sprintf("%v's pizza", e.User().EffectiveName()),
+			IconURL: *e.User().AvatarURL(),
+		}
+		embed.SetColor(utils.COLOR_BLURPLE)
+
+		var currentChunk strings.Builder
+		var chunks []string
+
+		for i, tc := range output {
+			toppingText := tc
+
+			if currentChunk.Len()+len(toppingText)+2 > MAX_FIELD_LENGTH {
+				chunks = append(chunks, currentChunk.String())
+				currentChunk.Reset()
+			}
+
+			if currentChunk.Len() > 0 {
+				currentChunk.WriteString(", ")
+			}
+			currentChunk.WriteString(toppingText)
+
+			if i == len(output)-1 && currentChunk.Len() > 0 {
+				chunks = append(chunks, currentChunk.String())
+			}
+		}
+
+		if len(chunks) > 1 {
+			for i, chunk := range chunks {
+				embed.AddField(fmt.Sprintf("Toppings (x%d) (%d/%d)", amount, i+1, len(chunks)), chunk, false)
+			}
+		} else if len(chunks) == 1 {
+			embed.AddField(fmt.Sprintf("Toppings (x%d)", amount), chunks[0], false)
+		}
+
+		err = e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().
+			SetEmbeds(embed.Build()).
+			AddActionRow(discord.NewPrimaryButton("Rerandomize", "/pizza/randomize").WithEmoji(discord.ComponentEmoji{Name: "🍕"})).
+			Build())
+
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
+func getRandomToppings(amount int) ([]string, error) {
+	db := database.GetDB()
+
+	rows, err := db.Query("SELECT name FROM pizza_toppings")
+	if err != nil {
+		return nil, err
+	}
+
+	var allToppings []string
+	for rows.Next() {
+		var topping string
+		if err := rows.Scan(&topping); err != nil {
+			return nil, err
+		}
+		allToppings = append(allToppings, topping)
+	}
+
+	if len(allToppings) == 0 {
+		return nil, errors.New("no toppings found in database")
+	}
+
+	toppingsCount := len(allToppings)
+
+	randomToppings := make([]Topping, toppingsCount)
+	amountToRoll := int64(amount)
+
+	for amountToRoll > 0 {
+		roll := rand.Intn(toppingsCount)
+		countLimit := math.Ceil(float64(amount) / 12)
+		count := rand.Int63n(int64(countLimit))
+		if count == 0 {
+			count += 1
+		}
+
+		randomToppings[roll].Count += count
+		randomToppings[roll].Name = allToppings[roll]
+		amountToRoll -= count
+	}
+
+	var output []string
+	for _, v := range randomToppings {
+		if v.Count > 0 {
+			if v.Count > 1 {
+				output = append(output, fmt.Sprintf("%sx %s", formatNumber(v.Count), v.Name))
+			} else {
+				output = append(output, v.Name)
+			}
+		}
+	}
+
+	return output, nil
 }

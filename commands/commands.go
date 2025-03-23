@@ -60,6 +60,7 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 	r.Command("/roll", roll.HandleRoll(b))
 	r.Command("/flip", flip.HandleFlip(b))
 	r.Command("/pizza", pizza.HandlePizza(b))
+	r.Component("/pizza/randomize", pizza.HandlePizzaRandomize(b))
 	r.Command("/friday", friday.HandleFriday(b))
 	r.Command("/user", user.HandleUser(b))
 	r.Command("/trivia", trivia.HandleTrivia(b))
