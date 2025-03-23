@@ -130,6 +130,19 @@ func HandlePizzaRandomize(b *wokkibot.Wokkibot) handler.ComponentHandler {
 			return errors.New("no embeds found in message")
 		}
 
+		embedAuthor := message.Embeds[0].Author
+		if embedAuthor == nil {
+			return errors.New("no author found in embed")
+		}
+
+		author := message.InteractionMetadata.User
+		if author.ID != e.User().ID {
+			return e.Respond(discord.InteractionResponseTypeCreateMessage, discord.NewMessageCreateBuilder().
+				SetContent("Only the original user can rerandomize the pizza!").
+				SetEphemeral(true).
+				Build())
+		}
+
 		titleField := message.Embeds[0].Fields[0]
 		title := titleField.Name
 
