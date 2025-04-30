@@ -72,7 +72,7 @@ func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.Compo
 		AddField("Disgo", getDisgoVersion(), true).
 		AddField("yt-dlp", ytdlpVersion, true).
 		AddField("FFmpeg", getFfmpegVersion(), true).
-		AddField("Uptime", time.Since(b.StartTime).Round(time.Second).String(), true).
+		AddField("Uptime", fmt.Sprintf("<t:%d:R>", b.StartTime.Unix()), true).
 		AddField("Ping", getPing(b), true).
 		SetColor(utils.COLOR_GREEN)
 
