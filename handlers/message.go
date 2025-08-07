@@ -64,7 +64,7 @@ func (h *Handler) HandleXLinks(e *events.MessageCreate) {
 	if r.MatchString(message) {
 		links := xurls.Strict.FindAllString(message, -1)
 
-		fixedURL, err := utils.ReplaceDomain(links[0], "fixupx.com")
+		fixedURL, err := utils.ReplaceDomain(links[0], "fixvx.com")
 		if err != nil {
 			return
 		}
