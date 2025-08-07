@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -98,8 +99,21 @@ const (
 	defaultResolution = "720"
 )
 
-var taskQueue = make(chan DownloadTask, 10)
-var once sync.Once
+var (
+	taskQueue = make(chan DownloadTask, 10)
+	once      sync.Once
+
+	timeParamRegex = regexp.MustCompile(`^(?:\d+(?:\.\d+)?|\d+:\d+(?:\.\d+)?|\d+:\d+:\d+(?:\.\d+)?)$`)
+
+	allowedSchemes = map[string]bool{
+		"http":  true,
+		"https": true,
+	}
+
+	shellDangerousChars = []string{";", "|", "$", "`", "\"", "'", "\\", "\n", "\r", "\t"}
+
+	timeDangerousChars = []string{";", "|", "&", "$", "`", "$(", ")", "(", "\"", "'", "\\", "\n", "\r", "\t"}
+)
 
 func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 	once.Do(func() {
@@ -108,9 +122,22 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 	return func(e *handler.CommandEvent) error {
 		url := e.SlashCommandInteractionData().String("url")
+		startTime := e.SlashCommandInteractionData().String("start")
+		endTime := e.SlashCommandInteractionData().String("end")
 
-		if url == "" {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No URL provided").Build())
+		if err := utils.ValidateURL(url, allowedSchemes, shellDangerousChars); err != nil {
+			utils.HandleError(e, "Invalid URL format", err.Error())
+			return err
+		}
+
+		if err := utils.ValidateTimeParameter(startTime, timeParamRegex, timeDangerousChars); err != nil {
+			utils.HandleError(e, "Invalid start time", err.Error())
+			return err
+		}
+
+		if err := utils.ValidateTimeParameter(endTime, timeParamRegex, timeDangerousChars); err != nil {
+			utils.HandleError(e, "Invalid end time", err.Error())
+			return err
 		}
 
 		if err := e.Respond(discord.InteractionResponseTypeDeferredCreateMessage, nil); err != nil {
@@ -146,8 +173,8 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 			tempDir:           tempDir,
 			maxFileSize:       utils.CalculateMaximumFileSizeForGuild(guild),
 			resolution:        res,
-			from:              e.SlashCommandInteractionData().String("start"),
-			to:                e.SlashCommandInteractionData().String("end"),
+			from:              startTime,
+			to:                endTime,
 		}
 		taskQueue <- task
 
@@ -223,7 +250,8 @@ func downloadFile(task DownloadTask, e *handler.CommandEvent) (string, error) {
 		if to != "" {
 			toValue = to
 		}
-		cmd.Args = append(cmd.Args, "--download-sections", fmt.Sprintf("*%s-%s", from, toValue))
+		sectionArg := fmt.Sprintf("*%s-%s", from, toValue)
+		cmd.Args = append(cmd.Args, "--download-sections", sectionArg)
 	}
 
 	return executeOperation(e, task, cmd, ctx, "download", "")
