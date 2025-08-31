@@ -20,5 +20,5 @@ jobs:
           git pull
           export GIT_COMMIT=$(git rev-parse --short HEAD)
           rm -rf ~/.cache/yt-dlp
-          sudo -E docker compose build --build-arg GIT_COMMIT=$GIT_COMMIT wokkibot
+          sudo -E docker compose build --no-cache --build-arg GIT_COMMIT=$GIT_COMMIT wokkibot
           sudo docker compose up -d --no-deps wokkibot
