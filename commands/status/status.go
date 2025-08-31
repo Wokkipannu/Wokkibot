@@ -1,13 +1,8 @@
 package status
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"os/exec"
 	"runtime"
-	"runtime/debug"
-	"strings"
 	"time"
 	"wokkibot/database"
 	"wokkibot/types"
@@ -55,8 +50,8 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.ComponentEvent) *discord.EmbedBuilder {
 	self, _ := b.Client.Caches().SelfUser()
 
-	currentYtdlpVersion := getYtdlpVersion()
-	latestYtdlpVersion, err := getLatestYtdlpVersion()
+	currentYtdlpVersion := utils.GetYtdlpVersion()
+	latestYtdlpVersion, err := utils.GetLatestYtdlpVersion()
 	ytdlpVersion := fmt.Sprintf("%s (Latest: %s)", currentYtdlpVersion, latestYtdlpVersion)
 	if err == nil {
 		if currentYtdlpVersion == latestYtdlpVersion {
@@ -69,9 +64,9 @@ func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.Compo
 		SetThumbnail(self.EffectiveAvatarURL()).
 		AddField("Version", fmt.Sprintf("[%s](https://github.com/Wokkipannu/Wokkibot/commit/%s)", b.Version, b.Version), false).
 		AddField("Go", runtime.Version(), true).
-		AddField("Disgo", getDisgoVersion(), true).
+		AddField("Disgo", utils.GetDisgoVersion(), true).
 		AddField("yt-dlp", ytdlpVersion, true).
-		AddField("FFmpeg", getFfmpegVersion(), true).
+		AddField("FFmpeg", utils.GetFfmpegVersion(), true).
 		AddField("Uptime", fmt.Sprintf("<t:%d:R>", b.StartTime.Unix()), true).
 		AddField("Ping", getPing(b), true).
 		SetColor(utils.COLOR_GREEN)
@@ -95,63 +90,6 @@ func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.Compo
 	}
 
 	return embed
-}
-
-func getYtdlpVersion() string {
-	cmd := exec.Command("yt-dlp", "--version")
-	output, err := cmd.Output()
-	ytdlpVersion := "Not found"
-	if err == nil {
-		ytdlpVersion = strings.TrimSpace(string(output))
-	}
-	return ytdlpVersion
-}
-
-func getLatestYtdlpVersion() (string, error) {
-	resp, err := http.Get("https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest")
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	var release struct {
-		TagName string `json:"tag_name"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", err
-	}
-	return strings.TrimPrefix(release.TagName, ""), nil
-}
-
-func getFfmpegVersion() string {
-	cmd := exec.Command("ffmpeg", "-version")
-	output, err := cmd.Output()
-	if err != nil {
-		return "Not found"
-	}
-
-	lines := strings.Split(string(output), "\n")
-	if len(lines) == 0 {
-		return "Not found"
-	}
-
-	parts := strings.Split(lines[0], " ")
-	if len(parts) < 3 {
-		return "Not found"
-	}
-
-	return parts[2]
-}
-
-func getDisgoVersion() string {
-	if info, ok := debug.ReadBuildInfo(); ok {
-		for _, dep := range info.Deps {
-			if dep.Path == "github.com/disgoorg/disgo" {
-				return dep.Version
-			}
-		}
-	}
-	return "Unknown"
 }
 
 func getPing(b *wokkibot.Wokkibot) string {

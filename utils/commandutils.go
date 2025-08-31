@@ -4,6 +4,11 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"net/http"
+	"os/exec"
+	"runtime/debug"
+	"encoding/json"
+	"os"
 	"wokkibot/database"
 
 	"github.com/disgoorg/disgo/discord"
@@ -70,4 +75,74 @@ func SetCDNOptions(format discord.FileFormat, values discord.QueryValues) discor
 func UpdateStatistics(statsitic string) {
 	db := database.GetDB()
 	db.Exec("UPDATE statistics SET " + statsitic + " = " + statsitic + " + 1")
+}
+
+func GetYtdlpVersion() string {
+    cmd := exec.Command("yt-dlp", "--version")
+    output, err := cmd.Output()
+    ytdlpVersion := "Not found"
+    if err == nil {
+        ytdlpVersion = strings.TrimSpace(string(output))
+    }
+    return ytdlpVersion
+}
+
+func GetLatestYtdlpVersion() (string, error) {
+    resp, err := http.Get("https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest")
+    if err != nil {
+        return "", err
+    }
+    defer resp.Body.Close()
+
+    var release struct {
+        TagName string `json:"tag_name"`
+    }
+    if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+        return "", err
+    }
+    return strings.TrimPrefix(release.TagName, ""), nil
+}
+
+func UpdateYtdlpBinary() error {
+    curlCmd := exec.Command("curl", "-L", "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", "-o", "/usr/local/bin/yt-dlp")
+    if out, err := curlCmd.CombinedOutput(); err != nil {
+        return fmt.Errorf("curl update failed: %w, output: %s", err, string(out))
+    }
+
+    if err := os.Chmod("/usr/local/bin/yt-dlp", 0755); err != nil {
+        return fmt.Errorf("chmod failed: %w", err)
+    }
+
+    return nil
+}
+
+func GetFfmpegVersion() string {
+	cmd := exec.Command("ffmpeg", "-version")
+	output, err := cmd.Output()
+	if err != nil {
+		return "Not found"
+	}
+
+	lines := strings.Split(string(output), "\n")
+	if len(lines) == 0 {
+		return "Not found"
+	}
+
+	parts := strings.Split(lines[0], " ")
+	if len(parts) < 3 {
+		return "Not found"
+	}
+
+	return parts[2]
+}
+
+func GetDisgoVersion() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, dep := range info.Deps {
+			if dep.Path == "github.com/disgoorg/disgo" {
+				return dep.Version
+			}
+		}
+	}
+	return "Unknown"
 }
