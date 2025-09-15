@@ -65,7 +65,7 @@ func main() {
 
 	h.Guilds = guilds
 
-	h.ReminderHandler.Reminders = reminders
+	h.ReminderHandler.SetReminders(reminders)
 
 	// Initialize wokkibot
 	b := wokkibot.New(*cfg, version, h)

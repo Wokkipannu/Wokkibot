@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"sync"
+	"time"
 	"wokkibot/database"
 	"wokkibot/types"
 
@@ -9,11 +11,14 @@ import (
 
 type ReminderHandler struct {
 	Reminders []types.Reminder
+	mu        sync.RWMutex
+	updateCh  chan struct{}
 }
 
 func NewReminderHandler() *ReminderHandler {
 	return &ReminderHandler{
 		Reminders: []types.Reminder{},
+		updateCh:  make(chan struct{}, 1),
 	}
 }
 
@@ -38,6 +43,22 @@ func (h *ReminderHandler) LoadReminders() ([]types.Reminder, error) {
 	return reminders, nil
 }
 
+func (h *ReminderHandler) SetReminders(reminders []types.Reminder) {
+	h.mu.Lock()
+	h.Reminders = reminders
+	h.mu.Unlock()
+	h.notifyUpdate()
+}
+
+func (h *ReminderHandler) UpdateChan() <-chan struct{} { return h.updateCh }
+
+func (h *ReminderHandler) notifyUpdate() {
+	select {
+	case h.updateCh <- struct{}{}:
+	default:
+	}
+}
+
 func (h *ReminderHandler) AddReminder(reminder types.Reminder) error {
 	db := database.GetDB()
 
@@ -53,7 +74,11 @@ func (h *ReminderHandler) AddReminder(reminder types.Reminder) error {
 	}
 
 	reminder.ID = int(id)
+	h.mu.Lock()
 	h.Reminders = append(h.Reminders, reminder)
+	h.mu.Unlock()
+
+	h.notifyUpdate()
 
 	return nil
 }
@@ -73,6 +98,7 @@ func (h *ReminderHandler) RemoveReminder(id int) error {
 		return nil
 	}
 
+	h.mu.Lock()
 	newReminders := make([]types.Reminder, 0, len(h.Reminders)-1)
 	for _, reminder := range h.Reminders {
 		if reminder.ID != id {
@@ -80,11 +106,17 @@ func (h *ReminderHandler) RemoveReminder(id int) error {
 		}
 	}
 	h.Reminders = newReminders
+	h.mu.Unlock()
+
+	h.notifyUpdate()
 
 	return nil
 }
 
 func (h *ReminderHandler) GetRemindersByUserID(userID snowflake.ID) ([]types.Reminder, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
 	var reminders []types.Reminder
 	for _, reminder := range h.Reminders {
 		if reminder.UserID == userID {
@@ -92,4 +124,34 @@ func (h *ReminderHandler) GetRemindersByUserID(userID snowflake.ID) ([]types.Rem
 		}
 	}
 	return reminders, nil
+}
+
+func (h *ReminderHandler) GetNextRemindAt() (time.Time, bool) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	var (
+		minTime time.Time
+		ok      bool
+	)
+	for _, r := range h.Reminders {
+		if !ok || r.RemindAt.Before(minTime) {
+			minTime = r.RemindAt
+			ok = true
+		}
+	}
+	return minTime, ok
+}
+
+func (h *ReminderHandler) GetDueReminders(now time.Time) []types.Reminder {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	var due []types.Reminder
+	for _, r := range h.Reminders {
+		if !r.RemindAt.After(now) {
+			due = append(due, r)
+		}
+	}
+	return due
 }
