@@ -1,0 +1,19 @@
+{
+ "token": "BOT_TOKEN", // Discord bot token
+ "guildid": "GUILD_ID", // Discord guild id if you want to restrict commands to a specific guild
+ "admins": [
+  "ADMIN_USER_ID"
+ ],
+ "lavalink": {
+  "enabled": true,
+  "nodes": [
+   {
+    "name": "Lavalink",
+    "address": "localhost:2333",
+    "password": "youshallnotpass",
+    "secure": false,
+    "session_id": ""
+   }
+  ]
+ }
+}

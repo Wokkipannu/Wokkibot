@@ -99,7 +99,7 @@ var SettingsCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
-		// Guild specific settings, for now only pin channel
+		// Guild specific settings
 		discord.ApplicationCommandOptionSubCommandGroup{
 			Name:        "guild",
 			Description: "Guild specific settings",
@@ -138,7 +138,7 @@ var SettingsCommand = discord.SlashCommandCreate{
 				},
 			},
 		},
-		// Add new lavalink settings group
+		// Lavalink related settings
 		discord.ApplicationCommandOptionSubCommandGroup{
 			Name:        "lavalink",
 			Description: "Manage lavalink settings",

@@ -62,12 +62,12 @@ func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.Compo
 	embed := discord.NewEmbedBuilder().
 		SetTitlef("%s Status", self.Username).
 		SetThumbnail(self.EffectiveAvatarURL()).
-		AddField("Version", fmt.Sprintf("[%s](https://github.com/Wokkipannu/Wokkibot/commit/%s)", b.Version, b.Version), false).
+		AddField("Version", getBotVersion(b), false).
 		AddField("Go", runtime.Version(), true).
 		AddField("Disgo", utils.GetDisgoVersion(), true).
 		AddField("yt-dlp", ytdlpVersion, true).
 		AddField("FFmpeg", utils.GetFfmpegVersion(), true).
-		AddField("Uptime", fmt.Sprintf("<t:%d:R>", b.StartTime.Unix()), true).
+		AddField("Start time", fmt.Sprintf("<t:%d:R>", b.StartTime.Unix()), true).
 		AddField("Ping", getPing(b), true).
 		SetColor(utils.COLOR_GREEN)
 
@@ -90,6 +90,14 @@ func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.Compo
 	}
 
 	return embed
+}
+
+func getBotVersion(b *wokkibot.Wokkibot) string {
+	if b.Version == "dev" {
+		return b.Version
+	}
+
+	return fmt.Sprintf("[%s](https://github.com/Wokkipannu/Wokkibot/commit/%s)", b.Version, b.Version)
 }
 
 func getPing(b *wokkibot.Wokkibot) string {
