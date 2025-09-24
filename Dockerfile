@@ -15,7 +15,7 @@ FROM alpine:latest
 
 COPY --from=build /build/bot /bin/bot
 
-RUN apk --no-cache add ca-certificates curl python3 ffmpeg curl tzdata
+RUN apk --no-cache add ca-certificates curl python3 ffmpeg curl tzdata deno
 
 ENV TZ=Europe/Helsinki
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
