@@ -113,6 +113,8 @@ var (
 	shellDangerousChars = []string{";", "|", "$", "`", "\"", "'", "\\", "\n", "\r", "\t"}
 
 	timeDangerousChars = []string{";", "|", "&", "$", "`", "$(", ")", "(", "\"", "'", "\\", "\n", "\r", "\t"}
+	// Experimental: Disable all conversion and send original formats as Discord added more support for video formats
+	conversionEnabled = false
 )
 
 func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
@@ -243,10 +245,15 @@ func handleDownloadAndConversion(task DownloadTask) {
 		}
 	}
 
-	processedFile, err := convertVideo(task, e, downloadedFile)
-	if err != nil {
-		utils.HandleError(e, "Error while converting video", err.Error())
-		return
+	var processedFile string
+	if conversionEnabled {
+		processedFile, err = convertVideo(task, e, downloadedFile)
+		if err != nil {
+			utils.HandleError(e, "Error while converting video", err.Error())
+			return
+		}
+	} else {
+		processedFile = downloadedFile
 	}
 
 	if err := attachFile(e, processedFile); err != nil {
@@ -290,7 +297,8 @@ func downloadFileWithCurl(task DownloadTask, e *handler.CommandEvent) (string, e
 	ctx, cancel := context.WithTimeout(context.Background(), downloadTimeout)
 	defer cancel()
 
-	output := filepath.Join(task.tempDir, "video_download.%(ext)s")
+	// We force mp4 here because special scenario URLs are normalized to end with "-apple.mp4"
+	output := filepath.Join(task.tempDir, "video_download.mp4")
 
 	cmd := exec.CommandContext(ctx, "curl",
 		"-L",
@@ -534,19 +542,7 @@ func attachFile(e *handler.CommandEvent, filePath string) error {
 	}
 	defer file.Close()
 
-	codec, err := getCodec(filePath)
-	if err != nil {
-		utils.HandleError(e, "Error getting codec", err.Error())
-		return err
-	}
-
-	var outputFileName string
-	switch codec {
-	case "mp3":
-		outputFileName = "audio.mp3"
-	default:
-		outputFileName = "video.mp4"
-	}
+	outputFileName := filepath.Base(filePath)
 
 	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
 		SetContent("").
