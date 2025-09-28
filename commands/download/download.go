@@ -543,6 +543,11 @@ func attachFile(e *handler.CommandEvent, filePath string) error {
 	defer file.Close()
 
 	outputFileName := filepath.Base(filePath)
+	// mkv files don't play on Discord by default, but if we attach them as .webm they'll play
+	if strings.EqualFold(filepath.Ext(outputFileName), ".mkv") {
+		base := strings.TrimSuffix(outputFileName, filepath.Ext(outputFileName))
+		outputFileName = base + ".webm"
+	}
 
 	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
 		SetContent("").
