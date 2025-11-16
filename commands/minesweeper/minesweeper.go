@@ -244,14 +244,14 @@ func HandleMinesweeper(b *wokkibot.Wokkibot) handler.CommandHandler {
 		return e.CreateMessage(discord.NewMessageCreateBuilder().
 			SetEmbeds(embedBuilder.Build()).
 			AddActionRow(
-				discord.NewPrimaryButton("Up", "minesweeper/up").WithEmoji(discord.ComponentEmoji{Name: EMOJI_UP}),
-				discord.NewPrimaryButton("Down", "minesweeper/down").WithEmoji(discord.ComponentEmoji{Name: EMOJI_DOWN}),
-				discord.NewPrimaryButton("Left", "minesweeper/left").WithEmoji(discord.ComponentEmoji{Name: EMOJI_LEFT}),
-				discord.NewPrimaryButton("Right", "minesweeper/right").WithEmoji(discord.ComponentEmoji{Name: EMOJI_RIGHT}),
+				discord.NewPrimaryButton("Up", "/minesweeper/up").WithEmoji(discord.ComponentEmoji{Name: EMOJI_UP}),
+				discord.NewPrimaryButton("Down", "/minesweeper/down").WithEmoji(discord.ComponentEmoji{Name: EMOJI_DOWN}),
+				discord.NewPrimaryButton("Left", "/minesweeper/left").WithEmoji(discord.ComponentEmoji{Name: EMOJI_LEFT}),
+				discord.NewPrimaryButton("Right", "/minesweeper/right").WithEmoji(discord.ComponentEmoji{Name: EMOJI_RIGHT}),
 			).
 			AddActionRow(
-				discord.NewPrimaryButton("Flag", "minesweeper/flag").WithEmoji(discord.ComponentEmoji{Name: EMOJI_FLAG}),
-				discord.NewPrimaryButton("Reveal", "minesweeper/reveal").WithEmoji(discord.ComponentEmoji{Name: EMOJI_COVERED}),
+				discord.NewPrimaryButton("Flag", "/minesweeper/flag").WithEmoji(discord.ComponentEmoji{Name: EMOJI_FLAG}),
+				discord.NewPrimaryButton("Reveal", "/minesweeper/reveal").WithEmoji(discord.ComponentEmoji{Name: EMOJI_COVERED}),
 			).
 			Build())
 	}

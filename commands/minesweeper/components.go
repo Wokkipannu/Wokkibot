@@ -8,42 +8,36 @@ import (
 
 func HandleMinesweeperFlagActionComponent(b *wokkibot.Wokkibot) handler.ComponentHandler {
 	return func(e *handler.ComponentEvent) error {
-		HandleMinesweeperFlagAction(b, e)
-		return nil
+		return HandleMinesweeperFlagAction(b, e)
 	}
 }
 
 func HandleMinesweeperRevealActionComponent(b *wokkibot.Wokkibot) handler.ComponentHandler {
 	return func(e *handler.ComponentEvent) error {
-		HandleMinesweeperRevealAction(b, e)
-		return nil
+		return HandleMinesweeperRevealAction(b, e)
 	}
 }
 
 func HandleMinesweeperUpActionComponent(b *wokkibot.Wokkibot) handler.ComponentHandler {
 	return func(e *handler.ComponentEvent) error {
-		HandleMinesweeperUpAction(b, e)
-		return nil
+		return HandleMinesweeperUpAction(b, e)
 	}
 }
 
 func HandleMinesweeperDownActionComponent(b *wokkibot.Wokkibot) handler.ComponentHandler {
 	return func(e *handler.ComponentEvent) error {
-		HandleMinesweeperDownAction(b, e)
-		return nil
+		return HandleMinesweeperDownAction(b, e)
 	}
 }
 
 func HandleMinesweeperLeftActionComponent(b *wokkibot.Wokkibot) handler.ComponentHandler {
 	return func(e *handler.ComponentEvent) error {
-		HandleMinesweeperLeftAction(b, e)
-		return nil
+		return HandleMinesweeperLeftAction(b, e)
 	}
 }
 
 func HandleMinesweeperRightActionComponent(b *wokkibot.Wokkibot) handler.ComponentHandler {
 	return func(e *handler.ComponentEvent) error {
-		HandleMinesweeperRightAction(b, e)
-		return nil
+		return HandleMinesweeperRightAction(b, e)
 	}
 }
