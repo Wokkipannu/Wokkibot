@@ -3,12 +3,14 @@ package database
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 )
 
 type Migration struct {
 	Version     int
 	Description string
 	SQL         string
+	IgnoreError string
 }
 
 // TODO: move migrations to their own individual files perhaps. For now, this works, but in the long run this can get really big
@@ -17,6 +19,7 @@ var migrations = []Migration{
 		Version:     1,
 		Description: "Add pin_channel to guilds",
 		SQL:         "ALTER TABLE guilds ADD COLUMN pin_channel TEXT;",
+		IgnoreError: "duplicate column",
 	},
 	{
 		Version:     2,
@@ -27,6 +30,7 @@ var migrations = []Migration{
 		Version:     3,
 		Description: "Add convert_x_links to guilds",
 		SQL:         "ALTER TABLE guilds ADD COLUMN convert_x_links BOOLEAN DEFAULT TRUE;",
+		IgnoreError: "duplicate column",
 	},
 	{
 		Version:     4,
@@ -37,6 +41,7 @@ var migrations = []Migration{
 		Version:     5,
 		Description: "Add guild_id to reminders",
 		SQL:         "ALTER TABLE reminders ADD COLUMN guild_id TEXT;",
+		IgnoreError: "duplicate column",
 	},
 	{
 		Version:     6,
@@ -66,6 +71,17 @@ func runMigrations() error {
 
 		_, err = tx.Exec(migration.SQL)
 		if err != nil {
+			if migration.IgnoreError != "" && strings.Contains(err.Error(), migration.IgnoreError) {
+				slog.Info("Migration already applied (ignoring expected error)",
+					"version", migration.Version,
+					"description", migration.Description)
+				tx.Rollback()
+				_, recordErr := db.Exec("INSERT INTO migrations (version) VALUES (?)", migration.Version)
+				if recordErr != nil {
+					return fmt.Errorf("failed to record migration %d: %v", migration.Version, recordErr)
+				}
+				continue
+			}
 			tx.Rollback()
 			return fmt.Errorf("failed to apply migration %d: %v", migration.Version, err)
 		}

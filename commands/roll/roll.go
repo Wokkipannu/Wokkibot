@@ -1,8 +1,8 @@
 package roll
 
 import (
-	"math/rand"
-	"time"
+	"crypto/rand"
+	"math/big"
 	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
@@ -26,14 +26,10 @@ func HandleRoll(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		data := e.SlashCommandInteractionData()
 
-		r := rand.NewSource(time.Now().UnixNano())
+		min := 1
+		max := 100
 
-		min := int(1)
-		var max int
-
-		if data.Int("max") == 0 {
-			max = int(100)
-		} else {
+		if data.Int("max") != 0 {
 			max = data.Int("max")
 		}
 
@@ -41,7 +37,11 @@ func HandleRoll(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Max must be at least 2 for rolling a dice").Build())
 		}
 
-		roll := rand.New(r).Intn(max-min+1) + min
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(max-min+1)))
+		if err != nil {
+			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Failed to generate random number").Build())
+		}
+		roll := int(n.Int64()) + min
 
 		utils.UpdateStatistics("dice_rolled")
 
