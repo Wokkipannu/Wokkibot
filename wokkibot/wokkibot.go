@@ -28,6 +28,7 @@ type Wokkibot struct {
 	PistonClient *gopiston.Client
 	Lavalink     disgolink.Client
 	Trivias      *handlers.TriviaManager
+	Blackjacks   *handlers.BlackjackManager
 	Games        map[snowflake.ID]interface{}
 	StartTime    time.Time
 	Version      string
@@ -40,6 +41,7 @@ func New(config config.Config, version string, handlers *handlers.Handler) *Wokk
 		Config:       config,
 		Handlers:     handlers,
 		Trivias:      handlers.TriviaManager,
+		Blackjacks:   handlers.BlackjackManager,
 		Games:        make(map[snowflake.ID]interface{}),
 		StartTime:    time.Now(),
 		Version:      version,

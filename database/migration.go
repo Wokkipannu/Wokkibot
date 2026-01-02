@@ -48,6 +48,12 @@ var migrations = []Migration{
 		Description: "Initialize statistics table with a single row",
 		SQL:         "INSERT INTO statistics (video_downloads, names_given, songs_played, pizzas_generated, coins_flipped, dice_rolled, trivia_games_played, trivia_games_won, trivia_games_lost) SELECT 0, 0, 0, 0, 0, 0, 0, 0, 0 WHERE NOT EXISTS (SELECT 1 FROM statistics);",
 	},
+	{
+		Version:     7,
+		Description: "Add blackjack_games_played to statistics",
+		SQL:         "ALTER TABLE statistics ADD COLUMN blackjack_games_played INTEGER DEFAULT 0;",
+		IgnoreError: "duplicate column",
+	},
 }
 
 func runMigrations() error {

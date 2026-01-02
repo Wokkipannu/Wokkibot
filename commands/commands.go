@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"wokkibot/commands/blackjack"
 	"wokkibot/commands/download"
 	"wokkibot/commands/eval"
 	"wokkibot/commands/flip"
@@ -46,6 +47,7 @@ var Commands = []discord.ApplicationCommandCreate{
 	status.StatusCommand,
 	remind.RemindCommand,
 	name.NameCommand,
+	blackjack.BlackjackCommand,
 	// Music commands
 	music.PlayCommand,
 	music.SkipCommand,
@@ -109,4 +111,6 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 	r.Component("/minesweeper/down", minesweeper.HandleMinesweeperDownActionComponent(b))
 	r.Component("/minesweeper/left", minesweeper.HandleMinesweeperLeftActionComponent(b))
 	r.Component("/minesweeper/right", minesweeper.HandleMinesweeperRightActionComponent(b))
+	// Blackjack
+	r.Command("/blackjack", blackjack.HandleBlackjack(b))
 }

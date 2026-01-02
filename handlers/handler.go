@@ -8,19 +8,21 @@ import (
 )
 
 type Handler struct {
-	CustomCommands  []types.Command
-	Guilds          map[snowflake.ID]types.Guild
-	PlayerHandler   *PlayerHandler
-	TriviaManager   *TriviaManager
-	ReminderHandler *ReminderHandler
+	CustomCommands   []types.Command
+	Guilds           map[snowflake.ID]types.Guild
+	PlayerHandler    *PlayerHandler
+	TriviaManager    *TriviaManager
+	ReminderHandler  *ReminderHandler
+	BlackjackManager *BlackjackManager
 }
 
 func New() *Handler {
 	return &Handler{
-		CustomCommands:  []types.Command{},
-		Guilds:          make(map[snowflake.ID]types.Guild),
-		PlayerHandler:   NewPlayerHandler(queue.NewQueueManager()),
-		TriviaManager:   NewTriviaManager(),
-		ReminderHandler: NewReminderHandler(),
+		CustomCommands:   []types.Command{},
+		Guilds:           make(map[snowflake.ID]types.Guild),
+		PlayerHandler:    NewPlayerHandler(queue.NewQueueManager()),
+		TriviaManager:    NewTriviaManager(),
+		ReminderHandler:  NewReminderHandler(),
+		BlackjackManager: NewBlackjackManager(),
 	}
 }
