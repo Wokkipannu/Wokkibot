@@ -122,7 +122,7 @@ func HandleStatusStatistics(b *wokkibot.Wokkibot) handler.ComponentHandler {
 
 		db := database.GetDB()
 		var statistics types.Statistics
-		err := db.QueryRow("SELECT video_downloads, names_given, songs_played, pizzas_generated, coins_flipped, dice_rolled, trivia_games_played, trivia_games_won, trivia_games_lost FROM statistics").Scan(&statistics.VideoDownloads, &statistics.NamesGiven, &statistics.SongsPlayed, &statistics.PizzasGenerated, &statistics.CoinsFlipped, &statistics.DiceRolled, &statistics.TriviaGamesPlayed, &statistics.TriviaGamesWon, &statistics.TriviaGamesLost)
+		err := db.QueryRow("SELECT video_downloads, names_given, songs_played, pizzas_generated, coins_flipped, dice_rolled, trivia_games_played, trivia_games_won, trivia_games_lost, blackjack_games_played FROM statistics").Scan(&statistics.VideoDownloads, &statistics.NamesGiven, &statistics.SongsPlayed, &statistics.PizzasGenerated, &statistics.CoinsFlipped, &statistics.DiceRolled, &statistics.TriviaGamesPlayed, &statistics.TriviaGamesWon, &statistics.TriviaGamesLost, &statistics.BlackjackGamesPlayed)
 		if err != nil {
 			return err
 		}
@@ -139,6 +139,7 @@ func HandleStatusStatistics(b *wokkibot.Wokkibot) handler.ComponentHandler {
 			AddField("Trivia Games Played", fmt.Sprintf("%d", statistics.TriviaGamesPlayed), true).
 			AddField("Trivia Games Won", fmt.Sprintf("%d", statistics.TriviaGamesWon), true).
 			AddField("Trivia Games Lost", fmt.Sprintf("%d", statistics.TriviaGamesLost), true).
+			AddField("Blackjack Games Played", fmt.Sprintf("%d", statistics.BlackjackGamesPlayed), true).
 			SetColor(utils.COLOR_GREEN)
 
 		err = e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().

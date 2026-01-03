@@ -76,12 +76,29 @@ func (h *Hand) IsBlackjack() bool {
 	return len(h.Cards) == 2 && h.Value() == 21
 }
 
+func (h *Hand) CanSplit() bool {
+	if len(h.Cards) != 2 {
+		return false
+	}
+	return h.Cards[0].Rank == h.Cards[1].Rank
+}
+
+func (h *Hand) CanDouble() bool {
+	return len(h.Cards) == 2
+}
+
+type PlayerHand struct {
+	Hand     Hand
+	Standing bool
+	Busted   bool
+	Doubled  bool
+	IsSplit  bool
+}
+
 type Player struct {
 	User        discord.User
 	DisplayName string
-	Hand        Hand
-	Standing    bool
-	Busted      bool
+	Hands       []PlayerHand
 }
 
 type Dealer struct {
@@ -220,7 +237,7 @@ func HandleBlackjack(b *wokkibot.Wokkibot) handler.CommandHandler {
 				players = append(players, Player{
 					User:        *user,
 					DisplayName: displayName,
-					Hand:        Hand{},
+					Hands:       []PlayerHand{{Hand: Hand{}}},
 				})
 			}
 		}
@@ -268,13 +285,13 @@ func HandleBlackjack(b *wokkibot.Wokkibot) handler.CommandHandler {
 		deck.Shuffle()
 
 		for i := range players {
-			players[i].Hand.AddCard(deck.Draw())
-			players[i].Hand.AddCard(deck.Draw())
+			players[i].Hands[0].Hand.AddCard(deck.Draw())
+			players[i].Hands[0].Hand.AddCard(deck.Draw())
 		}
 		dealer.Hand.AddCard(deck.Draw())
 		dealer.Hand.AddCard(deck.Draw())
 
-		embed := buildGameEmbed(players, dealer, -1, true)
+		embed := buildGameEmbed(players, dealer, -1, -1, true)
 
 		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
 			SetContent("").
@@ -305,42 +322,106 @@ func runBlackjackGame(b *wokkibot.Wokkibot, e *handler.CommandEvent, players []P
 	channelID := e.Channel().ID()
 
 	for playerIdx := range players {
-		if players[playerIdx].Hand.IsBlackjack() {
-			embed := buildGameEmbed(players, dealer, playerIdx, true)
+		if players[playerIdx].Hands[0].Hand.IsBlackjack() {
+			embed := buildGameEmbed(players, dealer, playerIdx, 0, true)
 			embed.SetFooter(fmt.Sprintf("🎰 %s has BLACKJACK!", players[playerIdx].DisplayName), "")
 			_, _ = b.Client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+			players[playerIdx].Hands[0].Standing = true
 			time.Sleep(2 * time.Second)
 			continue
 		}
 
-		for !players[playerIdx].Standing && !players[playerIdx].Busted {
-			embed := buildGameEmbed(players, dealer, playerIdx, true)
-			embed.SetFooter(fmt.Sprintf("🎯 %s's turn! Type 'hit' or 'stand' (60s timeout)", players[playerIdx].DisplayName), "")
+		handIdx := 0
+		for handIdx < len(players[playerIdx].Hands) {
+			for !players[playerIdx].Hands[handIdx].Standing && !players[playerIdx].Hands[handIdx].Busted {
+				currentHand := &players[playerIdx].Hands[handIdx]
+				canDouble := currentHand.Hand.CanDouble() && !currentHand.IsSplit
+				canSplit := currentHand.Hand.CanSplit() && len(players[playerIdx].Hands) < 4
 
-			_, _ = b.Client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
-
-			action, timedOut := waitForPlayerAction(e, players[playerIdx].User.ID, channelID)
-
-			if timedOut {
-				players[playerIdx].Standing = true
-				_, _ = b.Client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().
-					SetContent(fmt.Sprintf("⏰ %s took too long! Auto-standing.", players[playerIdx].User.Mention())).
-					Build())
-				continue
-			}
-
-			switch action {
-			case "hit":
-				players[playerIdx].Hand.AddCard(deck.Draw())
-				if players[playerIdx].Hand.IsBusted() {
-					players[playerIdx].Busted = true
-					embed := buildGameEmbed(players, dealer, playerIdx, true)
-					embed.SetFooter(fmt.Sprintf("💥 %s busted with %d!", players[playerIdx].DisplayName, players[playerIdx].Hand.Value()), "")
-					_, _ = b.Client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+				actions := []string{"hit", "stand"}
+				if canDouble {
+					actions = append(actions, "double")
 				}
-			case "stand":
-				players[playerIdx].Standing = true
+				if canSplit {
+					actions = append(actions, "split")
+				}
+
+				handLabel := ""
+				if len(players[playerIdx].Hands) > 1 {
+					handLabel = fmt.Sprintf(" (Hand %d)", handIdx+1)
+				}
+
+				embed := buildGameEmbed(players, dealer, playerIdx, handIdx, true)
+				embed.SetFooter(fmt.Sprintf("🎯 %s%s's turn! Type %s (60s timeout)",
+					players[playerIdx].DisplayName, handLabel, formatActions(actions)), "")
+
+				_, _ = b.Client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+
+				action, timedOut := waitForPlayerAction(e, players[playerIdx].User.ID, channelID, actions)
+
+				if timedOut {
+					players[playerIdx].Hands[handIdx].Standing = true
+					_, _ = b.Client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().
+						SetContent(fmt.Sprintf("⏰ %s took too long! Auto-standing.", players[playerIdx].User.Mention())).
+						Build())
+					continue
+				}
+
+				switch action {
+				case "hit":
+					players[playerIdx].Hands[handIdx].Hand.AddCard(deck.Draw())
+					if players[playerIdx].Hands[handIdx].Hand.IsBusted() {
+						players[playerIdx].Hands[handIdx].Busted = true
+						embed := buildGameEmbed(players, dealer, playerIdx, handIdx, true)
+						embed.SetFooter(fmt.Sprintf("💥 %s%s busted with %d!",
+							players[playerIdx].DisplayName, handLabel, players[playerIdx].Hands[handIdx].Hand.Value()), "")
+						_, _ = b.Client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+					}
+
+				case "stand":
+					players[playerIdx].Hands[handIdx].Standing = true
+
+				case "double":
+					if canDouble {
+						players[playerIdx].Hands[handIdx].Doubled = true
+						players[playerIdx].Hands[handIdx].Hand.AddCard(deck.Draw())
+						players[playerIdx].Hands[handIdx].Standing = true
+						embed := buildGameEmbed(players, dealer, playerIdx, handIdx, true)
+						if players[playerIdx].Hands[handIdx].Hand.IsBusted() {
+							players[playerIdx].Hands[handIdx].Busted = true
+							embed.SetFooter(fmt.Sprintf("💥 %s%s doubled and busted with %d!",
+								players[playerIdx].DisplayName, handLabel, players[playerIdx].Hands[handIdx].Hand.Value()), "")
+						} else {
+							embed.SetFooter(fmt.Sprintf("✌️ %s%s doubled down! Final value: %d",
+								players[playerIdx].DisplayName, handLabel, players[playerIdx].Hands[handIdx].Hand.Value()), "")
+						}
+						_, _ = b.Client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+					}
+
+				case "split":
+					if canSplit {
+						secondCard := players[playerIdx].Hands[handIdx].Hand.Cards[1]
+						players[playerIdx].Hands[handIdx].Hand.Cards = players[playerIdx].Hands[handIdx].Hand.Cards[:1]
+						players[playerIdx].Hands[handIdx].IsSplit = true
+
+						players[playerIdx].Hands[handIdx].Hand.AddCard(deck.Draw())
+
+						newHand := PlayerHand{
+							Hand:    Hand{Cards: []Card{secondCard}},
+							IsSplit: true,
+						}
+						newHand.Hand.AddCard(deck.Draw())
+
+						players[playerIdx].Hands = append(players[playerIdx].Hands, newHand)
+
+						embed := buildGameEmbed(players, dealer, playerIdx, handIdx, true)
+						embed.SetFooter(fmt.Sprintf("✂️ %s split their hand!", players[playerIdx].DisplayName), "")
+						_, _ = b.Client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+						time.Sleep(1 * time.Second)
+					}
+				}
 			}
+			handIdx++
 		}
 	}
 
@@ -351,14 +432,20 @@ func runBlackjackGame(b *wokkibot.Wokkibot, e *handler.CommandEvent, players []P
 
 	time.Sleep(1 * time.Second)
 
-	embed := buildGameEmbed(players, dealer, -1, false)
+	embed := buildGameEmbed(players, dealer, -1, -1, false)
 	embed.SetFooter(fmt.Sprintf("%s shows: %s (Value: %d)", dealerName, dealer.Hand.String(), dealer.Hand.Value()), "")
 	_, _ = b.Client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
 
+	// Check if all hands are busted
 	allBusted := true
 	for _, p := range players {
-		if !p.Busted {
-			allBusted = false
+		for _, h := range p.Hands {
+			if !h.Busted {
+				allBusted = false
+				break
+			}
+		}
+		if !allBusted {
 			break
 		}
 	}
@@ -368,7 +455,7 @@ func runBlackjackGame(b *wokkibot.Wokkibot, e *handler.CommandEvent, players []P
 			time.Sleep(1500 * time.Millisecond)
 			dealer.Hand.AddCard(deck.Draw())
 
-			embed := buildGameEmbed(players, dealer, -1, false)
+			embed := buildGameEmbed(players, dealer, -1, -1, false)
 			if dealer.Hand.IsBusted() {
 				embed.SetFooter(fmt.Sprintf("💥 %s busted with %d!", dealerName, dealer.Hand.Value()), "")
 			} else {
@@ -383,7 +470,18 @@ func runBlackjackGame(b *wokkibot.Wokkibot, e *handler.CommandEvent, players []P
 	_, _ = b.Client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().SetEmbeds(resultsEmbed.Build()).Build())
 }
 
-func waitForPlayerAction(e *handler.CommandEvent, playerID snowflake.ID, channelID snowflake.ID) (string, bool) {
+func formatActions(actions []string) string {
+	quoted := make([]string, len(actions))
+	for i, a := range actions {
+		quoted[i] = "'" + a + "'"
+	}
+	if len(quoted) <= 2 {
+		return strings.Join(quoted, " or ")
+	}
+	return strings.Join(quoted[:len(quoted)-1], ", ") + ", or " + quoted[len(quoted)-1]
+}
+
+func waitForPlayerAction(e *handler.CommandEvent, playerID snowflake.ID, channelID snowflake.ID, validActions []string) (string, bool) {
 	ch, cls := bot.NewEventCollector(e.Client(), func(event *events.MessageCreate) bool {
 		if event.Message.Author.Bot || event.ChannelID != channelID {
 			return false
@@ -392,7 +490,12 @@ func waitForPlayerAction(e *handler.CommandEvent, playerID snowflake.ID, channel
 			return false
 		}
 		content := strings.ToLower(strings.TrimSpace(event.Message.Content))
-		return content == "hit" || content == "stand"
+		for _, action := range validActions {
+			if content == action {
+				return true
+			}
+		}
+		return false
 	})
 	defer cls()
 
@@ -410,7 +513,7 @@ func waitForPlayerAction(e *handler.CommandEvent, playerID snowflake.ID, channel
 	}
 }
 
-func buildGameEmbed(players []Player, dealer Dealer, currentPlayerIdx int, hideDealer bool) *discord.EmbedBuilder {
+func buildGameEmbed(players []Player, dealer Dealer, currentPlayerIdx int, currentHandIdx int, hideDealer bool) *discord.EmbedBuilder {
 	embed := discord.NewEmbedBuilder()
 	embed.SetTitle("🃏 Blackjack")
 	embed.SetColor(utils.RGBToInteger(46, 139, 87))
@@ -422,25 +525,35 @@ func buildGameEmbed(players []Player, dealer Dealer, currentPlayerIdx int, hideD
 	}
 
 	for i, player := range players {
-		status := ""
-		if player.Busted {
-			status = " 💥 BUSTED"
-		} else if player.Standing {
-			status = " ✋ STANDING"
-		} else if player.Hand.IsBlackjack() {
-			status = " 🎰 BLACKJACK!"
-		}
+		for j, hand := range player.Hands {
+			status := ""
+			if hand.Busted {
+				status = " 💥 BUSTED"
+			} else if hand.Standing {
+				status = " ✋ STANDING"
+			} else if hand.Hand.IsBlackjack() {
+				status = " 🎰 BLACKJACK!"
+			}
+			if hand.Doubled {
+				status = " ✌️ DOUBLED" + status
+			}
 
-		indicator := ""
-		if i == currentPlayerIdx {
-			indicator = "▶ "
-		}
+			indicator := ""
+			if i == currentPlayerIdx && j == currentHandIdx {
+				indicator = "▶ "
+			}
 
-		embed.AddField(
-			fmt.Sprintf("%s%s", indicator, player.DisplayName),
-			fmt.Sprintf("%s (Value: %d)%s", player.Hand.String(), player.Hand.Value(), status),
-			true,
-		)
+			handLabel := player.DisplayName
+			if len(player.Hands) > 1 {
+				handLabel = fmt.Sprintf("%s (Hand %d)", player.DisplayName, j+1)
+			}
+
+			embed.AddField(
+				fmt.Sprintf("%s%s", indicator, handLabel),
+				fmt.Sprintf("%s (Value: %d)%s", hand.Hand.String(), hand.Hand.Value(), status),
+				true,
+			)
+		}
 	}
 
 	return embed
@@ -459,31 +572,44 @@ func buildResultsEmbed(players []Player, dealer Dealer) *discord.EmbedBuilder {
 
 	var results []string
 	for _, player := range players {
-		playerValue := player.Hand.Value()
-		result := ""
+		for j, hand := range player.Hands {
+			handValue := hand.Hand.Value()
+			result := ""
 
-		if player.Busted {
-			result = "❌ LOSE (Busted)"
-		} else if dealerBusted {
-			result = fmt.Sprintf("✅ WIN (%s busted)", dealer.Name())
-		} else if player.Hand.IsBlackjack() && !dealerBlackjack {
-			result = "💲🤑🎰🤑💲 WIN (Blackjack)"
-		} else if dealerBlackjack && !player.Hand.IsBlackjack() {
-			result = fmt.Sprintf("❌ LOSE (%s blackjack)", dealer.Name())
-		} else if playerValue > dealerValue {
-			result = "✅ WIN"
-		} else if playerValue < dealerValue {
-			result = "❌ LOSE"
-		} else {
-			result = "🤝 PUSH (Tie)"
+			if hand.Busted {
+				result = "❌ LOSE (Busted)"
+			} else if dealerBusted {
+				result = fmt.Sprintf("✅ WIN (%s busted)", dealer.Name())
+			} else if hand.Hand.IsBlackjack() && !dealerBlackjack && !hand.IsSplit {
+				result = "💲🤑🎰🤑💲 WIN (Blackjack)"
+			} else if dealerBlackjack && !hand.Hand.IsBlackjack() {
+				result = fmt.Sprintf("❌ LOSE (%s blackjack)", dealer.Name())
+			} else if handValue > dealerValue {
+				result = "✅ WIN"
+			} else if handValue < dealerValue {
+				result = "❌ LOSE"
+			} else {
+				result = "🤝 PUSH (Tie)"
+			}
+
+			handLabel := player.DisplayName
+			if len(player.Hands) > 1 {
+				handLabel = fmt.Sprintf("%s (Hand %d)", player.DisplayName, j+1)
+			}
+
+			doubledNote := ""
+			if hand.Doubled {
+				doubledNote = " ✌️"
+			}
+
+			results = append(results, fmt.Sprintf("**%s**: %s (%d)%s - %s",
+				handLabel,
+				hand.Hand.String(),
+				handValue,
+				doubledNote,
+				result,
+			))
 		}
-
-		results = append(results, fmt.Sprintf("**%s**: %s (%d) - %s",
-			player.DisplayName,
-			player.Hand.String(),
-			playerValue,
-			result,
-		))
 	}
 
 	embed.SetDescription(strings.Join(results, "\n"))
