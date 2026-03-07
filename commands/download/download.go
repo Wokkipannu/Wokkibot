@@ -625,24 +625,25 @@ func getFileSizeMB(filePath string) (float64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("error getting file info: %w", err)
 	}
-	
+
 	return float64(info.Size()) / (1024 * 1024), nil
 }
 
 func calculateExpiryHours(fileSizeMB float64) int {
-	const maxDays = 18
+	const (
+		yMin = 2.0
+		yMax = 18.0
+	)
 
-	if fileSizeMB < 1 {
-		fileSizeMB = 1
+	sigmoid1 := 1.0 / (1.0 + math.Exp(0.15*(fileSizeMB-20)))
+	sigmoid2 := 1.0 / (1.0 + math.Exp(-0.2*(fileSizeMB-80)))
+	days := yMin + (yMax-yMin)*((sigmoid1-sigmoid2+0.5)/1.5)
+
+	if days < yMin {
+		days = yMin
 	}
 
-	days := maxDays - math.Log2(fileSizeMB*fileSizeMB)
-	
-	if days < 1 {
-		days = 1
-	}
-
-	return int(days * 24)
+	return int(math.Round(days * 24))
 }
 
 type pepoLandResponse struct {
