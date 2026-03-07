@@ -6,8 +6,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"math"
+	"mime/multipart"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -82,6 +85,8 @@ type DownloadTask struct {
 	filePathProcessed string
 	tempDir           string
 	maxFileSize       int
+	guildMaxFileSize  int
+	uploadAPIKey      string
 	resolution        string
 	from              string
 	to                string
@@ -92,11 +97,13 @@ type DownloadProgress struct {
 }
 
 const (
-	downloadTimeout   = 3 * time.Minute
-	conversionTimeout = 5 * time.Minute
-	updateInterval    = 1 * time.Second
-	defaultBitrate    = "1M"
-	defaultResolution = "720"
+	downloadTimeout        = 3 * time.Minute
+	conversionTimeout      = 5 * time.Minute
+	updateInterval         = 1 * time.Second
+	defaultBitrate         = "1M"
+	defaultResolution      = "720"
+	uploadServiceMaxSizeMB = 100
+	pepoLandURL            = "https://pepo.land/"
 )
 
 var (
@@ -168,12 +175,20 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 			res = defaultResolution
 		}
 
+		guildMaxFileSize := utils.CalculateMaximumFileSizeForGuild(guild)
+		maxFileSize := guildMaxFileSize
+		if b.Config.UploadAPIKey != "" {
+			maxFileSize = uploadServiceMaxSizeMB
+		}
+
 		task := DownloadTask{
 			e:                 e,
 			url:               url,
 			filePathProcessed: filepath.Join(tempDir, fmt.Sprintf("%s_processed.mp4", utils.GenerateRandomName(10))),
 			tempDir:           tempDir,
-			maxFileSize:       utils.CalculateMaximumFileSizeForGuild(guild),
+			maxFileSize:       maxFileSize,
+			guildMaxFileSize:  guildMaxFileSize,
+			uploadAPIKey:      b.Config.UploadAPIKey,
 			resolution:        res,
 			from:              startTime,
 			to:                endTime,
@@ -256,10 +271,52 @@ func handleDownloadAndConversion(task DownloadTask) {
 		processedFile = downloadedFile
 	}
 
-	if err := attachFile(e, processedFile); err != nil {
-		utils.HandleError(e, "Error while attaching file", err.Error())
+	fileSizeMB, err := getFileSizeMB(processedFile)
+	if err != nil {
+		utils.HandleError(e, "Error checking file size", err.Error())
 		return
 	}
+
+	if fileSizeMB <= float64(task.guildMaxFileSize) {
+		if err := attachFile(e, processedFile); err != nil {
+			utils.HandleError(e, "Error while attaching file", err.Error())
+			return
+		}
+		return
+	}
+
+	if task.uploadAPIKey == "" {
+		utils.HandleError(e, "File too large", fmt.Sprintf("File is %.1fMB but the guild limit is %dMB and no upload service is configured", fileSizeMB, task.guildMaxFileSize))
+		return
+	}
+
+	if fileSizeMB > uploadServiceMaxSizeMB {
+		utils.HandleError(e, "File too large", fmt.Sprintf("File is %.1fMB which exceeds the %dMB upload service limit", fileSizeMB, uploadServiceMaxSizeMB))
+		return
+	}
+
+	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+		SetContent("File size is higher than guild upload limit, uploading to pepo.land...").
+		Build())
+
+	expiryHours := calculateExpiryHours(fileSizeMB)
+
+	uploadURL, err := uploadToPepoLand(processedFile, task.uploadAPIKey, expiryHours)
+	if err != nil {
+		utils.HandleError(e, "Error uploading file", err.Error())
+		return
+	}
+
+	expiryDays := expiryHours / 24
+	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
+		SetContent(fmt.Sprintf("%s\nExpires in %d days.", uploadURL, expiryDays)).
+		Build())
+	if err != nil {
+		utils.HandleError(e, "Error updating message", err.Error())
+		return
+	}
+
+	utils.UpdateStatistics("video_downloads")
 }
 
 func downloadFile(task DownloadTask, e *handler.CommandEvent) (string, error) {
@@ -369,7 +426,7 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 		if operation == "download" {
 			if strings.Contains(scanner.Text(), "File is larger than max-filesize") {
 				_ = cmd.Process.Kill()
-				return "", fmt.Errorf("file size exceeds the maximum allowed size for this guild. Maximum is %dMB", task.maxFileSize)
+				return "", fmt.Errorf("file size exceeds the maximum allowed size of %dMB", task.maxFileSize)
 			}
 
 			if !strings.HasPrefix(scanner.Text(), "{") || !json.Valid([]byte(scanner.Text())) {
@@ -560,6 +617,100 @@ func attachFile(e *handler.CommandEvent, filePath string) error {
 	utils.UpdateStatistics("video_downloads")
 
 	return nil
+}
+
+func getFileSizeMB(filePath string) (float64, error) {
+	info, err := os.Stat(filePath)
+
+	if err != nil {
+		return 0, fmt.Errorf("error getting file info: %w", err)
+	}
+	
+	return float64(info.Size()) / (1024 * 1024), nil
+}
+
+func calculateExpiryHours(fileSizeMB float64) int {
+	const maxDays = 18
+
+	if fileSizeMB < 1 {
+		fileSizeMB = 1
+	}
+
+	days := maxDays - math.Log2(fileSizeMB*fileSizeMB)
+	
+	if days < 1 {
+		days = 1
+	}
+
+	return int(days * 24)
+}
+
+type pepoLandResponse struct {
+	URL string `json:"url"`
+}
+
+func uploadToPepoLand(filePath string, apiKey string, expiryHours int) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", fmt.Errorf("error opening file: %w", err)
+	}
+	defer file.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
+	if err != nil {
+		return "", fmt.Errorf("error creating form file: %w", err)
+	}
+
+	if _, err = io.Copy(part, file); err != nil {
+		return "", fmt.Errorf("error copying file data: %w", err)
+	}
+
+	if err = writer.WriteField("expires", strconv.Itoa(expiryHours)); err != nil {
+		return "", fmt.Errorf("error writing expires field: %w", err)
+	}
+
+	if err = writer.Close(); err != nil {
+		return "", fmt.Errorf("error closing multipart writer: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", pepoLandURL, body)
+	if err != nil {
+		return "", fmt.Errorf("error creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("X-API-Key", apiKey)
+
+	client := &http.Client{Timeout: 5 * time.Minute}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error uploading file: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("upload failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading upload response: %w", err)
+	}
+
+	var result pepoLandResponse
+	if err = json.Unmarshal(respBody, &result); err == nil && result.URL != "" {
+		return result.URL, nil
+	}
+
+	if text := strings.TrimSpace(string(respBody)); text != "" {
+		return text, nil
+	}
+
+	return "", fmt.Errorf("upload succeeded but no URL returned")
 }
 
 func handleSpecialScenarios(e *handler.CommandEvent, url string) (string, error) {

@@ -9,12 +9,13 @@ import (
 )
 
 type Config struct {
-	Token       string         `json:"token"`
-	GuildID     string         `json:"guildid"`
-	TriviaToken string         `json:"trivia_token"`
-	Admins      []snowflake.ID `json:"admins"`
-	Lavalink    LavalinkConfig `json:"lavalink"`
-	Web         struct {
+	Token        string         `json:"token"`
+	GuildID      string         `json:"guildid"`
+	TriviaToken  string         `json:"trivia_token"`
+	UploadAPIKey string         `json:"upload_api_key"`
+	Admins       []snowflake.ID `json:"admins"`
+	Lavalink     LavalinkConfig `json:"lavalink"`
+	Web          struct {
 		ClientID     string `json:"client_id"`
 		ClientSecret string `json:"client_secret"`
 		RedirectURI  string `json:"redirect_uri"`
