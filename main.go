@@ -94,7 +94,6 @@ func main() {
 	b.Client, err = disgo.New(b.Config.Token,
 		bot.WithGatewayConfigOpts(
 			gateway.WithIntents(intents),
-			gateway.WithCompress(true),
 			gateway.WithPresenceOpts(
 				gateway.WithPlayingActivity("starting up..."),
 				gateway.WithOnlineStatus(discord.OnlineStatusDND),

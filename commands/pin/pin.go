@@ -26,23 +26,22 @@ func HandlePin(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return nil
 		}
 
-		m := discord.NewMessageCreateBuilder()
-		m.SetMessageReference(&discord.MessageReference{
+		m := discord.NewMessageCreate()
+		m = m.WithMessageReference(&discord.MessageReference{
 			Type:      discord.MessageReferenceTypeForward,
 			MessageID: &msg.ID,
 			GuildID:   msg.GuildID,
 			ChannelID: &msg.ChannelID,
 		})
 
-		_, err = e.Client().Rest().CreateMessage(pinChannel, m.Build())
+		_, err = e.Client().Rest.CreateMessage(pinChannel, m)
 		if err != nil {
 			utils.HandleError(e, "Failed to pin message", err.Error())
 			return err
 		}
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetContent("Message pinned").
-			Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithContent("Message pinned"))
 
 		return err
 	}

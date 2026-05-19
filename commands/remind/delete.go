@@ -41,9 +41,8 @@ func HandleDeleteMyReminder(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		if !found {
-			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetContent("You don't have a reminder with that ID.").
-				Build())
+			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+				WithContent("You don't have a reminder with that ID."))
 			return err
 		}
 
@@ -52,9 +51,8 @@ func HandleDeleteMyReminder(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetContent("Reminder deleted successfully.").
-			Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithContent("Reminder deleted successfully."))
 
 		return err
 	}

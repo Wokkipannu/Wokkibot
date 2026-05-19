@@ -184,26 +184,26 @@ func (b *Board) String() string {
 }
 
 func UpdateSweeperMessage(e discord.User, board *Board, gameOver bool) discord.MessageUpdate {
-	embedBuilder := discord.NewEmbedBuilder().
-		SetTitlef("%s's Minesweeper Game", e.Username).
+	embedBuilder := discord.NewEmbed().
+		WithTitlef("%s's Minesweeper Game", e.Username).
 		AddField("Width", fmt.Sprintf("%d", board.width), true).
 		AddField("Height", fmt.Sprintf("%d", board.height), true).
 		AddField("Mines", fmt.Sprintf("%d", board.mines), true).
 		AddField("", board.String(), false).
-		SetColor(utils.RGBToInteger(255, 215, 0))
+		WithColor(utils.RGBToInteger(255, 215, 0))
 
 	if gameOver {
-		embedBuilder.SetTitle(fmt.Sprintf("%s's Minesweeper Game - Game Over!", e.Username))
+		embedBuilder = embedBuilder.WithTitle(fmt.Sprintf("%s's Minesweeper Game - Game Over!", e.Username))
 	}
 
-	builder := discord.NewMessageUpdateBuilder().
-		SetEmbeds(embedBuilder.Build())
+	builder := discord.NewMessageUpdate().
+		WithEmbeds(embedBuilder)
 
 	if gameOver {
-		builder.ClearContainerComponents()
+		builder.ClearComponents()
 	}
 
-	return builder.Build()
+	return builder
 }
 
 func HandleMinesweeper(b *wokkibot.Wokkibot) handler.CommandHandler {
@@ -227,22 +227,22 @@ func HandleMinesweeper(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		if width > 20 || height > 20 || mines > (width*height)-1 {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Width and height must be less than 20 and mines must be less than (width*height)-1").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Width and height must be less than 20 and mines must be less than (width*height)-1"))
 		}
 
 		board := newBoard(width, height, mines, e.User().ID.String())
 		b.Games[e.User().ID] = board
 
-		embedBuilder := discord.NewEmbedBuilder().
-			SetTitlef("%s's Minesweeper Game", e.User().Username).
+		embedBuilder := discord.NewEmbed().
+			WithTitlef("%s's Minesweeper Game", e.User().Username).
 			AddField("Width", fmt.Sprintf("%d", board.width), true).
 			AddField("Height", fmt.Sprintf("%d", board.height), true).
 			AddField("Mines", fmt.Sprintf("%d", board.mines), true).
 			AddField("", board.String(), false).
-			SetColor(utils.RGBToInteger(255, 215, 0))
+			WithColor(utils.RGBToInteger(255, 215, 0))
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().
-			SetEmbeds(embedBuilder.Build()).
+		return e.CreateMessage(discord.NewMessageCreate().
+			WithEmbeds(embedBuilder).
 			AddActionRow(
 				discord.NewPrimaryButton("Up", "/minesweeper/up").WithEmoji(discord.ComponentEmoji{Name: EMOJI_UP}),
 				discord.NewPrimaryButton("Down", "/minesweeper/down").WithEmoji(discord.ComponentEmoji{Name: EMOJI_DOWN}),
@@ -252,8 +252,7 @@ func HandleMinesweeper(b *wokkibot.Wokkibot) handler.CommandHandler {
 			AddActionRow(
 				discord.NewPrimaryButton("Flag", "/minesweeper/flag").WithEmoji(discord.ComponentEmoji{Name: EMOJI_FLAG}),
 				discord.NewPrimaryButton("Reveal", "/minesweeper/reveal").WithEmoji(discord.ComponentEmoji{Name: EMOJI_COVERED}),
-			).
-			Build())
+			))
 	}
 }
 

@@ -26,28 +26,26 @@ func HandleListMyReminders(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		if len(reminders) == 0 {
-			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetContent("You have no reminders.").
-				Build())
+			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+				WithContent("You have no reminders."))
 
 			return err
 		}
 
-		embedBuilder := discord.NewEmbedBuilder().
-			SetTitle("Your reminders").
-			SetColor(utils.COLOR_BLURPLE)
+		embedBuilder := discord.NewEmbed().
+			WithTitle("Your reminders").
+			WithColor(utils.COLOR_BLURPLE)
 
 		for _, reminder := range reminders {
-			embedBuilder.AddField(
+			embedBuilder = embedBuilder.AddField(
 				fmt.Sprintf("ID: %d | %s", reminder.ID, reminder.Message),
 				fmt.Sprintf("<t:%d:R>", reminder.RemindAt.Unix()),
 				false,
 			)
 		}
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetEmbeds(embedBuilder.Build()).
-			Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithEmbeds(embedBuilder))
 
 		return err
 	}

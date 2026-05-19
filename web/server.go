@@ -160,7 +160,7 @@ func (s *Server) handleDeleteGlobalCommand(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "invalid command ID"})
 	}
 
-	err = s.admin.bot.Client.Rest().DeleteGlobalCommand(s.admin.bot.Client.ApplicationID(), cID)
+	err = s.admin.bot.Client.Rest.DeleteGlobalCommand(s.admin.bot.Client.ApplicationID, cID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "failed to delete command"})
 	}
@@ -173,7 +173,7 @@ func (s *Server) Start(addr string) error {
 }
 
 func (s *Server) GetPresence() string {
-	activity := s.admin.bot.Client.Gateway().Presence().Activities[0]
+	activity := s.admin.bot.Client.Gateway.Presence().Activities[0]
 
 	switch activity.Type {
 	case 0: // Playing
@@ -198,18 +198,18 @@ func (s *Server) GetUptime() string {
 }
 
 func (s *Server) GetGuildsCount() int {
-	return s.admin.bot.Client.Caches().GuildsLen()
+	return s.admin.bot.Client.Caches.GuildsLen()
 }
 
 func (s *Server) GetCommands() ([]discord.ApplicationCommand, []discord.ApplicationCommand, error) {
-	GlobalCommands, err := s.admin.bot.Client.Rest().GetGlobalCommands(s.admin.bot.Client.ApplicationID(), false)
+	GlobalCommands, err := s.admin.bot.Client.Rest.GetGlobalCommands(s.admin.bot.Client.ApplicationID, false)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	var GuildCommands []discord.ApplicationCommand
 	if s.admin.bot.Config.GuildID != "" {
-		GuildCommands, err = s.admin.bot.Client.Rest().GetGuildCommands(s.admin.bot.Client.ApplicationID(), snowflake.MustParse(s.admin.bot.Config.GuildID), false)
+		GuildCommands, err = s.admin.bot.Client.Rest.GetGuildCommands(s.admin.bot.Client.ApplicationID, snowflake.MustParse(s.admin.bot.Config.GuildID), false)
 		if err != nil {
 			return nil, nil, err
 		}

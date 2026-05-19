@@ -67,9 +67,8 @@ func (w *Worker) fireDueReminders() {
 	now := time.Now()
 	due := w.Bot.Handlers.ReminderHandler.GetDueReminders(now)
 	for _, reminder := range due {
-		_, err := w.Bot.Client.Rest().CreateMessage(reminder.ChannelID, discord.NewMessageCreateBuilder().
-			SetContentf("<@%s> %s", reminder.UserID.String(), reminder.Message).
-			Build())
+		_, err := w.Bot.Client.Rest.CreateMessage(reminder.ChannelID, discord.NewMessageCreate().
+			WithContentf("<@%s> %s", reminder.UserID.String(), reminder.Message))
 		if err != nil {
 			slog.Error("Error sending reminder", "error", err)
 			continue

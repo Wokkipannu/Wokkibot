@@ -18,6 +18,6 @@ func HandleQuote(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		embed := utils.QuoteEmbed(msg)
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewLinkButton("Go to message", msg.JumpURL())).Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithEmbeds(embed).AddActionRow(discord.NewLinkButton("Go to message", msg.JumpURL())))
 	}
 }

@@ -24,7 +24,7 @@ var VolumeCommand = discord.SlashCommandCreate{
 func HandleVolume(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		if !b.Config.Lavalink.Enabled {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Lavalink connection has not been established").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Lavalink connection has not been established"))
 		}
 
 		data := e.SlashCommandInteractionData()
@@ -32,13 +32,13 @@ func HandleVolume(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		player := b.Lavalink.ExistingPlayer(*e.GuildID())
 		if player == nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No player found").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("No player found"))
 		}
 
 		if err := player.Update(context.TODO(), lavalink.WithVolume(volume)); err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Failed to set volume").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Failed to set volume"))
 		}
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Volume set to %d", volume).Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithContentf("Volume set to %d", volume))
 	}
 }

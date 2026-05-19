@@ -195,9 +195,8 @@ func HandleDownload(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 		taskQueue <- task
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetContent("Waiting for previous download tasks to finish...").
-			Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithContent("Waiting for previous download tasks to finish..."))
 		return err
 	}
 }
@@ -213,9 +212,8 @@ func handleDownloadAndConversion(task DownloadTask) {
 
 	defer cleanup(task.tempDir)
 
-	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-		SetContent("Starting video download...").
-		Build())
+	e.UpdateInteractionResponse(discord.NewMessageUpdate().
+		WithContent("Starting video download..."))
 
 	var downloadedFile string
 	var err error
@@ -229,9 +227,8 @@ func handleDownloadAndConversion(task DownloadTask) {
 	if err != nil {
 		// Experimental: Testing if yt-dlp is out of date and attempting to update it
 		if strings.HasPrefix(err.Error(), "download failed: ERROR: [youtube]") || strings.HasPrefix(err.Error(), "download failed: WARNING: [youtube]") {
-			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetContent("Encountered YouTube error. Checking yt-dlp version...").
-				Build())
+			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+				WithContent("Encountered YouTube error. Checking yt-dlp version..."))
 
 			current := utils.GetYtdlpVersion()
 			latest, verErr := utils.GetLatestYtdlpVersion()
@@ -240,9 +237,8 @@ func handleDownloadAndConversion(task DownloadTask) {
 				return
 			}
 
-			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetContent("Updating yt-dlp and retrying download...").
-				Build())
+			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+				WithContent("Updating yt-dlp and retrying download..."))
 
 			if updErr := utils.UpdateYtdlpBinary(); updErr != nil {
 				utils.HandleError(e, "Failed to update yt-dlp", updErr.Error())
@@ -295,9 +291,8 @@ func handleDownloadAndConversion(task DownloadTask) {
 		return
 	}
 
-	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-		SetContent("File size is higher than guild upload limit, uploading to pepo.land...").
-		Build())
+	e.UpdateInteractionResponse(discord.NewMessageUpdate().
+		WithContent("File size is higher than guild upload limit, uploading to pepo.land..."))
 
 	expiryHours := calculateExpiryHours(fileSizeMB)
 
@@ -308,9 +303,8 @@ func handleDownloadAndConversion(task DownloadTask) {
 	}
 
 	expiryDays := expiryHours / 24
-	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-		SetContent(fmt.Sprintf("%s\nExpires in %d days.", uploadURL, expiryDays)).
-		Build())
+	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+		WithContent(fmt.Sprintf("Uploaded to pepo.land: %s\nExpires in %d days.", uploadURL, expiryDays)))
 	if err != nil {
 		utils.HandleError(e, "Error updating message", err.Error())
 		return
@@ -418,9 +412,8 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 	lastUpdate := time.Now()
 	var lastPercentage float64
 
-	e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-		SetContent(fmt.Sprintf("Starting video %s\n%s %.2f%%", operation, createProgressBar(0.0), 0.0)).
-		Build())
+	e.UpdateInteractionResponse(discord.NewMessageUpdate().
+		WithContent(fmt.Sprintf("Starting video %s\n%s %.2f%%", operation, createProgressBar(0.0), 0.0)))
 
 	for scanner.Scan() {
 		if operation == "download" {
@@ -442,9 +435,8 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 			if time.Since(lastUpdate) >= updateInterval && percentage != lastPercentage {
 				progress := createProgressBar(percentage)
 
-				e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-					SetContent(fmt.Sprintf("Downloading video\n%s %.2f%%", progress, percentage)).
-					Build())
+				e.UpdateInteractionResponse(discord.NewMessageUpdate().
+					WithContent(fmt.Sprintf("Downloading video\n%s %.2f%%", progress, percentage)))
 
 				lastUpdate = time.Now()
 				lastPercentage = percentage
@@ -474,9 +466,8 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 						progressPercentage := (progressTime / totalDuration) * 100
 						if time.Since(lastUpdate) >= 1*time.Second && progressPercentage != lastPercentage {
 							progress := createProgressBar(progressPercentage)
-							e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-								SetContent(fmt.Sprintf("Converting video\n%s %.2f%%", progress, progressPercentage)).
-								Build())
+							e.UpdateInteractionResponse(discord.NewMessageUpdate().
+								WithContent(fmt.Sprintf("Converting video\n%s %.2f%%", progress, progressPercentage)))
 							lastUpdate = time.Now()
 							lastPercentage = progressPercentage
 						}
@@ -492,9 +483,8 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 
 				if time.Since(lastUpdate) >= updateInterval && percentage != lastPercentage {
 					progress := createProgressBar(percentage)
-					e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-						SetContent(fmt.Sprintf("Downloading video\n%s %.2f%%", progress, percentage)).
-						Build())
+					e.UpdateInteractionResponse(discord.NewMessageUpdate().
+						WithContent(fmt.Sprintf("Downloading video\n%s %.2f%%", progress, percentage)))
 					lastUpdate = time.Now()
 					lastPercentage = percentage
 				}
@@ -606,10 +596,9 @@ func attachFile(e *handler.CommandEvent, filePath string) error {
 		outputFileName = base + ".webm"
 	}
 
-	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-		SetContent("").
-		AddFile(outputFileName, filePath, file).
-		Build())
+	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+		WithContent("").
+		AddFile(outputFileName, filePath, file))
 	if err != nil {
 		return err
 	}

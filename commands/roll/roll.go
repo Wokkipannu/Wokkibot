@@ -34,17 +34,17 @@ func HandleRoll(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		if max < 2 {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Max must be at least 2 for rolling a dice").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Max must be at least 2 for rolling a dice"))
 		}
 
 		n, err := rand.Int(rand.Reader, big.NewInt(int64(max-min+1)))
 		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Failed to generate random number").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Failed to generate random number"))
 		}
 		roll := int(n.Int64()) + min
 
 		utils.UpdateStatistics("dice_rolled")
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(discord.NewEmbedBuilder().SetTitlef("%v rolled a dice", e.User().EffectiveName()).SetDescriptionf("%d (1-%d)", roll, max).Build()).Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithEmbeds(discord.NewEmbed().WithTitlef("%v rolled a dice", e.User().EffectiveName()).WithDescriptionf("%d (1-%d)", roll, max)))
 	}
 }

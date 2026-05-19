@@ -39,19 +39,19 @@ func (h *Handler) HandleQuoteMessages(e *events.MessageCreate) {
 
 		channelId := snowflake.MustParse(slashes[len(slashes)-2])
 		messageId := snowflake.MustParse(slashes[len(slashes)-1])
-		msg, err := e.Client().Rest().GetMessage(channelId, messageId)
+		msg, err := e.Client().Rest.GetMessage(channelId, messageId)
 		if err != nil {
 			return
 		}
 
 		embed := utils.QuoteEmbed(*msg)
 
-		e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewLinkButton("Go to message", links[0])).Build())
+		e.Client().Rest.CreateMessage(e.Message.ChannelID, discord.NewMessageCreate().WithEmbeds(embed).AddActionRow(discord.NewLinkButton("Go to message", links[0])))
 	}
 }
 
 func (h *Handler) HandleXLinks(e *events.MessageCreate) {
-	self, _ := e.Client().Caches().SelfUser()
+	self, _ := e.Client().Caches.SelfUser()
 	if e.Message.Author.ID == self.ID {
 		return
 	}
@@ -70,9 +70,9 @@ func (h *Handler) HandleXLinks(e *events.MessageCreate) {
 		}
 
 		suppressEmbeds := discord.MessageFlagSuppressEmbeds
-		e.Client().Rest().UpdateMessage(e.Message.ChannelID, e.Message.ID, discord.MessageUpdate{Flags: &suppressEmbeds})
+		e.Client().Rest.UpdateMessage(e.Message.ChannelID, e.Message.ID, discord.MessageUpdate{Flags: &suppressEmbeds})
 
-		e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().SetContent(fixedURL).SetMessageReferenceByID(e.Message.ID).SetAllowedMentions(&discord.AllowedMentions{RepliedUser: false}).Build())
+		e.Client().Rest.CreateMessage(e.Message.ChannelID, discord.NewMessageCreate().WithContent(fixedURL).WithMessageReferenceByID(e.Message.ID).WithAllowedMentions(&discord.AllowedMentions{RepliedUser: false}))
 	}
 }
 
@@ -89,11 +89,10 @@ func (h *Handler) HandleCustomCommand(e *events.MessageCreate) {
 		if cmd.Prefix == prefix && cmd.Name == name && cmd.GuildID == *e.GuildID {
 			output := handleVariables(cmd.Output, e)
 
-			e.Client().Rest().CreateMessage(e.Message.ChannelID, discord.NewMessageCreateBuilder().
-				SetContent(output).
-				SetMessageReferenceByID(e.Message.ID).
-				SetAllowedMentions(&discord.AllowedMentions{RepliedUser: false}).
-				Build())
+			e.Client().Rest.CreateMessage(e.Message.ChannelID, discord.NewMessageCreate().
+				WithContent(output).
+				WithMessageReferenceByID(e.Message.ID).
+				WithAllowedMentions(&discord.AllowedMentions{RepliedUser: false}))
 		}
 	}
 }

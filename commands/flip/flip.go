@@ -32,6 +32,6 @@ func HandleFlip(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		utils.UpdateStatistics("coins_flipped")
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent(result).Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithContent(result))
 	}
 }

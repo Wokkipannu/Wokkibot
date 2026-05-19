@@ -47,14 +47,14 @@ var SeekCommand = discord.SlashCommandCreate{
 func HandleSeek(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		if !b.Config.Lavalink.Enabled {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Lavalink connection has not been established").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Lavalink connection has not been established"))
 		}
 
 		data := e.SlashCommandInteractionData()
 
 		player := b.Lavalink.ExistingPlayer(*e.GuildID())
 		if player == nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No player found").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("No player found"))
 		}
 
 		position := data.Int("position")
@@ -64,9 +64,9 @@ func HandleSeek(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 		finalPosition := lavalink.Duration(position * unit)
 		if err := player.Update(context.TODO(), lavalink.WithPosition(finalPosition)); err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Error while seeking to position %d: %s", position, err.Error()).Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContentf("Error while seeking to position %d: %s", position, err.Error()))
 		}
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Seeked to position %d", position).Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithContentf("Seeked to position %d", position))
 	}
 }

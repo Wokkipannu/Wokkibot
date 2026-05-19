@@ -26,9 +26,8 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		statusEmbed := createEmbed(b, e, nil)
 
-		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetEmbeds(statusEmbed.Build()).
-			Build())
+		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithEmbeds(statusEmbed))
 
 		if err != nil {
 			return err
@@ -37,18 +36,17 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 		go func() {
 			ping := getPing(b)
 			statusEmbed.Fields[6].Value = ping
-			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetEmbeds(statusEmbed.Build()).
-				AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"})).
-				Build())
+			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+				WithEmbeds(statusEmbed).
+				AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"})))
 		}()
 
 		return nil
 	}
 }
 
-func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.ComponentEvent) *discord.EmbedBuilder {
-	self, _ := b.Client.Caches().SelfUser()
+func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.ComponentEvent) discord.Embed {
+	self, _ := b.Client.Caches.SelfUser()
 
 	currentYtdlpVersion := utils.GetYtdlpVersion()
 	latestYtdlpVersion, err := utils.GetLatestYtdlpVersion()
@@ -59,9 +57,9 @@ func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.Compo
 		}
 	}
 
-	embed := discord.NewEmbedBuilder().
-		SetTitlef("%s Status", self.Username).
-		SetThumbnail(self.EffectiveAvatarURL()).
+	embed := discord.NewEmbed().
+		WithTitlef("%s Status", self.Username).
+		WithThumbnail(self.EffectiveAvatarURL()).
 		AddField("Version", getBotVersion(b), false).
 		AddField("Go", runtime.Version(), true).
 		AddField("Disgo", utils.GetDisgoVersion(), true).
@@ -69,24 +67,24 @@ func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.Compo
 		AddField("FFmpeg", utils.GetFfmpegVersion(), true).
 		AddField("Start time", fmt.Sprintf("<t:%d:R>", b.StartTime.Unix()), true).
 		AddField("Ping", getPing(b), true).
-		SetColor(utils.COLOR_GREEN)
+		WithColor(utils.COLOR_GREEN)
 
 	if c != nil {
 		guild, _ := c.Guild()
-		embed.AddField("File Size limit", fmt.Sprintf("%dMB", utils.CalculateMaximumFileSizeForGuild(guild)), true)
+		embed = embed.AddField("File Size limit", fmt.Sprintf("%dMB", utils.CalculateMaximumFileSizeForGuild(guild)), true)
 	}
 
 	if e != nil {
 		guild, _ := e.Guild()
-		embed.AddField("File Size limit", fmt.Sprintf("%dMB", utils.CalculateMaximumFileSizeForGuild(guild)), true)
+		embed = embed.AddField("File Size limit", fmt.Sprintf("%dMB", utils.CalculateMaximumFileSizeForGuild(guild)), true)
 	}
 
 	// Self user does not contain BannerURL, so we must fetch it from the client rest
-	botUser, err := b.Client.Rest().GetUser(self.ID)
+	botUser, err := b.Client.Rest.GetUser(self.ID)
 
 	if err == nil && botUser.BannerURL() != nil {
 		formatOpt := utils.SetCDNOptions(discord.FileFormatPNG, discord.QueryValues{"size": 1024})
-		embed.SetImage(*botUser.BannerURL(formatOpt))
+		embed = embed.WithImage(*botUser.BannerURL(formatOpt))
 	}
 
 	return embed
@@ -105,7 +103,7 @@ func getPing(b *wokkibot.Wokkibot) string {
 	retryDelay := 2 * time.Second
 
 	for i := range maxRetries {
-		ping := b.Client.Gateway().Latency().Milliseconds()
+		ping := b.Client.Gateway.Latency().Milliseconds()
 		if ping > 0 {
 			return fmt.Sprintf("%dms", ping)
 		}
@@ -118,7 +116,7 @@ func getPing(b *wokkibot.Wokkibot) string {
 
 func HandleStatusStatistics(b *wokkibot.Wokkibot) handler.ComponentHandler {
 	return func(e *handler.ComponentEvent) error {
-		self, _ := b.Client.Caches().SelfUser()
+		self, _ := b.Client.Caches.SelfUser()
 
 		db := database.GetDB()
 		var statistics types.Statistics
@@ -127,9 +125,9 @@ func HandleStatusStatistics(b *wokkibot.Wokkibot) handler.ComponentHandler {
 			return err
 		}
 
-		embed := discord.NewEmbedBuilder().
-			SetTitlef("%s Statistics", self.Username).
-			SetThumbnail(self.EffectiveAvatarURL()).
+		embed := discord.NewEmbed().
+			WithTitlef("%s Statistics", self.Username).
+			WithThumbnail(self.EffectiveAvatarURL()).
 			AddField("Video Downloads", fmt.Sprintf("%d", statistics.VideoDownloads), true).
 			AddField("Names Given", fmt.Sprintf("%d", statistics.NamesGiven), true).
 			AddField("Songs Played", fmt.Sprintf("%d", statistics.SongsPlayed), true).
@@ -140,12 +138,11 @@ func HandleStatusStatistics(b *wokkibot.Wokkibot) handler.ComponentHandler {
 			AddField("Trivia Games Won", fmt.Sprintf("%d", statistics.TriviaGamesWon), true).
 			AddField("Trivia Games Lost", fmt.Sprintf("%d", statistics.TriviaGamesLost), true).
 			AddField("Blackjack Games Played", fmt.Sprintf("%d", statistics.BlackjackGamesPlayed), true).
-			SetColor(utils.COLOR_GREEN)
+			WithColor(utils.COLOR_GREEN)
 
-		err = e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().
-			SetEmbeds(embed.Build()).
-			AddActionRow(discord.NewPrimaryButton("Status", "/status/status").WithEmoji(discord.ComponentEmoji{Name: "📺"}).WithDisabled(true)).
-			Build())
+		err = e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdate().
+			WithEmbeds(embed).
+			AddActionRow(discord.NewPrimaryButton("Status", "/status/status").WithEmoji(discord.ComponentEmoji{Name: "📺"}).WithDisabled(true)))
 
 		if err != nil {
 			return err
@@ -153,10 +150,9 @@ func HandleStatusStatistics(b *wokkibot.Wokkibot) handler.ComponentHandler {
 
 		go func() {
 			time.Sleep(5 * time.Second)
-			_, _ = e.Client().Rest().UpdateMessage(e.Channel().ID(), e.Message.ID, discord.NewMessageUpdateBuilder().
-				SetEmbeds(embed.Build()).
-				AddActionRow(discord.NewPrimaryButton("Status", "/status/status").WithEmoji(discord.ComponentEmoji{Name: "📺"}).WithDisabled(false)).
-				Build())
+			_, _ = e.Client().Rest.UpdateMessage(e.Channel().ID(), e.Message.ID, discord.NewMessageUpdate().
+				WithEmbeds(embed).
+				AddActionRow(discord.NewPrimaryButton("Status", "/status/status").WithEmoji(discord.ComponentEmoji{Name: "📺"}).WithDisabled(false)))
 		}()
 
 		return nil
@@ -167,10 +163,9 @@ func HandleStatusStatus(b *wokkibot.Wokkibot) handler.ComponentHandler {
 	return func(e *handler.ComponentEvent) error {
 		statusEmbed := createEmbed(b, nil, e)
 
-		err := e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().
-			SetEmbeds(statusEmbed.Build()).
-			AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"}).WithDisabled(true)).
-			Build())
+		err := e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdate().
+			WithEmbeds(statusEmbed).
+			AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"}).WithDisabled(true)))
 
 		if err != nil {
 			return err
@@ -178,10 +173,9 @@ func HandleStatusStatus(b *wokkibot.Wokkibot) handler.ComponentHandler {
 
 		go func() {
 			time.Sleep(5 * time.Second)
-			_, _ = e.Client().Rest().UpdateMessage(e.Channel().ID(), e.Message.ID, discord.NewMessageUpdateBuilder().
-				SetEmbeds(statusEmbed.Build()).
-				AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"}).WithDisabled(false)).
-				Build())
+			_, _ = e.Client().Rest.UpdateMessage(e.Channel().ID(), e.Message.ID, discord.NewMessageUpdate().
+				WithEmbeds(statusEmbed).
+				AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"}).WithDisabled(false)))
 		}()
 
 		return nil

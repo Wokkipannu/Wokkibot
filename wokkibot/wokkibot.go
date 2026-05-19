@@ -23,7 +23,7 @@ import (
 )
 
 type Wokkibot struct {
-	Client       bot.Client
+	Client       *bot.Client
 	Config       config.Config
 	PistonClient *gopiston.Client
 	Lavalink     disgolink.Client
@@ -49,19 +49,19 @@ func New(config config.Config, version string, handlers *handlers.Handler) *Wokk
 }
 
 func (b *Wokkibot) SyncGuildCommands(commands []discord.ApplicationCommandCreate, guildID snowflake.ID) {
-	if _, err := b.Client.Rest().SetGuildCommands(b.Client.ApplicationID(), guildID, commands); err != nil {
+	if _, err := b.Client.Rest.SetGuildCommands(b.Client.ApplicationID, guildID, commands); err != nil {
 		slog.Error("error while registering guild commands", slog.Any("err", err))
 	}
 }
 
 func (b *Wokkibot) SyncGlobalCommands(commands []discord.ApplicationCommandCreate) {
-	if _, err := b.Client.Rest().SetGlobalCommands(b.Client.ApplicationID(), commands); err != nil {
+	if _, err := b.Client.Rest.SetGlobalCommands(b.Client.ApplicationID, commands); err != nil {
 		slog.Error("error while registering global commands", slog.Any("err", err))
 	}
 }
 
 func (b *Wokkibot) InitLavalink() {
-	b.Lavalink = disgolink.New(b.Client.ApplicationID(),
+	b.Lavalink = disgolink.New(b.Client.ApplicationID,
 		disgolink.WithListenerFunc(b.Handlers.PlayerHandler.OnPlayerPause),
 		disgolink.WithListenerFunc(b.Handlers.PlayerHandler.OnPlayerResume),
 		disgolink.WithListenerFunc(b.Handlers.PlayerHandler.OnTrackStart),
@@ -139,7 +139,7 @@ func (b *Wokkibot) OnDiscordEvent(event bot.Event) {
 			slog.Error("error while setting presence", slog.Any("err", err))
 		}
 	case *events.GuildVoiceStateUpdate:
-		if e.VoiceState.UserID != b.Client.ApplicationID() {
+		if e.VoiceState.UserID != b.Client.ApplicationID {
 			return
 		}
 		if b.Config.Lavalink.Enabled {

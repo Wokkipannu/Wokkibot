@@ -16,18 +16,18 @@ var DisconnectCommand = discord.SlashCommandCreate{
 func HandleDisconnect(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		if !b.Config.Lavalink.Enabled {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Lavalink connection has not been established").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Lavalink connection has not been established"))
 		}
 
 		player := b.Lavalink.ExistingPlayer(*e.GuildID())
 		if player == nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No player found").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("No player found"))
 		}
 
 		if err := b.Client.UpdateVoiceState(context.TODO(), *e.GuildID(), nil, false, false); err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Failed to disconnect").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Failed to disconnect"))
 		}
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Disconnected").Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithContent("Disconnected"))
 	}
 }

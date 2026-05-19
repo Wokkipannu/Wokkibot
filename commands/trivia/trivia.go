@@ -204,9 +204,8 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 		t := b.Trivias.Get(*e.GuildID())
 
 		if t.IsActive {
-			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetContent("Trivia is already running. Wait for it to finish first.").
-				Build())
+			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+				WithContent("Trivia is already running. Wait for it to finish first."))
 			return err
 		}
 
@@ -219,16 +218,14 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		_trivia, err := FetchTrivia(e, b)
 		if err != nil {
-			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetContent("Trivia API did not return any trivia. This could be due to rate limiting. Please try again later.").
-				Build())
+			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+				WithContent("Trivia API did not return any trivia. This could be due to rate limiting. Please try again later."))
 			return err
 		}
 
 		if len(_trivia) == 0 {
-			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetContent("API did not return any trivia. Try again later.").
-				Build())
+			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+				WithContent("API did not return any trivia. Try again later."))
 			return err
 		}
 		trivia := _trivia[0]
@@ -239,18 +236,18 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		options = ShuffleOptions(options)
 
-		embed := discord.NewEmbedBuilder()
-		embed.SetTitle("Trivia Question")
+		embed := discord.NewEmbed()
+		embed = embed.WithTitle("Trivia Question")
 
 		if strings.Contains(strings.ToLower(trivia.Question), "which") {
-			embed.AddField("Choices", strings.Join(options, "\n"), false)
+			embed = embed.AddField("Choices", strings.Join(options, "\n"), false)
 		}
 
-		embed.AddField("Difficulty", trivia.Difficulty, true)
-		embed.AddField("Category", html.UnescapeString(trivia.Category), true)
-		embed.SetColor(utils.RGBToInteger(255, 215, 0))
-		embed.SetDescription(html.UnescapeString(trivia.Question))
-		embed.SetFooterText("Type your answers below. Time limit 60 seconds. You can type hint or skip if you are stuck.")
+		embed = embed.AddField("Difficulty", trivia.Difficulty, true)
+		embed = embed.AddField("Category", html.UnescapeString(trivia.Category), true)
+		embed = embed.WithColor(utils.RGBToInteger(255, 215, 0))
+		embed = embed.WithDescription(html.UnescapeString(trivia.Question))
+		embed = embed.WithFooterText("Type your answers below. Time limit 60 seconds. You can type hint or skip if you are stuck.")
 		// embed.AddField("Correct answer", fmt.Sprintf("||%v||", trivia.CorrectAnswer), true)
 		// embed.AddField("Answers", strings.Join(trivia.IncorrectAnswers, "\n"), true)
 
@@ -293,14 +290,14 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 			for {
 				select {
 				case <-ctx.Done():
-					timeoutEmbed := discord.NewEmbedBuilder()
-					timeoutEmbed.SetTitle("Trivia ended")
-					timeoutEmbed.SetDescription("No one guessed in time.")
-					timeoutEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
-					timeoutEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
-					timeoutEmbed.SetColor(utils.RGBToInteger(215, 0, 0))
+					timeoutEmbed := discord.NewEmbed()
+					timeoutEmbed = timeoutEmbed.WithTitle("Trivia ended")
+					timeoutEmbed = timeoutEmbed.WithDescription("No one guessed in time.")
+					timeoutEmbed = timeoutEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
+					timeoutEmbed = timeoutEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
+					timeoutEmbed = timeoutEmbed.WithColor(utils.RGBToInteger(215, 0, 0))
 
-					_, err := b.Client.Rest().CreateMessage(channel, discord.NewMessageCreateBuilder().SetEmbeds(timeoutEmbed.Build()).Build())
+					_, err := b.Client.Rest.CreateMessage(channel, discord.NewMessageCreate().WithEmbeds(timeoutEmbed))
 					if err != nil {
 						slog.Error("Error while sending timeout message", slog.Any("err", err))
 					}
@@ -316,25 +313,25 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 					}
 
 					if strings.ToLower(messageEvent.Message.Content) == "hint" {
-						hintEmbed := discord.NewEmbedBuilder()
-						hintEmbed.SetTitle("Trivia Hint")
-						hintEmbed.SetDescription(html.UnescapeString(trivia.Question))
-						hintEmbed.AddField("Choices", strings.Join(options, "\n"), true)
-						hintEmbed.SetColor(utils.RGBToInteger(255, 215, 0))
+						hintEmbed := discord.NewEmbed()
+						hintEmbed = hintEmbed.WithTitle("Trivia Hint")
+						hintEmbed = hintEmbed.WithDescription(html.UnescapeString(trivia.Question))
+						hintEmbed = hintEmbed.AddField("Choices", strings.Join(options, "\n"), true)
+						hintEmbed = hintEmbed.WithColor(utils.RGBToInteger(255, 215, 0))
 
-						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(hintEmbed.Build()).SetMessageReferenceByID(messageEvent.Message.ID).Build())
+						_, err := b.Client.Rest.CreateMessage(messageEvent.ChannelID, discord.NewMessageCreate().WithEmbeds(hintEmbed).WithMessageReferenceByID(messageEvent.Message.ID))
 						if err != nil {
 							slog.Error("Error while sending hint", slog.Any("err", err))
 						}
 					} else if strings.ToLower(messageEvent.Message.Content) == "skip" {
-						skipEmbed := discord.NewEmbedBuilder()
-						skipEmbed.SetTitle("Trivia ended")
-						skipEmbed.SetDescription("Trivia was skipped")
-						skipEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
-						skipEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
-						skipEmbed.SetColor(utils.RGBToInteger(215, 0, 0))
+						skipEmbed := discord.NewEmbed()
+						skipEmbed = skipEmbed.WithTitle("Trivia ended")
+						skipEmbed = skipEmbed.WithDescription("Trivia was skipped")
+						skipEmbed = skipEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
+						skipEmbed = skipEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
+						skipEmbed = skipEmbed.WithColor(utils.RGBToInteger(215, 0, 0))
 
-						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(skipEmbed.Build()).SetMessageReferenceByID(messageEvent.Message.ID).Build())
+						_, err := b.Client.Rest.CreateMessage(messageEvent.ChannelID, discord.NewMessageCreate().WithEmbeds(skipEmbed).WithMessageReferenceByID(messageEvent.Message.ID))
 						if err != nil {
 							slog.Error("Error while sending skip message", slog.Any("err", err))
 						}
@@ -348,18 +345,18 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 					if ValidateTriviaAnswer(messageEvent.Message.Content, html.UnescapeString(trivia.CorrectAnswer)) {
 						a := getUserByID(messageEvent.Message.Author.ID)
-						correctEmbed := discord.NewEmbedBuilder()
-						correctEmbed.SetTitle("Trivia ended")
+						correctEmbed := discord.NewEmbed()
+						correctEmbed = correctEmbed.WithTitle("Trivia ended")
 						if a.AnswersCount == 1 {
-							correctEmbed.SetDescriptionf("%v got it correct in first try!", messageEvent.Message.Author.EffectiveName())
+							correctEmbed = correctEmbed.WithDescriptionf("%v got it correct in first try!", messageEvent.Message.Author.EffectiveName())
 						} else {
-							correctEmbed.SetDescriptionf("%v got it correct after %v answers!", messageEvent.Message.Author.EffectiveName(), a.AnswersCount)
+							correctEmbed = correctEmbed.WithDescriptionf("%v got it correct after %v answers!", messageEvent.Message.Author.EffectiveName(), a.AnswersCount)
 						}
-						correctEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
-						correctEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
-						correctEmbed.SetColor(utils.RGBToInteger(0, 215, 0))
+						correctEmbed = correctEmbed.AddField("Question", html.UnescapeString(trivia.Question), true)
+						correctEmbed = correctEmbed.AddField("Correct answer", html.UnescapeString(trivia.CorrectAnswer), true)
+						correctEmbed = correctEmbed.WithColor(utils.RGBToInteger(0, 215, 0))
 
-						_, err := b.Client.Rest().CreateMessage(messageEvent.ChannelID, discord.NewMessageCreateBuilder().SetEmbeds(correctEmbed.Build()).SetMessageReferenceByID(messageEvent.Message.ID).Build())
+						_, err := b.Client.Rest.CreateMessage(messageEvent.ChannelID, discord.NewMessageCreate().WithEmbeds(correctEmbed).WithMessageReferenceByID(messageEvent.Message.ID))
 						if err != nil {
 							slog.Error("Error while sending correct answer message", slog.Any("err", err))
 						}
@@ -373,10 +370,9 @@ func HandleTrivia(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}(e.Channel().ID(), options)
 
 		t.SetStatus(true)
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetContent("").
-			SetEmbeds(embed.Build()).
-			Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithContent("").
+			WithEmbeds(embed))
 
 		return err
 	}
@@ -397,7 +393,7 @@ func ValidateTriviaAnswer(answer, correct string) bool {
 }
 
 func FetchToken(e *handler.CommandEvent, b *wokkibot.Wokkibot) error {
-	res, err := b.Client.Rest().HTTPClient().Get("https://opentdb.com/api_token.php?command=request")
+	res, err := b.Client.Rest.HTTPClient().Get("https://opentdb.com/api_token.php?command=request")
 	if err != nil {
 		return fmt.Errorf("failed to fetch token: %w", err)
 	}
@@ -464,7 +460,7 @@ func FetchTrivia(e *handler.CommandEvent, b *wokkibot.Wokkibot) ([]TriviaQuestio
 			queryParams.Add("type", "multiple")
 		}
 
-		res, err := b.Client.Rest().HTTPClient().Get(apiEndpoint + "?" + queryParams.Encode())
+		res, err := b.Client.Rest.HTTPClient().Get(apiEndpoint + "?" + queryParams.Encode())
 		if err != nil {
 			lastError = err
 			continue
@@ -489,9 +485,8 @@ func FetchTrivia(e *handler.CommandEvent, b *wokkibot.Wokkibot) ([]TriviaQuestio
 		case 0:
 			return triviaResponse.Trivia, nil
 		case 3:
-			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetContent("Trivia token expired, fetching new token. This can take couple seconds...").
-				Build())
+			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+				WithContent("Trivia token expired, fetching new token. This can take couple seconds..."))
 
 			err := FetchToken(e, b)
 			if err != nil {

@@ -10,15 +10,15 @@ import (
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/handler"
-	"github.com/disgoorg/json"
+	"github.com/disgoorg/omit"
 )
 
-var perms = json.NewNullable(discord.Permissions(discord.PermissionAdministrator))
+var perms = omit.NewPtr(discord.Permissions(discord.PermissionAdministrator))
 
 var SettingsCommand = discord.SlashCommandCreate{
 	Name:                     "settings",
 	Description:              "Used to change server settings",
-	DefaultMemberPermissions: &perms,
+	DefaultMemberPermissions: perms,
 	Options: []discord.ApplicationCommandOption{
 		// Custom command related settings
 		discord.ApplicationCommandOptionSubCommandGroup{
@@ -200,9 +200,8 @@ func HandleCustomAdd(h *handlers.Handler) handler.CommandHandler {
 			return err
 		}
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetContent("Custom command added successfully").
-			Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithContent("Custom command added successfully"))
 
 		return err
 	}
@@ -227,9 +226,8 @@ func HandleCustomRemove(h *handlers.Handler) handler.CommandHandler {
 			return err
 		}
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetContent("Custom command removed successfully").
-			Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithContent("Custom command removed successfully"))
 
 		return err
 	}
@@ -242,25 +240,25 @@ func HandleCustomList(h *handlers.Handler) handler.CommandHandler {
 		var authors []string
 		for _, cmd := range h.CustomCommands {
 			if cmd.GuildID == *e.GuildID() {
-				author, _ := e.Client().Rest().GetUser(cmd.Author)
+				author, _ := e.Client().Rest.GetUser(cmd.Author)
 				cmds = append(cmds, fmt.Sprintf("%v%v", cmd.Prefix, cmd.Name))
 				descriptions = append(descriptions, cmd.Description)
 				authors = append(authors, fmt.Sprintf("%v", author.EffectiveName()))
 			}
 		}
 
-		embed := discord.NewEmbedBuilder()
-		embed.SetTitle("Custom commands")
-		embed.SetColor(utils.COLOR_BLURPLE)
+		embed := discord.NewEmbed()
+		embed = embed.WithTitle("Custom commands")
+		embed = embed.WithColor(utils.COLOR_BLURPLE)
 		if len(cmds) == 0 {
-			embed.SetDescription("No custom commands found")
+			embed = embed.WithDescription("No custom commands found")
 		} else {
-			embed.AddField("Command", strings.Join(cmds, "\n"), true)
-			embed.AddField("Description", strings.Join(descriptions, "\n"), true)
-			embed.AddField("Author", strings.Join(authors, "\n"), true)
+			embed = embed.AddField("Command", strings.Join(cmds, "\n"), true)
+			embed = embed.AddField("Description", strings.Join(descriptions, "\n"), true)
+			embed = embed.AddField("Author", strings.Join(authors, "\n"), true)
 		}
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithEmbeds(embed))
 	}
 }
 
@@ -279,9 +277,8 @@ func HandlePinChannelChange(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		b.Handlers.SetPinChannel(*e.GuildID(), channel.ID)
 
-		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetContent("Pin channel updated successfully").
-			Build())
+		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithContent("Pin channel updated successfully"))
 
 		return err
 	}
@@ -305,9 +302,8 @@ func HandleXLinksToggle(b *wokkibot.Wokkibot) handler.CommandHandler {
 			message = "X links have been disabled"
 		}
 
-		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetContent(message).
-			Build())
+		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithContent(message))
 
 		return err
 	}
@@ -319,7 +315,7 @@ func HandleXLinksToggle(b *wokkibot.Wokkibot) handler.CommandHandler {
 func HandleInitLavalink(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		b.InitLavalink()
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Lavalink initialized successfully").Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithContent("Lavalink initialized successfully"))
 	}
 }
 
@@ -344,9 +340,8 @@ func HandleLavalinkToggle(b *wokkibot.Wokkibot) handler.CommandHandler {
 			message = "Lavalink has been disabled"
 		}
 
-		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetContent(message).
-			Build())
+		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithContent(message))
 
 		return err
 	}

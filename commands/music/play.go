@@ -74,7 +74,7 @@ var PlayCommand = discord.SlashCommandCreate{
 func HandlePlay(b *wokkibot.Wokkibot, q *queue.QueueManager) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		if !b.Config.Lavalink.Enabled {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Lavalink connection has not been established").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Lavalink connection has not been established"))
 		}
 
 		data := e.SlashCommandInteractionData()
@@ -89,9 +89,9 @@ func HandlePlay(b *wokkibot.Wokkibot, q *queue.QueueManager) handler.CommandHand
 			identifier = lavalink.SearchTypeYouTube.Apply(identifier)
 		}
 
-		voiceState, ok := b.Client.Caches().VoiceState(*e.GuildID(), e.User().ID)
+		voiceState, ok := b.Client.Caches.VoiceState(*e.GuildID(), e.User().ID)
 		if !ok {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("You need to be in a voice channel to use this command").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("You need to be in a voice channel to use this command"))
 		}
 
 		if err := e.DeferCreateMessage(false); err != nil {
@@ -113,41 +113,41 @@ func HandlePlay(b *wokkibot.Wokkibot, q *queue.QueueManager) handler.CommandHand
 				toPlay = &tracks[0]
 			},
 			func() {
-				e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Nothing found for: `%s`", identifier).Build())
+				e.CreateMessage(discord.NewMessageCreate().WithContentf("Nothing found for: `%s`", identifier))
 			},
 			func(err error) {
-				e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Error while looking up query: `%s`", identifier).Build())
+				e.CreateMessage(discord.NewMessageCreate().WithContentf("Error while looking up query: `%s`", identifier))
 			},
 		))
 
 		if toPlay == nil {
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContentf("Nothing found for: `%s`", identifier).Build())
+			e.UpdateInteractionResponse(discord.NewMessageUpdate().WithContentf("Nothing found for: `%s`", identifier))
 			return nil
 		}
 
 		if err := b.Client.UpdateVoiceState(context.TODO(), *e.GuildID(), voiceState.ChannelID, false, false); err != nil {
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetContentf("Error while updating voice state: %s", err.Error()).Build())
+			e.UpdateInteractionResponse(discord.NewMessageUpdate().WithContentf("Error while updating voice state: %s", err.Error()))
 			return err
 		}
 
-		embed := discord.NewEmbedBuilder()
-		embed.SetColor(utils.RGBToInteger(255, 215, 0))
+		embed := discord.NewEmbed()
+		embed = embed.WithColor(utils.RGBToInteger(255, 215, 0))
 		if toPlay.Info.ArtworkURL != nil {
-			embed.SetImage(*toPlay.Info.ArtworkURL)
+			embed = embed.WithImage(*toPlay.Info.ArtworkURL)
 		}
-		embed.SetFooterTextf("Length: %s", utils.FormatDuration(toPlay.Info.Length))
-		embed.AddField("Track", fmt.Sprintf("[%s](<%s>)", toPlay.Info.Title, *toPlay.Info.URI), true)
-		embed.AddField("Source", toPlay.Info.SourceName, true)
+		embed = embed.WithFooterTextf("Length: %s", utils.FormatDuration(toPlay.Info.Length))
+		embed = embed.AddField("Track", fmt.Sprintf("[%s](<%s>)", toPlay.Info.Title, *toPlay.Info.URI), true)
+		embed = embed.AddField("Source", toPlay.Info.SourceName, true)
 
 		player := b.Lavalink.ExistingPlayer(*e.GuildID())
 		if len(queue.Tracks) == 0 && (player == nil || player.Track() == nil) {
-			embed.SetTitle("Playing")
-			e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetEmbeds(embed.Build()).Build())
+			embed = embed.WithTitle("Playing")
+			e.UpdateInteractionResponse(discord.NewMessageUpdate().WithEmbeds(embed))
 			return b.Lavalink.Player(*e.GuildID()).Update(context.TODO(), lavalink.WithTrack(*toPlay))
 		}
 
-		embed.SetTitlef("Queued to position %d", len(queue.Tracks)+1)
-		e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetEmbeds((embed).Build()).Build())
+		embed = embed.WithTitlef("Queued to position %d", len(queue.Tracks)+1)
+		e.UpdateInteractionResponse(discord.NewMessageUpdate().WithEmbeds((embed)))
 		queue.Add(*toPlay)
 		return nil
 	}

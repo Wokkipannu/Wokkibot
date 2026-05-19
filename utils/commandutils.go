@@ -1,14 +1,14 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
-	"net/url"
-	"strings"
 	"net/http"
+	"net/url"
+	"os"
 	"os/exec"
 	"runtime/debug"
-	"encoding/json"
-	"os"
+	"strings"
 	"wokkibot/database"
 
 	"github.com/disgoorg/disgo/discord"
@@ -17,11 +17,11 @@ import (
 var imageTypes = []string{"image/png", "image/jpeg", "image/gif", "image/webp"}
 
 // Creates a quote embed from a message
-func QuoteEmbed(msg discord.Message) discord.EmbedBuilder {
-	embed := discord.NewEmbedBuilder()
-	embed.SetAuthor(fmt.Sprintf("Quoting %v", msg.Author.EffectiveName()), "", *msg.Author.AvatarURL())
-	embed.SetDescription(msg.Content)
-	embed.SetTimestamp(msg.CreatedAt)
+func QuoteEmbed(msg discord.Message) discord.Embed {
+	embed := discord.NewEmbed()
+	embed = embed.WithAuthor(fmt.Sprintf("Quoting %v", msg.Author.EffectiveName()), "", *msg.Author.AvatarURL())
+	embed = embed.WithDescription(msg.Content)
+	embed = embed.WithTimestamp(msg.CreatedAt)
 
 	if len(msg.Attachments) > 0 {
 		var attachments []string
@@ -30,16 +30,16 @@ func QuoteEmbed(msg discord.Message) discord.EmbedBuilder {
 			attachments = append(attachments, a)
 			for _, t := range imageTypes {
 				if *attachment.ContentType == t {
-					embed.SetImage(attachment.URL)
+					embed = embed.WithImage(attachment.URL)
 					break
 				}
 			}
 		}
 
-		embed.AddField("Attachments", strings.Join(attachments, "\n"), true)
+		embed = embed.AddField("Attachments", strings.Join(attachments, "\n"), true)
 	}
 
-	return *embed
+	return embed
 }
 
 // Replaces the domain part of a URL, for example "https://example.com/path" with "https://newdomain.com/path"
@@ -78,42 +78,42 @@ func UpdateStatistics(statsitic string) {
 }
 
 func GetYtdlpVersion() string {
-    cmd := exec.Command("yt-dlp", "--version")
-    output, err := cmd.Output()
-    ytdlpVersion := "Not found"
-    if err == nil {
-        ytdlpVersion = strings.TrimSpace(string(output))
-    }
-    return ytdlpVersion
+	cmd := exec.Command("yt-dlp", "--version")
+	output, err := cmd.Output()
+	ytdlpVersion := "Not found"
+	if err == nil {
+		ytdlpVersion = strings.TrimSpace(string(output))
+	}
+	return ytdlpVersion
 }
 
 func GetLatestYtdlpVersion() (string, error) {
-    resp, err := http.Get("https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest")
-    if err != nil {
-        return "", err
-    }
-    defer resp.Body.Close()
+	resp, err := http.Get("https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
 
-    var release struct {
-        TagName string `json:"tag_name"`
-    }
-    if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-        return "", err
-    }
-    return strings.TrimPrefix(release.TagName, ""), nil
+	var release struct {
+		TagName string `json:"tag_name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return "", err
+	}
+	return strings.TrimPrefix(release.TagName, ""), nil
 }
 
 func UpdateYtdlpBinary() error {
-    curlCmd := exec.Command("curl", "-L", "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", "-o", "/usr/local/bin/yt-dlp")
-    if out, err := curlCmd.CombinedOutput(); err != nil {
-        return fmt.Errorf("curl update failed: %w, output: %s", err, string(out))
-    }
+	curlCmd := exec.Command("curl", "-L", "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", "-o", "/usr/local/bin/yt-dlp")
+	if out, err := curlCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("curl update failed: %w, output: %s", err, string(out))
+	}
 
-    if err := os.Chmod("/usr/local/bin/yt-dlp", 0755); err != nil {
-        return fmt.Errorf("chmod failed: %w", err)
-    }
+	if err := os.Chmod("/usr/local/bin/yt-dlp", 0755); err != nil {
+		return fmt.Errorf("chmod failed: %w", err)
+	}
 
-    return nil
+	return nil
 }
 
 func GetFfmpegVersion() string {

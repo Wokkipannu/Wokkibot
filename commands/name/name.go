@@ -49,9 +49,8 @@ func HandleName(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		randomName := fmt.Sprintf("You are **%s%s**", names[0], names[1])
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetContent(randomName).
-			Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithContent(randomName))
 
 		utils.UpdateStatistics("names_given")
 

@@ -84,36 +84,36 @@ func HandleJoke(b *wokkibot.Wokkibot) handler.CommandHandler {
 			category = "Any"
 		}
 
-		res, err := b.Client.Rest().HTTPClient().Get("https://v2.jokeapi.dev/joke/" + category)
+		res, err := b.Client.Rest.HTTPClient().Get("https://v2.jokeapi.dev/joke/" + category)
 		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while fetching joke").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Error while fetching joke"))
 		}
 
 		defer res.Body.Close()
 
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while reading joke").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Error while reading joke"))
 		}
 
 		var jokeRes JokeRes
 		err = json.Unmarshal(body, &jokeRes)
 		if err != nil {
 			slog.Error("Error while unmarshaling joke response", slog.Any("err", err))
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while parsing joke").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Error while parsing joke"))
 		}
 
-		embed := discord.NewEmbedBuilder()
+		embed := discord.NewEmbed()
 
 		if jokeRes.Joke == "" {
-			embed.SetDescriptionf("%v\n\n%v", jokeRes.Setup, jokeRes.Delivery)
+			embed = embed.WithDescriptionf("%v\n\n%v", jokeRes.Setup, jokeRes.Delivery)
 		} else {
-			embed.SetDescription(jokeRes.Joke)
+			embed = embed.WithDescription(jokeRes.Joke)
 		}
 
-		embed.SetColor(utils.RGBToInteger(255, 215, 0))
-		embed.SetFooterTextf("ID %v", jokeRes.ID)
+		embed = embed.WithColor(utils.RGBToInteger(255, 215, 0))
+		embed = embed.WithFooterTextf("ID %v", jokeRes.ID)
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithEmbeds(embed))
 	}
 }

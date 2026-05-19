@@ -19,7 +19,7 @@ var QueueCommand = discord.SlashCommandCreate{
 func HandleQueue(b *wokkibot.Wokkibot, q *queue.QueueManager) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		if !b.Config.Lavalink.Enabled {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Lavalink connection has not been established").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Lavalink connection has not been established"))
 		}
 
 		queue := q.Get(*e.GuildID())
@@ -32,9 +32,9 @@ func HandleQueue(b *wokkibot.Wokkibot, q *queue.QueueManager) handler.CommandHan
 
 		embed := createResponseEmbed(queue, player)
 		if len(queue.Tracks) > 0 || player.Track() != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewPrimaryButton("Skip", "/queue/skip").WithEmoji(discord.ComponentEmoji{Name: "⏩"})).Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithEmbeds(embed).AddActionRow(discord.NewPrimaryButton("Skip", "/queue/skip").WithEmoji(discord.ComponentEmoji{Name: "⏩"})))
 		}
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed.Build()).Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithEmbeds(embed))
 	}
 }
 
@@ -42,7 +42,7 @@ func HandleQueueSkipAction(b *wokkibot.Wokkibot, q *queue.QueueManager, e *handl
 	queue := q.Get(*e.GuildID())
 	player := b.Lavalink.ExistingPlayer(*e.GuildID())
 	if queue == nil || player == nil {
-		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().SetContent("No player found").Build())
+		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdate().WithContent("No player found"))
 	}
 
 	err := Skip(b, q, e.GuildID())
@@ -57,26 +57,26 @@ func HandleQueueSkipAction(b *wokkibot.Wokkibot, q *queue.QueueManager, e *handl
 	}
 
 	if len(queue.Tracks) > 0 || player.Track() != nil {
-		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().SetContent(content).SetEmbeds(embed.Build()).AddActionRow(discord.NewPrimaryButton("Skip", "/queue/skip").WithEmoji(discord.ComponentEmoji{Name: "⏩"})).Build())
+		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdate().WithContent(content).WithEmbeds(embed).AddActionRow(discord.NewPrimaryButton("Skip", "/queue/skip").WithEmoji(discord.ComponentEmoji{Name: "⏩"})))
 	} else {
-		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().SetContent(content).SetEmbeds(embed.Build()).ClearContainerComponents().Build())
+		return e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdate().WithContent(content).WithEmbeds(embed).ClearComponents())
 	}
 }
 
-func createResponseEmbed(queue *queue.Queue, player disgolink.Player) *discord.EmbedBuilder {
-	embed := discord.NewEmbedBuilder().SetTitle("Queue")
-	embed.SetColor(utils.RGBToInteger(255, 215, 0))
+func createResponseEmbed(queue *queue.Queue, player disgolink.Player) discord.Embed {
+	embed := discord.NewEmbed().WithTitle("Queue")
+	embed = embed.WithColor(utils.RGBToInteger(255, 215, 0))
 	currentTrack := player.Track()
 
 	if currentTrack != nil {
-		embed.AddField("Current track", fmt.Sprintf("[%s](<%s>)", currentTrack.Info.Title, *currentTrack.Info.URI), true)
-		embed.AddField("Source", currentTrack.Info.SourceName, true)
-		embed.AddField("Position", fmt.Sprintf("%s / %s", utils.FormatPosition(player.Position()), utils.FormatPosition(currentTrack.Info.Length)), true)
+		embed = embed.AddField("Current track", fmt.Sprintf("[%s](<%s>)", currentTrack.Info.Title, *currentTrack.Info.URI), true)
+		embed = embed.AddField("Source", currentTrack.Info.SourceName, true)
+		embed = embed.AddField("Position", fmt.Sprintf("%s / %s", utils.FormatPosition(player.Position()), utils.FormatPosition(currentTrack.Info.Length)), true)
 	}
 
 	if len(queue.Tracks) == 0 {
 		if currentTrack == nil {
-			embed.SetDescription("No tracks in queue")
+			embed = embed.WithDescription("No tracks in queue")
 		}
 	} else {
 		var tracks string
@@ -87,8 +87,8 @@ func createResponseEmbed(queue *queue.Queue, player disgolink.Player) *discord.E
 			sources += track.Info.SourceName + "\n"
 		}
 
-		embed.AddField("Track", tracks, true)
-		embed.AddField("Source", sources, true)
+		embed = embed.AddField("Track", tracks, true)
+		embed = embed.AddField("Source", sources, true)
 	}
 
 	return embed

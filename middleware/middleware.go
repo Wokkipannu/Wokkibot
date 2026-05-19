@@ -22,7 +22,7 @@ func AdminMiddleware(next handler.CommandHandler) handler.CommandHandler {
 			}
 		}
 
-		event.CreateMessage(discord.NewMessageCreateBuilder().SetContent("You do not have permission to use this command").Build())
+		event.CreateMessage(discord.NewMessageCreate().WithContent("You do not have permission to use this command"))
 
 		return nil
 	}

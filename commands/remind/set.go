@@ -61,18 +61,16 @@ func HandleRemind(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		parts := strings.Split(timeStr, ":")
 		if len(parts) != 2 {
-			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetContent("Invalid time format. Use HH:MM, e.g., 15:30").
-				Build())
+			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+				WithContent("Invalid time format. Use HH:MM, e.g., 15:30"))
 			return err
 		}
 
 		hour, herr := parseTwoDigit(parts[0])
 		minute, merr := parseTwoDigit(parts[1])
 		if herr != nil || merr != nil || hour < 0 || hour > 23 || minute < 0 || minute > 59 {
-			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-				SetContent("Invalid time. Hours 00-23 and minutes 00-59.").
-				Build())
+			_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+				WithContent("Invalid time. Hours 00-23 and minutes 00-59."))
 			return err
 		}
 
@@ -82,25 +80,22 @@ func HandleRemind(b *wokkibot.Wokkibot) handler.CommandHandler {
 		if dateStr != "" {
 			dp := strings.Split(dateStr, ".")
 			if len(dp) != 3 {
-				_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-					SetContent("Invalid date format. Use DD.MM.YYYY, e.g., 20.09.2025").
-					Build())
+				_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+					WithContent("Invalid date format. Use DD.MM.YYYY, e.g., 20.09.2025"))
 				return err
 			}
 			day, derr1 := strconv.Atoi(dp[0])
 			month, derr2 := strconv.Atoi(dp[1])
 			year, derr3 := strconv.Atoi(dp[2])
 			if derr1 != nil || derr2 != nil || derr3 != nil || day < 1 || day > 31 || month < 1 || month > 12 || year < 1 {
-				_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-					SetContent("Invalid date value. Use DD.MM.YYYY").
-					Build())
+				_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+					WithContent("Invalid date value. Use DD.MM.YYYY"))
 				return err
 			}
 			target = time.Date(year, time.Month(month), day, hour, minute, 0, 0, loc)
 			if !target.After(now) {
-				_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-					SetContent("The specified date/time is in the past.").
-					Build())
+				_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+					WithContent("The specified date/time is in the past."))
 				return err
 			}
 		} else {
@@ -120,16 +115,14 @@ func HandleRemind(b *wokkibot.Wokkibot) handler.CommandHandler {
 			RemindAt:  remindAt,
 		})
 
-		embed := discord.NewEmbedBuilder().
-			SetTitle("Reminder set").
-			SetColor(utils.COLOR_BLURPLE).
+		embed := discord.NewEmbed().
+			WithTitle("Reminder set").
+			WithColor(utils.COLOR_BLURPLE).
 			AddField("Reminder", reminder, true).
-			AddField("Time", fmt.Sprintf("<t:%d:R>", remindAt.Unix()), true).
-			Build()
+			AddField("Time", fmt.Sprintf("<t:%d:R>", remindAt.Unix()), true)
 
-		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetEmbeds(embed).
-			Build())
+		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithEmbeds(embed))
 
 		return err
 	}

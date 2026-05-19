@@ -21,21 +21,21 @@ var SkipCommand = discord.SlashCommandCreate{
 func HandleSkip(b *wokkibot.Wokkibot, q *queue.QueueManager) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		if !b.Config.Lavalink.Enabled {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Lavalink connection has not been established").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Lavalink connection has not been established"))
 		}
 
 		player := b.Lavalink.ExistingPlayer(*e.GuildID())
 		queue := q.Get(*e.GuildID())
 
 		if player == nil || queue == nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No player or queue found").Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("No player or queue found"))
 		}
 
 		if err := Skip(b, q, e.GuildID()); err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent(utils.CapitalizeFirstLetter(err.Error())).Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent(utils.CapitalizeFirstLetter(err.Error())))
 		}
 
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Skipped track").Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithContent("Skipped track"))
 	}
 }
 

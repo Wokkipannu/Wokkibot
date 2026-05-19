@@ -76,12 +76,12 @@ func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
-		embed := discord.NewEmbedBuilder()
+		embed := discord.NewEmbed()
 		embed.Author = &discord.EmbedAuthor{
 			Name:    fmt.Sprintf("%v's pizza", e.User().EffectiveName()),
 			IconURL: *e.User().AvatarURL(),
 		}
-		embed.SetColor(utils.COLOR_BLURPLE)
+		embed = embed.WithColor(utils.COLOR_BLURPLE)
 
 		var currentChunk strings.Builder
 		var chunks []string
@@ -106,16 +106,15 @@ func HandlePizza(b *wokkibot.Wokkibot) handler.CommandHandler {
 
 		if len(chunks) > 1 {
 			for i, chunk := range chunks {
-				embed.AddField(fmt.Sprintf("Toppings (x%d) (%d/%d)", amount, i+1, len(chunks)), chunk, false)
+				embed = embed.AddField(fmt.Sprintf("Toppings (x%d) (%d/%d)", amount, i+1, len(chunks)), chunk, false)
 			}
 		} else if len(chunks) == 1 {
-			embed.AddField(fmt.Sprintf("Toppings (x%d)", amount), chunks[0], false)
+			embed = embed.AddField(fmt.Sprintf("Toppings (x%d)", amount), chunks[0], false)
 		}
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().
-			SetEmbeds(embed.Build()).
-			AddActionRow(discord.NewPrimaryButton("Rerandomize", "/pizza/randomize").WithEmoji(discord.ComponentEmoji{Name: "🍕"})).
-			Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
+			WithEmbeds(embed).
+			AddActionRow(discord.NewPrimaryButton("Rerandomize", "/pizza/randomize").WithEmoji(discord.ComponentEmoji{Name: "🍕"})))
 
 		utils.UpdateStatistics("pizzas_generated")
 
@@ -137,10 +136,9 @@ func HandlePizzaRandomize(b *wokkibot.Wokkibot) handler.ComponentHandler {
 
 		author := message.InteractionMetadata.User
 		if author.ID != e.User().ID {
-			return e.Respond(discord.InteractionResponseTypeCreateMessage, discord.NewMessageCreateBuilder().
-				SetContent("Only the original user can rerandomize the pizza!").
-				SetEphemeral(true).
-				Build())
+			return e.Respond(discord.InteractionResponseTypeCreateMessage, discord.NewMessageCreate().
+				WithContent("Only the original user can rerandomize the pizza!").
+				WithEphemeral(true))
 		}
 
 		titleField := message.Embeds[0].Fields[0]
@@ -157,12 +155,12 @@ func HandlePizzaRandomize(b *wokkibot.Wokkibot) handler.ComponentHandler {
 			return err
 		}
 
-		embed := discord.NewEmbedBuilder()
+		embed := discord.NewEmbed()
 		embed.Author = &discord.EmbedAuthor{
 			Name:    fmt.Sprintf("%v's pizza", e.User().EffectiveName()),
 			IconURL: *e.User().AvatarURL(),
 		}
-		embed.SetColor(utils.COLOR_BLURPLE)
+		embed = embed.WithColor(utils.COLOR_BLURPLE)
 
 		var currentChunk strings.Builder
 		var chunks []string
@@ -187,16 +185,15 @@ func HandlePizzaRandomize(b *wokkibot.Wokkibot) handler.ComponentHandler {
 
 		if len(chunks) > 1 {
 			for i, chunk := range chunks {
-				embed.AddField(fmt.Sprintf("Toppings (x%d) (%d/%d)", amount, i+1, len(chunks)), chunk, false)
+				embed = embed.AddField(fmt.Sprintf("Toppings (x%d) (%d/%d)", amount, i+1, len(chunks)), chunk, false)
 			}
 		} else if len(chunks) == 1 {
-			embed.AddField(fmt.Sprintf("Toppings (x%d)", amount), chunks[0], false)
+			embed = embed.AddField(fmt.Sprintf("Toppings (x%d)", amount), chunks[0], false)
 		}
 
-		err = e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdateBuilder().
-			SetEmbeds(embed.Build()).
-			AddActionRow(discord.NewPrimaryButton("Rerandomize", "/pizza/randomize").WithEmoji(discord.ComponentEmoji{Name: "🍕"})).
-			Build())
+		err = e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdate().
+			WithEmbeds(embed).
+			AddActionRow(discord.NewPrimaryButton("Rerandomize", "/pizza/randomize").WithEmoji(discord.ComponentEmoji{Name: "🍕"})))
 
 		if err != nil {
 			return err

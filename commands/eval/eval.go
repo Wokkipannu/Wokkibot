@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -22,14 +23,14 @@ func HandleEval(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		msg := e.MessageCommandInteractionData().TargetMessage()
 
-		runtimes, err := b.PistonClient.GetRuntimes()
+		runtimes, err := b.PistonClient.GetRuntimes(context.Background())
 		if err != nil {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Error while getting runtimes").SetFlags(discord.MessageFlagEphemeral).Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("Error while getting runtimes").WithFlags(discord.MessageFlagEphemeral))
 		}
 
 		matches := discordCodeblockRegex.FindStringSubmatch(msg.Content)
 		if len(matches) == 0 {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("No codeblock found").SetFlags(discord.MessageFlagEphemeral).Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContent("No codeblock found").WithFlags(discord.MessageFlagEphemeral))
 		}
 		rawLanguage := matches[discordCodeblockRegex.SubexpIndex("language")]
 		code := matches[discordCodeblockRegex.SubexpIndex("code")]
@@ -50,7 +51,7 @@ func HandleEval(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		if language == "" {
-			return e.CreateMessage(discord.NewMessageCreateBuilder().SetContentf("Language %s not supported", rawLanguage).SetFlags(discord.MessageFlagEphemeral).Build())
+			return e.CreateMessage(discord.NewMessageCreate().WithContentf("Language %s not supported", rawLanguage).WithFlags(discord.MessageFlagEphemeral))
 		}
 
 		if err = e.Respond(discord.InteractionResponseTypeDeferredCreateMessage, nil); err != nil {
@@ -58,25 +59,25 @@ func HandleEval(b *wokkibot.Wokkibot) handler.CommandHandler {
 		}
 
 		start := time.Now()
-		rs, err := b.PistonClient.Execute(language, "", []gopiston.Code{{Content: code}})
-		embed := discord.NewEmbedBuilder()
+		rs, err := b.PistonClient.Execute(context.Background(), language, "", []gopiston.Code{{Content: code}})
+		embed := discord.NewEmbed()
 		end := time.Now()
 		duration := end.Sub(start)
 		if err != nil {
-			embed.SetTitle("Eval")
-			embed.SetDescriptionf("Error: %s", err.Error())
-			embed.AddField("Status", "Error", true)
-			embed.AddField("Duration", fmt.Sprintf("%.3f seconds", duration.Seconds()), true)
-			embed.AddField("Language", rs.Language, true)
+			embed = embed.WithTitle("Eval")
+			embed = embed.WithDescriptionf("Error: %s", err.Error())
+			embed = embed.AddField("Status", "Error", true)
+			embed = embed.AddField("Duration", fmt.Sprintf("%.3f seconds", duration.Seconds()), true)
+			embed = embed.AddField("Language", language, true)
 		} else {
-			embed.SetTitle("Eval")
-			embed.SetDescription(rs.GetOutput())
-			embed.AddField("Status", "Success", true)
-			embed.AddField("Duration", fmt.Sprintf("%.3f seconds", duration.Seconds()), true)
-			embed.AddField("Language", rs.Language, true)
+			embed = embed.WithTitle("Eval")
+			embed = embed.WithDescription(rs.GetOutput())
+			embed = embed.AddField("Status", "Success", true)
+			embed = embed.AddField("Duration", fmt.Sprintf("%.3f seconds", duration.Seconds()), true)
+			embed = embed.AddField("Language", rs.Language, true)
 		}
 
-		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdateBuilder().SetEmbeds(embed.Build()).AddActionRow(discord.NewLinkButton("View code", msg.JumpURL())).Build())
+		_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().WithEmbeds(embed).AddActionRow(discord.NewLinkButton("View code", msg.JumpURL())))
 		return err
 	}
 }

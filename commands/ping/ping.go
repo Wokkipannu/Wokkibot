@@ -14,6 +14,6 @@ var PingCommand = discord.SlashCommandCreate{
 
 func HandlePing(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
-		return e.CreateMessage(discord.NewMessageCreateBuilder().SetContent("Pong!").Build())
+		return e.CreateMessage(discord.NewMessageCreate().WithContent("Pong!"))
 	}
 }
