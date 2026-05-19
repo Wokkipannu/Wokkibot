@@ -3,10 +3,13 @@ package workers
 import (
 	"log/slog"
 	"time"
+	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
 	"github.com/disgoorg/disgo/discord"
 )
+
+const ytdlpUpdateInterval = 10 * time.Minute
 
 type Worker struct {
 	Bot *wokkibot.Wokkibot
@@ -20,6 +23,39 @@ func NewWorker(bot *wokkibot.Wokkibot) *Worker {
 
 func (w *Worker) Start() {
 	go w.runReminderScheduler()
+	go w.runYtdlpUpdater()
+}
+
+func (w *Worker) runYtdlpUpdater() {
+	w.checkYtdlpUpdate()
+
+	ticker := time.NewTicker(ytdlpUpdateInterval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		w.checkYtdlpUpdate()
+	}
+}
+
+func (w *Worker) checkYtdlpUpdate() {
+	current := utils.GetYtdlpVersion()
+	latest, err := utils.GetLatestYtdlpVersion()
+	if err != nil {
+		slog.Error("Error checking latest yt-dlp version", "error", err)
+		return
+	}
+
+	if current == latest {
+		return
+	}
+
+	slog.Info("Updating yt-dlp", "current_version", current, "latest_version", latest)
+	if err := utils.UpdateYtdlpBinary(); err != nil {
+		slog.Error("Error updating yt-dlp", "error", err)
+		return
+	}
+
+	slog.Info("yt-dlp update completed", "version", latest)
 }
 
 func (w *Worker) runReminderScheduler() {

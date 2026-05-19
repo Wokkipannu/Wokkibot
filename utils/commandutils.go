@@ -7,14 +7,19 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime/debug"
 	"strings"
+	"sync"
+	"time"
 	"wokkibot/database"
 
 	"github.com/disgoorg/disgo/discord"
 )
 
 var imageTypes = []string{"image/png", "image/jpeg", "image/gif", "image/webp"}
+
+var ytdlpUpdateMu sync.Mutex
 
 // Creates a quote embed from a message
 func QuoteEmbed(msg discord.Message) discord.Embed {
@@ -88,11 +93,16 @@ func GetYtdlpVersion() string {
 }
 
 func GetLatestYtdlpVersion() (string, error) {
-	resp, err := http.Get("https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest")
+	client := http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get("https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest")
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return "", fmt.Errorf("latest yt-dlp release request failed with status %s", resp.Status)
+	}
 
 	var release struct {
 		TagName string `json:"tag_name"`
@@ -104,13 +114,33 @@ func GetLatestYtdlpVersion() (string, error) {
 }
 
 func UpdateYtdlpBinary() error {
-	curlCmd := exec.Command("curl", "-L", "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", "-o", "/usr/local/bin/yt-dlp")
+	ytdlpUpdateMu.Lock()
+	defer ytdlpUpdateMu.Unlock()
+
+	const targetPath = "/usr/local/bin/yt-dlp"
+
+	tempFile, err := os.CreateTemp(filepath.Dir(targetPath), ".yt-dlp-*")
+	if err != nil {
+		return fmt.Errorf("create temp yt-dlp binary failed: %w", err)
+	}
+	tempPath := tempFile.Name()
+	if err := tempFile.Close(); err != nil {
+		os.Remove(tempPath)
+		return fmt.Errorf("close temp yt-dlp binary failed: %w", err)
+	}
+	defer os.Remove(tempPath)
+
+	curlCmd := exec.Command("curl", "-L", "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", "-o", tempPath)
 	if out, err := curlCmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("curl update failed: %w, output: %s", err, string(out))
 	}
 
-	if err := os.Chmod("/usr/local/bin/yt-dlp", 0755); err != nil {
+	if err := os.Chmod(tempPath, 0755); err != nil {
 		return fmt.Errorf("chmod failed: %w", err)
+	}
+
+	if err := os.Rename(tempPath, targetPath); err != nil {
+		return fmt.Errorf("replace yt-dlp binary failed: %w", err)
 	}
 
 	return nil

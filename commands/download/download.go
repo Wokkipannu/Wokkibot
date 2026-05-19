@@ -225,35 +225,8 @@ func handleDownloadAndConversion(task DownloadTask) {
 	}
 
 	if err != nil {
-		// Experimental: Testing if yt-dlp is out of date and attempting to update it
-		if strings.HasPrefix(err.Error(), "download failed: ERROR: [youtube]") || strings.HasPrefix(err.Error(), "download failed: WARNING: [youtube]") {
-			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdate().
-				WithContent("Encountered YouTube error. Checking yt-dlp version..."))
-
-			current := utils.GetYtdlpVersion()
-			latest, verErr := utils.GetLatestYtdlpVersion()
-			if verErr == nil && current == latest {
-				utils.HandleError(e, "Error while downloading video", err.Error())
-				return
-			}
-
-			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdate().
-				WithContent("Updating yt-dlp and retrying download..."))
-
-			if updErr := utils.UpdateYtdlpBinary(); updErr != nil {
-				utils.HandleError(e, "Failed to update yt-dlp", updErr.Error())
-				return
-			}
-
-			downloadedFile, err = downloadFile(task, e)
-			if err != nil {
-				utils.HandleError(e, "Error while downloading video", err.Error())
-				return
-			}
-		} else {
-			utils.HandleError(e, "Error while downloading video", err.Error())
-			return
-		}
+		utils.HandleError(e, "Error while downloading video", err.Error())
+		return
 	}
 
 	var processedFile string
