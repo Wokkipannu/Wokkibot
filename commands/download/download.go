@@ -277,7 +277,7 @@ func handleDownloadAndConversion(task DownloadTask) {
 
 	expiryDays := expiryHours / 24
 	_, err = e.UpdateInteractionResponse(discord.NewMessageUpdate().
-		WithContent(fmt.Sprintf("Uploaded to pepo.land: %s\nExpires in %d days.", uploadURL, expiryDays)))
+		WithContent(fmt.Sprintf("%s\nExpires in %d days.", uploadURL, expiryDays)))
 	if err != nil {
 		utils.HandleError(e, "Error updating message", err.Error())
 		return
@@ -302,6 +302,7 @@ func downloadFile(task DownloadTask, e *handler.CommandEvent) (string, error) {
 		"--merge-output-format", "mp4",
 		"--cookies", "cookies.txt",
 		"--progress-template", "{\"progress_percentage\": \"%(progress._percent_str)s\"}",
+		"--no-playlist",
 		"--newline",
 	)
 
