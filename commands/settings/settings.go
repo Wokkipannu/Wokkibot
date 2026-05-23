@@ -105,17 +105,6 @@ var SettingsCommand = discord.SlashCommandCreate{
 			Description: "Guild specific settings",
 			Options: []discord.ApplicationCommandOptionSubCommand{
 				{
-					Name:        "pinchannel",
-					Description: "Set the pin channel for the guild",
-					Options: []discord.ApplicationCommandOption{
-						discord.ApplicationCommandOptionChannel{
-							Name:        "channel",
-							Description: "The channel to set as the pin channel",
-							Required:    true,
-						},
-					},
-				},
-				{
 					Name:        "xlinks",
 					Description: "Toggles the conversion of x.com links to fixupx.com links",
 					Options: []discord.ApplicationCommandOption{
@@ -265,25 +254,6 @@ func HandleCustomList(h *handlers.Handler) handler.CommandHandler {
 /**
  * Guild settings
  */
-func HandlePinChannelChange(b *wokkibot.Wokkibot) handler.CommandHandler {
-	return func(e *handler.CommandEvent) error {
-		if err := e.Respond(discord.InteractionResponseTypeDeferredCreateMessage, nil); err != nil {
-			return err
-		}
-
-		data := e.SlashCommandInteractionData()
-
-		channel := data.Channel("channel")
-
-		b.Handlers.SetPinChannel(*e.GuildID(), channel.ID)
-
-		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
-			WithContent("Pin channel updated successfully"))
-
-		return err
-	}
-}
-
 func HandleXLinksToggle(b *wokkibot.Wokkibot) handler.CommandHandler {
 	return func(e *handler.CommandEvent) error {
 		if err := e.Respond(discord.InteractionResponseTypeDeferredCreateMessage, nil); err != nil {

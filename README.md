@@ -35,7 +35,6 @@ Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://git
     * `/settings commands remove` - Remove a custom command
     * `/settings commands list` - List all custom commands
   * `/settings guild`
-    * `/settings guild pinchannel` - Set the pin channel
     * `/settings guild xlinks` - Set the conversion of x links to fixupx links on or off
   * `/settings lavalink`
     * `/settings lavalink toggle` - Toggle lavalink on/off
@@ -43,7 +42,6 @@ Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://git
 ##### Context menu commands
 * Quote - Post a message quote as an embed
 * Eval - Evaluate code
-* Pin - Pin a message to pins channel
 
 # Setup
 * Get [Lavalink](https://github.com/freyacodes/Lavalink) and required plugins ([YouTube-Source](https://github.com/lavalink-devs/youtube-source#plugin), [LavaSrc](https://github.com/topi314/LavaSrc) and [LavaSearch](https://github.com/topi314/LavaSearch))

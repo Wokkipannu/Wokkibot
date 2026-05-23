@@ -86,7 +86,6 @@ func initializeSchema() error {
 		`CREATE TABLE IF NOT EXISTS guilds (
 			id TEXT PRIMARY KEY,
 			trivia_token TEXT,
-			pin_channel TEXT,
 			convert_x_links BOOLEAN DEFAULT TRUE
 		)`,
 		`CREATE TABLE IF NOT EXISTS pizza_toppings (

@@ -16,12 +16,6 @@ type Migration struct {
 // TODO: move migrations to their own individual files perhaps. For now, this works, but in the long run this can get really big
 var migrations = []Migration{
 	{
-		Version:     1,
-		Description: "Add pin_channel to guilds",
-		SQL:         "ALTER TABLE guilds ADD COLUMN pin_channel TEXT;",
-		IgnoreError: "duplicate column",
-	},
-	{
 		Version:     2,
 		Description: "Add data to pizza_toppings table",
 		SQL:         "INSERT INTO pizza_toppings (name) VALUES ('Ananas'), ('Aurajuusto'), ('Chili'), ('Jalopeno'), ('Tuplajuusto'), ('Kananmuna'), ('Katkarapu'), ('Kermaperunat'), ('Oliivi'), ('Pekoni'), ('Pippurikastike'), ('Punasipuli'), ('Salaatti'), ('Simpukka'), ('Smetana'), ('Tomaatti'), ('Herkkusieni'), ('Anjovis'), ('BBQ-kastike'), ('Fetajuusto'), ('Jauheliha'), ('Kana'), ('Kapris'), ('Kebab'), ('Mozzarella'), ('Paprika'), ('Pepperoni'), ('Pizzasuikale'), ('Rucola'), ('Salami'), ('Sipuli'), ('Suolakurkku'), ('Tonnikala'), ('Banaani'), ('Currykastike');",
@@ -53,6 +47,12 @@ var migrations = []Migration{
 		Description: "Add blackjack_games_played to statistics",
 		SQL:         "ALTER TABLE statistics ADD COLUMN blackjack_games_played INTEGER DEFAULT 0;",
 		IgnoreError: "duplicate column",
+	},
+	{
+		Version:     8,
+		Description: "Remove pin_channel from guilds",
+		SQL:         "ALTER TABLE guilds DROP COLUMN pin_channel;",
+		IgnoreError: "no such column",
 	},
 }
 

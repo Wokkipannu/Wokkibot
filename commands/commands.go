@@ -10,7 +10,6 @@ import (
 	"wokkibot/commands/minesweeper"
 	"wokkibot/commands/music"
 	"wokkibot/commands/name"
-	"wokkibot/commands/pin"
 	"wokkibot/commands/ping"
 	"wokkibot/commands/pizza"
 	"wokkibot/commands/quote"
@@ -41,7 +40,6 @@ var Commands = []discord.ApplicationCommandCreate{
 	trivia.TriviaCommand,
 	settings.SettingsCommand,
 	joke.JokeCommand,
-	pin.PinCommand,
 	download.DownloadCommand,
 	minesweeper.MinesweeperCommand,
 	status.StatusCommand,
@@ -73,7 +71,6 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 			r.Command("/list", settings.HandleCustomList(h))
 		})
 		r.Route("/guild", func(r handler.Router) {
-			r.Command("/pinchannel", middleware.AdminMiddleware(settings.HandlePinChannelChange(b)))
 			r.Command("/xlinks", middleware.AdminMiddleware(settings.HandleXLinksToggle(b)))
 		})
 		r.Route("/lavalink", func(r handler.Router) {
@@ -93,7 +90,6 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 	// Context menu commands
 	r.Command("/Quote", quote.HandleQuote(b))
 	r.Command("/Eval", eval.HandleEval(b))
-	r.Command("/Pin", pin.HandlePin(b))
 	// Music commands
 	r.Command("/play", music.HandlePlay(b, q))
 	r.Command("/skip", music.HandleSkip(b, q))
