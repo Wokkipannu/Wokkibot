@@ -1,15 +1,11 @@
 package commands
 
 import (
-	"wokkibot/commands/blackjack"
 	"wokkibot/commands/download"
 	"wokkibot/commands/eval"
 	"wokkibot/commands/flip"
 	"wokkibot/commands/friday"
-	"wokkibot/commands/joke"
-	"wokkibot/commands/minesweeper"
 	"wokkibot/commands/music"
-	"wokkibot/commands/name"
 	"wokkibot/commands/ping"
 	"wokkibot/commands/pizza"
 	"wokkibot/commands/quote"
@@ -17,7 +13,6 @@ import (
 	"wokkibot/commands/roll"
 	"wokkibot/commands/settings"
 	"wokkibot/commands/status"
-	"wokkibot/commands/trivia"
 	"wokkibot/commands/user"
 	"wokkibot/handlers"
 	"wokkibot/middleware"
@@ -37,15 +32,10 @@ var Commands = []discord.ApplicationCommandCreate{
 	user.UserCommand,
 	quote.QuoteCommand,
 	eval.EvalCommand,
-	trivia.TriviaCommand,
 	settings.SettingsCommand,
-	joke.JokeCommand,
 	download.DownloadCommand,
-	minesweeper.MinesweeperCommand,
 	status.StatusCommand,
 	remind.RemindCommand,
-	name.NameCommand,
-	blackjack.BlackjackCommand,
 	// Music commands
 	music.PlayCommand,
 	music.SkipCommand,
@@ -63,7 +53,6 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 	r.Component("/pizza/randomize", pizza.HandlePizzaRandomize(b))
 	r.Command("/friday", friday.HandleFriday(b))
 	r.Command("/user", user.HandleUser(b))
-	r.Command("/trivia", trivia.HandleTrivia(b))
 	r.Route("/settings", func(r handler.Router) {
 		r.Route("/commands", func(r handler.Router) {
 			r.Command("/add", settings.HandleCustomAdd(h))
@@ -77,11 +66,8 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 			r.Command("/toggle", middleware.AdminMiddleware(settings.HandleLavalinkToggle(b)))
 		})
 	})
-	r.Command("/joke", joke.HandleJoke(b))
 	r.Command("/download", download.HandleDownload(b))
 	r.Command("/status", status.HandleStatus(b))
-	r.Component("/status/statistics", status.HandleStatusStatistics(b))
-	r.Component("/status/status", status.HandleStatusStatus(b))
 	r.Route("/remind", func(r handler.Router) {
 		r.Command("/set", remind.HandleRemind(b))
 		r.Command("/list", remind.HandleListMyReminders(b))
@@ -98,15 +84,4 @@ func RegisterCommands(r *handler.Mux, b *wokkibot.Wokkibot, h *handlers.Handler,
 	r.Command("/disconnect", music.HandleDisconnect(b))
 	r.Command("/seek", music.HandleSeek(b))
 	r.Command("/volume", music.HandleVolume(b))
-	r.Command("/name", name.HandleName(b))
-	// Minesweeper
-	r.Command("/minesweeper", minesweeper.HandleMinesweeper(b))
-	r.Component("/minesweeper/flag", minesweeper.HandleMinesweeperFlagActionComponent(b))
-	r.Component("/minesweeper/reveal", minesweeper.HandleMinesweeperRevealActionComponent(b))
-	r.Component("/minesweeper/up", minesweeper.HandleMinesweeperUpActionComponent(b))
-	r.Component("/minesweeper/down", minesweeper.HandleMinesweeperDownActionComponent(b))
-	r.Component("/minesweeper/left", minesweeper.HandleMinesweeperLeftActionComponent(b))
-	r.Component("/minesweeper/right", minesweeper.HandleMinesweeperRightActionComponent(b))
-	// Blackjack
-	r.Command("/blackjack", blackjack.HandleBlackjack(b))
 }

@@ -21,10 +21,6 @@ Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://git
 * `/pizza` - Get random pizza toppings
 * `/user` - Get information about a user
 * `/flip` - Flip a coin
-* `/trivia` - Start a trivia game
-* `/blackjack` - Start a blackjack game
-* `/joke` - Get a random joke
-* `/name` - Gives a random 2 part name from SQLite database
 * `/remind`
   * `/remind set` - Set a reminder
   * `/remind delete` - Delete a reminder
@@ -38,7 +34,6 @@ Wokkibot is a multi purpose Discord bot built with Go on the [DisGo](https://git
     * `/settings guild xlinks` - Set the conversion of x links to fixupx links on or off
   * `/settings lavalink`
     * `/settings lavalink toggle` - Toggle lavalink on/off
-* `/minesweeper` - Start a minesweeper game
 ##### Context menu commands
 * Quote - Post a message quote as an embed
 * Eval - Evaluate code

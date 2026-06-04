@@ -17,7 +17,6 @@ type Command struct {
 
 type Guild struct {
 	ID            snowflake.ID `json:"id"`
-	TriviaToken   string       `json:"trivia_token"`
 	ConvertXLinks bool         `json:"convert_x_links"`
 }
 

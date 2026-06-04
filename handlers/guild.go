@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"wokkibot/database"
@@ -12,7 +11,7 @@ import (
 
 func LoadGuilds() (map[snowflake.ID]types.Guild, error) {
 	db := database.GetDB()
-	rows, err := db.Query("SELECT id, trivia_token, convert_x_links FROM guilds")
+	rows, err := db.Query("SELECT id, convert_x_links FROM guilds")
 	if err != nil {
 		return nil, fmt.Errorf("failed to query guilds: %v", err)
 	}
@@ -22,15 +21,11 @@ func LoadGuilds() (map[snowflake.ID]types.Guild, error) {
 	for rows.Next() {
 		var guild types.Guild
 		var idStr string
-		var triviaTokenStr sql.NullString
-		if err := rows.Scan(&idStr, &triviaTokenStr, &guild.ConvertXLinks); err != nil {
+		if err := rows.Scan(&idStr, &guild.ConvertXLinks); err != nil {
 			return nil, fmt.Errorf("failed to scan guild row: %v", err)
 		}
 
 		guild.ID = snowflake.MustParse(idStr)
-		if triviaTokenStr.Valid {
-			guild.TriviaToken = triviaTokenStr.String
-		}
 
 		guilds[guild.ID] = guild
 	}

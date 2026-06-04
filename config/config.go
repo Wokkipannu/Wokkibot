@@ -11,7 +11,6 @@ import (
 type Config struct {
 	Token        string         `json:"token"`
 	GuildID      string         `json:"guildid"`
-	TriviaToken  string         `json:"trivia_token"`
 	UploadAPIKey string         `json:"upload_api_key"`
 	Admins       []snowflake.ID `json:"admins"`
 	Lavalink     LavalinkConfig `json:"lavalink"`

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"runtime"
 	"time"
-	"wokkibot/database"
-	"wokkibot/types"
 	"wokkibot/utils"
 	"wokkibot/wokkibot"
 
@@ -24,7 +22,7 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 			return err
 		}
 
-		statusEmbed := createEmbed(b, e, nil)
+		statusEmbed := createEmbed(b, e)
 
 		_, err := e.UpdateInteractionResponse(discord.NewMessageUpdate().
 			WithEmbeds(statusEmbed))
@@ -37,15 +35,14 @@ func HandleStatus(b *wokkibot.Wokkibot) handler.CommandHandler {
 			ping := getPing(b)
 			statusEmbed.Fields[6].Value = ping
 			_, _ = e.UpdateInteractionResponse(discord.NewMessageUpdate().
-				WithEmbeds(statusEmbed).
-				AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"})))
+				WithEmbeds(statusEmbed))
 		}()
 
 		return nil
 	}
 }
 
-func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.ComponentEvent) discord.Embed {
+func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent) discord.Embed {
 	self, _ := b.Client.Caches.SelfUser()
 
 	currentYtdlpVersion := utils.GetYtdlpVersion()
@@ -68,11 +65,6 @@ func createEmbed(b *wokkibot.Wokkibot, e *handler.CommandEvent, c *handler.Compo
 		AddField("Start time", fmt.Sprintf("<t:%d:R>", b.StartTime.Unix()), true).
 		AddField("Ping", getPing(b), true).
 		WithColor(utils.COLOR_GREEN)
-
-	if c != nil {
-		guild, _ := c.Guild()
-		embed = embed.AddField("File Size limit", fmt.Sprintf("%dMB", utils.CalculateMaximumFileSizeForGuild(guild)), true)
-	}
 
 	if e != nil {
 		guild, _ := e.Guild()
@@ -112,72 +104,4 @@ func getPing(b *wokkibot.Wokkibot) string {
 		}
 	}
 	return "N/A"
-}
-
-func HandleStatusStatistics(b *wokkibot.Wokkibot) handler.ComponentHandler {
-	return func(e *handler.ComponentEvent) error {
-		self, _ := b.Client.Caches.SelfUser()
-
-		db := database.GetDB()
-		var statistics types.Statistics
-		err := db.QueryRow("SELECT video_downloads, names_given, songs_played, pizzas_generated, coins_flipped, dice_rolled, trivia_games_played, trivia_games_won, trivia_games_lost, blackjack_games_played FROM statistics").Scan(&statistics.VideoDownloads, &statistics.NamesGiven, &statistics.SongsPlayed, &statistics.PizzasGenerated, &statistics.CoinsFlipped, &statistics.DiceRolled, &statistics.TriviaGamesPlayed, &statistics.TriviaGamesWon, &statistics.TriviaGamesLost, &statistics.BlackjackGamesPlayed)
-		if err != nil {
-			return err
-		}
-
-		embed := discord.NewEmbed().
-			WithTitlef("%s Statistics", self.Username).
-			WithThumbnail(self.EffectiveAvatarURL()).
-			AddField("Video Downloads", fmt.Sprintf("%d", statistics.VideoDownloads), true).
-			AddField("Names Given", fmt.Sprintf("%d", statistics.NamesGiven), true).
-			AddField("Songs Played", fmt.Sprintf("%d", statistics.SongsPlayed), true).
-			AddField("Pizzas Generated", fmt.Sprintf("%d", statistics.PizzasGenerated), true).
-			AddField("Coins Flipped", fmt.Sprintf("%d", statistics.CoinsFlipped), true).
-			AddField("Dice Rolled", fmt.Sprintf("%d", statistics.DiceRolled), true).
-			AddField("Trivia Games Played", fmt.Sprintf("%d", statistics.TriviaGamesPlayed), true).
-			AddField("Trivia Games Won", fmt.Sprintf("%d", statistics.TriviaGamesWon), true).
-			AddField("Trivia Games Lost", fmt.Sprintf("%d", statistics.TriviaGamesLost), true).
-			AddField("Blackjack Games Played", fmt.Sprintf("%d", statistics.BlackjackGamesPlayed), true).
-			WithColor(utils.COLOR_GREEN)
-
-		err = e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdate().
-			WithEmbeds(embed).
-			AddActionRow(discord.NewPrimaryButton("Status", "/status/status").WithEmoji(discord.ComponentEmoji{Name: "📺"}).WithDisabled(true)))
-
-		if err != nil {
-			return err
-		}
-
-		go func() {
-			time.Sleep(5 * time.Second)
-			_, _ = e.Client().Rest.UpdateMessage(e.Channel().ID(), e.Message.ID, discord.NewMessageUpdate().
-				WithEmbeds(embed).
-				AddActionRow(discord.NewPrimaryButton("Status", "/status/status").WithEmoji(discord.ComponentEmoji{Name: "📺"}).WithDisabled(false)))
-		}()
-
-		return nil
-	}
-}
-
-func HandleStatusStatus(b *wokkibot.Wokkibot) handler.ComponentHandler {
-	return func(e *handler.ComponentEvent) error {
-		statusEmbed := createEmbed(b, nil, e)
-
-		err := e.Respond(discord.InteractionResponseTypeUpdateMessage, discord.NewMessageUpdate().
-			WithEmbeds(statusEmbed).
-			AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"}).WithDisabled(true)))
-
-		if err != nil {
-			return err
-		}
-
-		go func() {
-			time.Sleep(5 * time.Second)
-			_, _ = e.Client().Rest.UpdateMessage(e.Channel().ID(), e.Message.ID, discord.NewMessageUpdate().
-				WithEmbeds(statusEmbed).
-				AddActionRow(discord.NewPrimaryButton("Statistics", "/status/statistics").WithEmoji(discord.ComponentEmoji{Name: "📊"}).WithDisabled(false)))
-		}()
-
-		return nil
-	}
 }
