@@ -99,18 +99,21 @@ type DownloadProgress struct {
 const (
 	downloadTimeout        = 3 * time.Minute
 	conversionTimeout      = 5 * time.Minute
+	mediaProbeTimeout      = 15 * time.Second
 	updateInterval         = 1 * time.Second
 	defaultBitrate         = "1M"
 	defaultResolution      = "720"
 	uploadServiceMaxSizeMB = 100
 	pepoLandURL            = "https://pepo.land/"
+	noDataBlocksError      = "ERROR: Did not get any data blocks" // In some cases yt-dlp will not get any data blocks and will return this error
 )
 
 var (
 	taskQueue = make(chan DownloadTask, 10)
 	once      sync.Once
 
-	timeParamRegex = regexp.MustCompile(`^(?:\d+(?:\.\d+)?|\d+:\d+(?:\.\d+)?|\d+:\d+:\d+(?:\.\d+)?)$`)
+	timeParamRegex    = regexp.MustCompile(`^(?:\d+(?:\.\d+)?|\d+:\d+(?:\.\d+)?|\d+:\d+:\d+(?:\.\d+)?)$`)
+	fragmentFileRegex = regexp.MustCompile(`\.f\d+\.`)
 
 	allowedSchemes = map[string]bool{
 		"http":  true,
@@ -475,19 +478,92 @@ func executeOperation(e *handler.CommandEvent, task DownloadTask, cmd *exec.Cmd,
 		if errMsg == "" {
 			errMsg = err.Error()
 		}
+
+		if operation == "download" && strings.Contains(errMsg, noDataBlocksError) {
+			recoveredFile, recoveryErr := findDownloadedFile(task.tempDir)
+			if recoveryErr == nil {
+				if validateMediaFile(recoveredFile) == nil {
+					slog.Warn("Recovering yt-dlp download despite no data blocks error",
+						"file", recoveredFile,
+						"error", errMsg,
+					)
+					return recoveredFile, nil
+				}
+			}
+		}
+
 		return "", fmt.Errorf("%s failed: %s", operation, errMsg)
 	}
 
 	if operation == "download" || operation == "curldownload" {
-		files, err := filepath.Glob(filepath.Join(task.tempDir, "video_download.*"))
-		if err != nil {
-			return "", fmt.Errorf("error finding downloaded file: %w", err)
-		}
-
-		return files[0], nil
+		return findDownloadedFile(task.tempDir)
 	}
 
 	return task.filePathProcessed, nil
+}
+
+func findDownloadedFile(tempDir string) (string, error) {
+	files, err := filepath.Glob(filepath.Join(tempDir, "video_download.*"))
+	if err != nil {
+		return "", fmt.Errorf("error finding downloaded file: %w", err)
+	}
+
+	var selected string
+	var selectedSize int64
+	for _, file := range files {
+		base := filepath.Base(file)
+		if strings.HasSuffix(base, ".part") || strings.HasSuffix(base, ".ytdl") || fragmentFileRegex.MatchString(base) {
+			continue
+		}
+
+		info, err := os.Stat(file)
+		if err != nil {
+			continue
+		}
+
+		if info.Size() > selectedSize {
+			selected = file
+			selectedSize = info.Size()
+		}
+	}
+
+	if selected == "" {
+		return "", fmt.Errorf("download did not output any files")
+	}
+
+	return selected, nil
+}
+
+func validateMediaFile(file string) error {
+	info, err := os.Stat(file)
+	if err != nil {
+		return fmt.Errorf("error getting file info: %w", err)
+	}
+	if info.Size() == 0 {
+		return fmt.Errorf("downloaded file is empty")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), mediaProbeTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "ffprobe",
+		"-v", "error",
+		"-show_entries", "format=format_name,duration",
+		"-of", "default=noprint_wrappers=1",
+		file,
+	)
+	output, err := cmd.CombinedOutput()
+	if ctx.Err() == context.DeadlineExceeded {
+		return fmt.Errorf("media probe timed out")
+	}
+	if err != nil {
+		return fmt.Errorf("media probe failed: %w, output: %s", err, string(output))
+	}
+	if strings.TrimSpace(string(output)) == "" {
+		return fmt.Errorf("media probe did not return metadata")
+	}
+
+	return nil
 }
 
 func getCodec(file string) (string, error) {
