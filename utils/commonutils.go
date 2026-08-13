@@ -103,6 +103,6 @@ func CalculateMaximumFileSizeForGuild(guild discord.Guild) int {
 	} else if guild.PremiumTier == discord.PremiumTier3 {
 		return 100
 	} else {
-		return 10
+		return 20
 	}
 }
