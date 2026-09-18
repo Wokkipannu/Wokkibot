@@ -15,6 +15,10 @@ import (
 	"github.com/mvdan/xurls"
 )
 
+var (
+	xLinkPattern = regexp.MustCompile(`https?:\/\/(x|twitter)\.com\/(.*\/status\/\d+)\??.*`)
+)
+
 func (h *Handler) OnMessageCreate(e *events.MessageCreate) {
 	if e.GuildID != nil {
 		h.EnsureGuildExists(*e.GuildID)
@@ -25,6 +29,24 @@ func (h *Handler) OnMessageCreate(e *events.MessageCreate) {
 
 	if guild, exists := h.Guilds[*e.GuildID]; exists && guild.ConvertXLinks {
 		h.HandleXLinks(e)
+	}
+}
+
+/*
+ * Since embeds might appear after we've already suppressed them, we need to check for them again on update
+ */
+func (h *Handler) OnMessageUpdate(e *events.MessageUpdate) {
+	if e.GuildID != nil {
+		h.EnsureGuildExists(*e.GuildID)
+	}
+
+	if xLinkPattern.MatchString(e.Message.Content) {
+		if guild, exists := h.Guilds[*e.GuildID]; exists && guild.ConvertXLinks {
+			// Prevent update loop, only suppress if not already suppressed
+			if !e.Message.Flags.Has(discord.MessageFlagSuppressEmbeds) {
+				h.SuppressEmbeds(nil, e)
+			}
+		}
 	}
 }
 
@@ -58,10 +80,7 @@ func (h *Handler) HandleXLinks(e *events.MessageCreate) {
 
 	message := e.Message.Content
 
-	regexPattern := `https?:\/\/(x|twitter)\.com\/(.*\/status\/\d+)\??.*`
-	r := regexp.MustCompile(regexPattern)
-
-	if r.MatchString(message) {
+	if xLinkPattern.MatchString(message) {
 		links := xurls.Strict.FindAllString(message, -1)
 
 		fixedURL, err := utils.ReplaceDomain(links[0], "fixvx.com")
@@ -69,10 +88,24 @@ func (h *Handler) HandleXLinks(e *events.MessageCreate) {
 			return
 		}
 
-		suppressEmbeds := discord.MessageFlagSuppressEmbeds
-		e.Client().Rest.UpdateMessage(e.Message.ChannelID, e.Message.ID, discord.MessageUpdate{Flags: &suppressEmbeds})
+		h.SuppressEmbeds(e, nil)
 
 		e.Client().Rest.CreateMessage(e.Message.ChannelID, discord.NewMessageCreate().WithContent(fixedURL).WithMessageReferenceByID(e.Message.ID).WithAllowedMentions(&discord.AllowedMentions{RepliedUser: false}))
+	}
+}
+
+func (h *Handler) SuppressEmbeds(eC *events.MessageCreate, eU *events.MessageUpdate) {
+	suppressEmbeds := discord.MessageFlagSuppressEmbeds
+
+	if eC != nil {
+		eC.Client().Rest.UpdateMessage(eC.Message.ChannelID, eC.Message.ID, discord.MessageUpdate{
+			Flags: &suppressEmbeds,
+		})
+	}
+	if eU != nil {
+		eU.Client().Rest.UpdateMessage(eU.Message.ChannelID, eU.Message.ID, discord.MessageUpdate{
+			Flags: &suppressEmbeds,
+		})
 	}
 }
 

@@ -105,6 +105,7 @@ func main() {
 		),
 		bot.WithEventListenerFunc(b.OnDiscordEvent),
 		bot.WithEventListenerFunc(h.OnMessageCreate),
+		bot.WithEventListenerFunc(h.OnMessageUpdate),
 		bot.WithLogger(logger),
 	)
 
